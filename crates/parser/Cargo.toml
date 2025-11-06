@@ -1,0 +1,11 @@
+[package]
+description = "Parser for `stylang` source code."
+documentation = "https://docs.rs/stylang-parser"
+edition = "2024"
+license = "MIT"
+name = "stylang-parser"
+repository = "https://github.com/stylang/stylang/crates/parser"
+version.workspace = true
+
+[dependencies]
+thiserror = "2.0.17"
