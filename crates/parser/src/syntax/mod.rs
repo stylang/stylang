@@ -1,0 +1,1 @@
+//! Syntax item for `stylang`.

@@ -9,3 +9,10 @@ version.workspace = true
 
 [dependencies]
 thiserror = "2.0.17"
+memchr = { version = "^2.7" }
+parserc = { version = "^0.10", default-features = false, features = ["syntax"]}
+serde = { version = "1.0.228", optional = true }
+
+[features]
+default = ["serde"]
+serde = ["dep:serde","parserc/serde"]
