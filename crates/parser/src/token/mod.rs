@@ -1,7 +1,7 @@
 //! Lexical token types.
 
-mod s;
-pub use s::*;
+mod tokens;
+pub use tokens::*;
 
-mod ops;
-pub use ops::*;
+pub mod keyword;
+pub mod ops;

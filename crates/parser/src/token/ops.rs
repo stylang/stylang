@@ -1,254 +1,131 @@
-use parserc::{ControlFlow, Parser, Span, keyword, next, syntax::Syntax};
+//! operator tokens.
 
-use crate::{StylangError, TokenKind, input::StylangInput};
+use parserc::syntax::Syntax;
+
+use crate::{OpKind, input::StylangInput};
 
 /// Op `&&`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct AndAnd<I>(I)
+#[parserc(keyword = "&&", map_err = OpKind::AndAnd.map())]
+pub struct AndAnd<I>(pub I)
 where
     I: StylangInput;
-
-impl<I> Syntax<I> for AndAnd<I>
-where
-    I: StylangInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        keyword("&&")
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::AndAnd.map())
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
-    }
-}
 
 /// Op `&=`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct AndEq<I>(I)
+#[parserc(keyword = "&=", map_err = OpKind::AndEq.map())]
+pub struct AndEq<I>(pub I)
 where
     I: StylangInput;
 
-impl<I> Syntax<I> for AndEq<I>
-where
-    I: StylangInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        keyword("&=")
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::AndEq.map())
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
-    }
-}
-
-/// Op `&&`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+/// Op `&`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct And<I>(I)
+#[parserc(char = b'&', map_err = OpKind::And.map())]
+pub struct And<I>(pub I)
 where
     I: StylangInput;
-
-impl<I> Syntax<I> for And<I>
-where
-    I: StylangInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let token = next(b'&')
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::And.map())?;
-
-        // Check whether the following character is a specific character
-        if let Some(c) = input.iter().next() {
-            match c {
-                // Returns an error according to the longest match principle.
-                b'&' | b'=' => {
-                    return Err(StylangError::Token(
-                        TokenKind::And,
-                        ControlFlow::Recovable,
-                        Span::Range(token.0.start()..token.0.start() + 1),
-                    ));
-                }
-                _ => {}
-            }
-        }
-
-        Ok(token)
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
-    }
-}
 
 /// Op `||`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct OrOr<I>(I)
+#[parserc(keyword = "||", map_err = OpKind::OrOr.map())]
+pub struct OrOr<I>(pub I)
 where
     I: StylangInput;
 
-impl<I> Syntax<I> for OrOr<I>
-where
-    I: StylangInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        keyword("||")
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::OrOr.map())
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
-    }
-}
-
-/// Op `&=`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+/// Op `|=`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct OrEq<I>(I)
+#[parserc(keyword = "|=", map_err = OpKind::OrEq.map())]
+pub struct OrEq<I>(pub I)
 where
     I: StylangInput;
-
-impl<I> Syntax<I> for OrEq<I>
-where
-    I: StylangInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        keyword("|=")
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::OrEq.map())
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
-    }
-}
 
 /// Op `|`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Or<I>(I)
+#[parserc(char = b'|', map_err = OpKind::Or.map())]
+pub struct Or<I>(pub I)
 where
     I: StylangInput;
-
-impl<I> Syntax<I> for Or<I>
-where
-    I: StylangInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let token = next(b'|')
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::And.map())?;
-
-        // Check whether the following character is a specific character
-        if let Some(c) = input.iter().next() {
-            match c {
-                // Returns an error according to the longest match principle.
-                b'|' | b'=' => {
-                    return Err(StylangError::Token(
-                        TokenKind::Or,
-                        ControlFlow::Recovable,
-                        Span::Range(token.0.start()..token.0.start() + 1),
-                    ));
-                }
-                _ => {}
-            }
-        }
-
-        Ok(token)
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
-    }
-}
 
 /// Op `^=`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct CaretEq<I>(I)
+#[parserc(keyword = "^=", map_err = OpKind::CaretEq.map())]
+pub struct CaretEq<I>(pub I)
 where
     I: StylangInput;
-
-impl<I> Syntax<I> for CaretEq<I>
-where
-    I: StylangInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        keyword("|=")
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::CaretEq.map())
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
-    }
-}
 
 /// Op `^`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Caret<I>(I)
+#[parserc(char = b'^', map_err = OpKind::Caret.map())]
+pub struct Caret<I>(pub I)
 where
     I: StylangInput;
 
-impl<I> Syntax<I> for Caret<I>
+/// Op `->`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(keyword = "->", map_err = OpKind::RightArrow.map())]
+pub struct RightArrow<I>(pub I)
+where
+    I: StylangInput;
+
+/// Parser for `op` tokens.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Op<I>
 where
     I: StylangInput,
 {
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let token = next(b'|')
-            .parse(input)
-            .map(|input| Self(input))
-            .map_err(TokenKind::Caret.map())?;
+    AndAnd(AndAnd<I>),
+    AndEq(AndEq<I>),
+    And(And<I>),
+    OrOr(OrOr<I>),
+    OrEq(OrEq<I>),
+    Or(Or<I>),
+    CaretEq(CaretEq<I>),
+    Caret(Caret<I>),
+    RightArrow(RightArrow<I>),
+}
 
-        // Check whether the following character is a specific character
-        if let Some(c) = input.iter().next() {
-            match c {
-                // Returns an error according to the longest match principle.
-                b'|' | b'=' => {
-                    return Err(StylangError::Token(
-                        TokenKind::Caret,
-                        ControlFlow::Recovable,
-                        Span::Range(token.0.start()..token.0.start() + 1),
-                    ));
-                }
-                _ => {}
-            }
+#[cfg(test)]
+mod tests {
+    use parserc::syntax::InputSyntaxExt;
+
+    use super::*;
+    use crate::input::TokenStream;
+
+    #[test]
+    fn test_ops() {
+        macro_rules! make_test {
+            ($ty: ident, $input: literal, $match: literal) => {
+                (
+                    TokenStream::from($input),
+                    Op::$ty($ty(TokenStream::from($match))),
+                )
+            };
         }
 
-        Ok(token)
-    }
+        let tests = [
+            make_test!(AndAnd, "&&==", "&&"),
+            make_test!(AndEq, "&==", "&="),
+            make_test!(And, "&a", "&"),
+            make_test!(OrOr, "||===", "||"),
+            make_test!(OrEq, "|===", "|="),
+            make_test!(Or, "|a", "|"),
+            make_test!(CaretEq, "^=", "^="),
+            make_test!(Caret, "^|", "^"),
+            make_test!(RightArrow, "->>", "->"),
+        ];
 
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.0.to_span()
+        for (mut input, target) in tests {
+            assert_eq!(input.parse(), Ok(target));
+        }
     }
 }
