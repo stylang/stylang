@@ -19,7 +19,9 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 
 [[package]]
 name = "parserc"
-version = "0.11.0"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e78eeda7012b5931d0c7b2fbb133f4c7e44f85b883d425f567e6e207b4977a1"
 dependencies = [
  "memchr",
  "parserc-derive",
@@ -30,7 +32,9 @@ dependencies = [
 
 [[package]]
 name = "parserc-derive"
-version = "0.11.0"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bdd543132b82e46c16d4a55670a1fb4ff5342580080f8f6537d7425633a1c9a"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -88,7 +92,9 @@ dependencies = [
 
 [[package]]
 name = "sourcespan"
-version = "0.11.0"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bacbbff984e50560c27bf18337ae793a225506e29ea9f049dc30900d61a86f20"
 dependencies = [
  "serde",
 ]
