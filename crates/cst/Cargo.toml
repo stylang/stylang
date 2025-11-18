@@ -1,10 +1,10 @@
 [package]
-description = "Parser for `stylang` source code."
-documentation = "https://docs.rs/stylang-parser"
+description = "Concrete Syntax Tree for `stylang` based on `parserc` infrastructure"
+documentation = "https://docs.rs/stylang-cst"
 edition = "2024"
 license = "MIT"
-name = "stylang-parser"
-repository = "https://github.com/stylang/stylang/crates/parser"
+name = "stylang-cst"
+repository = "https://github.com/stylang/stylang/crates/cst"
 version.workspace = true
 
 [dependencies]
