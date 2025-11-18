@@ -5,30 +5,153 @@ pub enum TokenKind {
     /// Keyword `fn`
     #[error("keyword `fn`")]
     Fn,
-    /// Punct `{`
-    #[error("Punct `{{`")]
+    /// Keyword `struct`
+    #[error("keyword `struct`")]
+    Struct,
+    /// Keyword `enum`
+    #[error("keyword `enum`")]
+    Enum,
+    /// Keyword `view`
+    #[error("keyword `view`")]
+    View,
+    /// punct `{`
+    #[error("punct `{{`")]
     BraceStart,
-    /// Punct `}`
-    #[error("Punct `}}`")]
+    /// punct `}`
+    #[error("punct `}}`")]
     BraceEnd,
-    /// Punct `[`
-    #[error("Punct `[`")]
+    /// punct `[`
+    #[error("punct `[`")]
     BracketStart,
-    /// Punct `]`
-    #[error("Punct `]`")]
+    /// punct `]`
+    #[error("punct `]`")]
     BracketEnd,
-    /// Punct `(`
-    #[error("Punct `(`")]
+    /// punct `(`
+    #[error("punct `(`")]
     ParenStart,
-    /// Punct `)`
-    #[error("Punct `)`")]
+    /// punct `)`
+    #[error("punct `)`")]
     ParenEnd,
-    /// Punct `@`
-    #[error("Punct `@`")]
+    /// punct `:`
+    #[error("punct `:`")]
+    Colon,
+    /// punct `,`
+    #[error("punct `,`")]
+    Comma,
+    /// punct `;`
+    #[error("punct `;`")]
+    Semi,
+    /// punct `::`
+    #[error("punct `::`")]
+    PathSep,
+    /// punct `@`
+    #[error("punct `@`")]
     At,
-    /// Punct `->`
-    #[error("Punct `->`")]
+    /// punct `->`
+    #[error("punct `->`")]
     ArrowRight,
+    /// Operator `&`
+    #[error("operator `&`")]
+    And,
+    /// Operator `&&`
+    #[error("operator `&&`")]
+    AndAnd,
+    /// Operator `&=`
+    #[error("operator `&=`")]
+    AndEq,
+    /// Operator `|`
+    #[error("operator `|`")]
+    Or,
+    /// Operator `||`
+    #[error("operator `||`")]
+    OrOr,
+    /// Operator `|=`
+    #[error("operator `|=`")]
+    OrEq,
+    /// Operator `^`
+    #[error("operator `^`")]
+    Caret,
+    /// Operator `^=`
+    #[error("operator `^=`")]
+    CaretEq,
+    /// Operator `%`
+    #[error("operator `%`")]
+    Percent,
+    /// Operator `%=`
+    #[error("operator `%=`")]
+    PercentEq,
+    /// Operator `/`
+    #[error("operator `/`")]
+    Slash,
+    /// Operator `/=`
+    #[error("operator `/=`")]
+    SlashEq,
+    /// Operator `*`
+    #[error("operator `*`")]
+    Star,
+    /// Operator `**`
+    #[error("operator `**`")]
+    StarStar,
+    /// Operator `*=`
+    #[error("operator `*=`")]
+    StarEq,
+    /// Operator `+`
+    #[error("operator `+`")]
+    Plus,
+    /// Operator `+=`
+    #[error("operator `+=`")]
+    PlusEq,
+    /// Operator `-`
+    #[error("operator `-`")]
+    Minus,
+    /// Operator `-=`
+    #[error("operator `-=`")]
+    MinusEq,
+    /// Operator `>>`
+    #[error("operator `>>`")]
+    Shr,
+    /// Operator `>>=`
+    #[error("operator `>>=`")]
+    ShrEq,
+    /// Operator `<<`
+    #[error("operator `<<`")]
+    Shl,
+    /// Operator `<<=`
+    #[error("operator `<<=`")]
+    ShlEq,
+    /// Operator `=`
+    #[error("operator `=`")]
+    Eq,
+    /// Operator `==`
+    #[error("operator `==`")]
+    EqEq,
+    /// Operator `=>`
+    #[error("operator `=>`")]
+    FatArrowRight,
+    /// Operator `>`
+    #[error("operator `>`")]
+    Gt,
+    /// Operator `>=`
+    #[error("operator `>=`")]
+    Ge,
+    /// Operator `/>`
+    #[error("operator `/>`")]
+    Sg,
+    /// Operator `<`
+    #[error("operator `<`")]
+    Lt,
+    /// Operator `<=`
+    #[error("operator `<=`")]
+    Le,
+    /// Operator `</`
+    #[error("operator `</`")]
+    Ls,
+    /// Operator `!`
+    #[error("operator `!`")]
+    Not,
+    /// Operator `!=`
+    #[error("operator `!=`")]
+    NotEq,
 }
 
 impl TokenKind {
