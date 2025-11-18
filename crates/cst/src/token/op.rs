@@ -34,6 +34,13 @@ define_token_c!(Not, b'!');
 define_token!(NotEq, "!=");
 define_token!(Sg, "/>");
 define_token!(Ls, "</");
+define_token!(SlashSlash, "//");
+define_token!(SlashSlashSlash, "///");
+define_token!(SlashSlashNot, "//!");
+define_token!(SlashStarStar, "/**");
+define_token!(SlashStarNot, "/*!");
+define_token!(SlashStar, "/*");
+define_token!(StarSlash, "*/");
 
 /// A parser for operator tokens.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, parserc::syntax::Syntax)]
@@ -52,10 +59,17 @@ where
     Caret(Caret<I>),
     PercentEq(PercentEq<I>),
     Percent(Percent<I>),
+    SlashSlashSlash(SlashSlashSlash<I>),
+    SlashSlashNot(SlashSlashNot<I>),
+    SlashSlash(SlashSlash<I>),
+    SlashStarStar(SlashStarStar<I>),
+    SlashStarNot(SlashStarNot<I>),
+    SlashStar(SlashStar<I>),
     SlashEq(SlashEq<I>),
     Sg(Sg<I>),
     Slash(Slash<I>),
     StarStar(StarStar<I>),
+    StarSlash(StarSlash<I>),
     StarEq(StarEq<I>),
     Star(Star<I>),
     PlusEq(PlusEq<I>),
@@ -125,5 +139,13 @@ mod tests {
         assert_op!(Not, "!!", "!");
         assert_op!(Sg, "/>>", "/>");
         assert_op!(Ls, "</==", "</");
+
+        assert_op!(SlashSlashSlash, "///-", "///");
+        assert_op!(SlashSlashNot, "//!!", "//!");
+        assert_op!(SlashSlash, "//-", "//");
+        assert_op!(SlashStarStar, "/**!", "/**");
+        assert_op!(SlashStarNot, "/*!!", "/*!");
+        assert_op!(SlashStar, "/*~", "/*");
+        assert_op!(StarSlash, "*//", "*/");
     }
 }

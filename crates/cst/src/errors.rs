@@ -86,6 +86,30 @@ pub enum TokenKind {
     /// Operator `/=`
     #[error("operator `/=`")]
     SlashEq,
+    /// Operator `/>`
+    #[error("operator `/>`")]
+    Sg,
+    /// Operator `//`
+    #[error("operator `//`")]
+    SlashSlash,
+    /// Operator `///`
+    #[error("operator `///`")]
+    SlashSlashSlash,
+    /// Operator `//!`
+    #[error("operator `//!`")]
+    SlashSlashNot,
+    /// Operator `/**`
+    #[error("operator `/**`")]
+    SlashStarStar,
+    /// Operator `/*!`
+    #[error("operator `/*!`")]
+    SlashStarNot,
+    /// Operator `/*`
+    #[error("operator `/*`")]
+    SlashStar,
+    /// Operator `*/`
+    #[error("operator `*/`")]
+    StarSlash,
     /// Operator `*`
     #[error("operator `*`")]
     Star,
@@ -134,9 +158,6 @@ pub enum TokenKind {
     /// Operator `>=`
     #[error("operator `>=`")]
     Ge,
-    /// Operator `/>`
-    #[error("operator `/>`")]
-    Sg,
     /// Operator `<`
     #[error("operator `<`")]
     Lt,
@@ -152,6 +173,12 @@ pub enum TokenKind {
     /// Operator `!=`
     #[error("operator `!=`")]
     NotEq,
+    /// ident character sequence.
+    #[error("`ident` string")]
+    Ident,
+    /// xml ident character sequence.
+    #[error("`xml ident` string")]
+    XmlIdent,
 }
 
 impl TokenKind {
