@@ -3,4 +3,5 @@
 
 pub mod errors;
 pub mod input;
+pub mod syntax;
 pub mod token;

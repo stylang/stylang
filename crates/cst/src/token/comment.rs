@@ -8,6 +8,8 @@ define_token!(SlashSlashSlash, "///");
 define_token!(SlashSlashNot, "//!");
 define_token!(SlashSlash, "//");
 define_token!(SlashStar, "/*");
+define_token!(SlashStarStar, "/**");
+define_token!(SlashStarNot, "/*!");
 define_token!(StarSlash, "*/");
 
 /// Comment start token.
@@ -17,6 +19,8 @@ pub enum CommentStart<I>
 where
     I: CSTInput,
 {
+    SlashStarNot(SlashStarNot<I>),
+    SlashStarStar(SlashStarStar<I>),
     SlashSlashSlash(SlashSlashSlash<I>),
     SlashSlashNot(SlashSlashNot<I>),
     SlashSlash(SlashSlash<I>),
