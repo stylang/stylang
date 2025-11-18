@@ -3,6 +3,15 @@ use parserc::{ControlFlow, ParseError, Span};
 /// Error for tokens.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum TokenKind {
+    /// Keyword `set`
+    #[error("keyword `set`")]
+    Set,
+    /// Keyword `map`
+    #[error("keyword `map`")]
+    Map,
+    /// Keyword `string`
+    #[error("keyword `string`")]
+    String,
     /// Keyword `fn`
     #[error("keyword `fn`")]
     Fn,
@@ -180,6 +189,12 @@ pub enum TokenKind {
     /// xml ident character sequence.
     #[error("`xml ident` string")]
     XmlIdent,
+    /// keyword `i8,...`
+    #[error("keyword `i8,i16,...`")]
+    Int,
+    /// keyword `u8,...`
+    #[error("keyword `u8,u16,...`")]
+    Uint,
 }
 
 impl TokenKind {
