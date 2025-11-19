@@ -58,7 +58,6 @@ where
 /// Literial rgb value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[parserc(map_err = SyntaxKind::LitRgb.map())]
 pub struct LitRgb<I>
 where
     I: CSTInput,
