@@ -9,10 +9,10 @@ use crate::{
     input::CSTInput,
     token::{
         S,
-        keyword::{Float, Int, Rgb, Uint},
+        keyword::{False, Float, Int, Rgb, True, Uint},
         lit::{Digits, HexDigits},
         op::{Minus, Plus},
-        punct::{Comma, Dot, DoubleQuote, Hex, ParenEnd, ParenStart, Pound, SingleQuote},
+        punct::{Comma, Dot, DoubleQuote, ParenEnd, ParenStart, Pound, SingleQuote, ZeroX},
     },
 };
 
@@ -56,7 +56,19 @@ where
     }
 }
 
-/// Literial rgb value.
+/// literal bool value.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::LitBool.map_unhandle())]
+pub enum LitBool<I>
+where
+    I: CSTInput,
+{
+    True(True<I>),
+    False(False<I>),
+}
+
+/// Literal rgb value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LitRgb<I>
@@ -382,7 +394,7 @@ where
     /// signature part of number.
     pub sign: Option<Or<Plus<I>, Minus<I>>>,
     /// leading `0x`
-    pub leading_0x: Hex<I>,
+    pub leading_0x: ZeroX<I>,
     /// hex-digits sequence.
     pub digits: HexDigits<I>,
     /// optional unit part.
@@ -423,6 +435,22 @@ where
             + self.digits.to_span()
             + self.unit.to_span()
     }
+}
+
+/// A literal value expr.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::Lit.map_unhandle())]
+pub enum Lit<I>
+where
+    I: CSTInput,
+{
+    Rgb(LitRgb<I>),
+    HexRgb(LitHexRgb<I>),
+    Str(LitStr<I>),
+    Number(LitNumber<I>),
+    HexNumber(LitHexNumber<I>),
+    Bool(LitBool<I>),
 }
 
 #[cfg(test)]
@@ -735,7 +763,7 @@ mod tests {
             TokenStream::from("-0x10.0").parse(),
             Ok(LitHexNumber {
                 sign: Some(Or::Second(Minus(TokenStream::from("-")))),
-                leading_0x: Hex(TokenStream::from((1, "0x"))),
+                leading_0x: ZeroX(TokenStream::from((1, "0x"))),
                 digits: HexDigits {
                     input: TokenStream::from((3, "10")),
                     value: 0x10
@@ -748,7 +776,7 @@ mod tests {
             TokenStream::from("-0x10i64").parse(),
             Ok(LitHexNumber {
                 sign: Some(Or::Second(Minus(TokenStream::from("-")))),
-                leading_0x: Hex(TokenStream::from((1, "0x"))),
+                leading_0x: ZeroX(TokenStream::from((1, "0x"))),
                 digits: HexDigits {
                     input: TokenStream::from((3, "10")),
                     value: 0x10
@@ -772,6 +800,19 @@ mod tests {
         assert_eq!(
             TokenStream::from("-0xffu32").parse::<LitHexNumber<_>>(),
             Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(5..8)))
+        );
+    }
+
+    #[test]
+    fn test_bool() {
+        assert_eq!(
+            TokenStream::from("true").parse(),
+            Ok(Lit::Bool(LitBool::True(True(TokenStream::from("true")))))
+        );
+
+        assert_eq!(
+            TokenStream::from("false").parse(),
+            Ok(Lit::Bool(LitBool::False(False(TokenStream::from("false")))))
         );
     }
 }

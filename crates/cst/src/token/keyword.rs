@@ -13,6 +13,9 @@ define_token!(Map, "map");
 define_token!(Set, "set");
 define_token!(Color, "color");
 define_token!(Rgb, "rgb");
+define_token!(True, "true");
+define_token!(False, "false");
+define_token!(Bool, "bool");
 
 /// Parser for keyword `i*`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -173,6 +176,7 @@ where
     Uint(Uint<I>),
     Map(Map<I>),
     Set(Set<I>),
+    Bool(Bool<I>),
 }
 
 #[cfg(test)]

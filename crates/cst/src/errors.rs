@@ -4,6 +4,13 @@ use parserc::{ControlFlow, ParseError, Span};
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum TokenKind {
     /// Keyword `rgb`
+    #[error("keyword `bool`")]
+    Bool,
+    #[error("keyword `true`")]
+    True,
+    #[error("keyword `false`")]
+    False,
+    /// Keyword `rgb`
     #[error("keyword `rgb`")]
     Rgb,
     /// Keyword `color`
@@ -77,7 +84,7 @@ pub enum TokenKind {
     SingleQuote,
     /// punct `0x`
     #[error("punct `0x`")]
-    Hex,
+    ZeroX,
     /// punct `->`
     #[error("punct `->`")]
     ArrowRight,
@@ -268,9 +275,24 @@ pub enum SyntaxKind {
     LitNumber,
     #[error("`literal hex-number`")]
     LitHexNumber,
+    #[error("`literal expr`")]
+    Lit,
+    #[error("`literal bool value`")]
+    LitBool,
 }
 
 impl SyntaxKind {
+    /// Map unhandle error
+    pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| {
+            if let CSTError::Kind(kind) = &err {
+                CSTError::Syntax(self, kind.control_flow(), kind.to_span())
+            } else {
+                err
+            }
+        }
+    }
+
     /// Map error to this kind.
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Syntax(self, err.control_flow(), err.to_span())
