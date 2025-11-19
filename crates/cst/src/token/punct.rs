@@ -10,6 +10,7 @@ define_token_c!(Colon, b':');
 define_token_c!(Comma, b',');
 define_token_c!(Semi, b';');
 define_token_c!(Pound, b'#');
+define_token_c!(Dot, b'.');
 define_token_c!(DoubleQuote, b'"');
 define_token_c!(SingleQuote, b'\'');
 define_token!(PathSep, "::");

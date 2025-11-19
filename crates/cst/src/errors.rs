@@ -48,6 +48,9 @@ pub enum TokenKind {
     /// punct `)`
     #[error("punct `)`")]
     ParenEnd,
+    /// punct `.`
+    #[error("punct `.`")]
+    Dot,
     /// punct `:`
     #[error("punct `:`")]
     Colon,
@@ -204,6 +207,9 @@ pub enum TokenKind {
     /// xml ident character sequence.
     #[error("`xml ident` string")]
     XmlIdent,
+    /// keyword `f16,...`
+    #[error("keyword `f16,f32,...`")]
+    Float,
     /// keyword `i8,...`
     #[error("keyword `i8,i16,...`")]
     Int,
@@ -253,6 +259,10 @@ pub enum SyntaxKind {
     LitStr,
     #[error("`literal string tailing quote`")]
     TailingQuote,
+    #[error("`unit for literal number`")]
+    Unit,
+    #[error("`literal number`")]
+    LitNumber,
 }
 
 impl SyntaxKind {
@@ -274,6 +284,37 @@ pub enum OverflowKind {
     RgbComponent,
 }
 
+impl OverflowKind {
+    /// Map error to this kind.
+    pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| CSTError::Overflow(self, err.to_span())
+    }
+
+    /// Map error to `SyntaxKind`
+    pub fn map_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| CSTError::Overflow(self, err.to_span())
+    }
+}
+
+/// Semantics error.
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum SemanticsKind {
+    #[error("`number unit`")]
+    Unit,
+}
+
+impl SemanticsKind {
+    /// Map error to this kind.
+    pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| CSTError::Semantics(self, err.to_span())
+    }
+
+    /// Map error to `SyntaxKind`
+    pub fn map_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| CSTError::Semantics(self, err.to_span())
+    }
+}
+
 /// Error returns by CST parsers.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum CSTError {
@@ -292,6 +333,10 @@ pub enum CSTError {
     /// literial value is overflow
     #[error("literial {0:?} is overflow: {1:?}")]
     Overflow(OverflowKind, Span),
+
+    /// Semantics error
+    #[error("unexpect/invalid: {0}, {1:?}")]
+    Semantics(SemanticsKind, Span),
 }
 
 impl ParseError for CSTError {
@@ -301,6 +346,7 @@ impl ParseError for CSTError {
             CSTError::Kind(kind) => kind.to_span(),
             CSTError::Token(_, _, span) => span.clone(),
             CSTError::Syntax(_, _, span) => span.clone(),
+            CSTError::Semantics(_, span) => span.clone(),
             CSTError::Overflow(_, span) => span.clone(),
         }
     }
@@ -312,6 +358,7 @@ impl ParseError for CSTError {
             CSTError::Token(_, control_flow, _) => *control_flow,
             CSTError::Syntax(_, control_flow, _) => *control_flow,
             CSTError::Overflow(_, _) => ControlFlow::Fatal,
+            CSTError::Semantics(_, _) => ControlFlow::Fatal,
         }
     }
 
@@ -324,6 +371,7 @@ impl ParseError for CSTError {
             }
             CSTError::Syntax(kind, _, span) => CSTError::Syntax(kind, ControlFlow::Fatal, span),
             CSTError::Overflow(kind, span) => CSTError::Overflow(kind, span),
+            CSTError::Semantics(kind, span) => CSTError::Semantics(kind, span),
         }
     }
 }

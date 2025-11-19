@@ -5,13 +5,14 @@ use parserc::{
 };
 
 use crate::{
-    errors::{CSTError, OverflowKind, SyntaxKind},
+    errors::{CSTError, OverflowKind, SemanticsKind, SyntaxKind},
     input::CSTInput,
     token::{
         S,
-        keyword::Rgb,
+        keyword::{Float, Int, Rgb, Uint},
         lit::Digits,
-        punct::{Comma, DoubleQuote, ParenEnd, ParenStart, Pound, SingleQuote},
+        op::{Minus, Plus},
+        punct::{Comma, Dot, DoubleQuote, ParenEnd, ParenStart, Pound, SingleQuote},
     },
 };
 
@@ -167,7 +168,7 @@ where
 {
     /// leading raw string flag.
     pub leading_raw_flag: Option<Byte<I, b'r'>>,
-    /// leading pounds chars.
+    /// leading delimiter.
     pub leading_pounds: I,
     /// leading quote char `"` or `'`
     pub leading_quote: Or<SingleQuote<I>, DoubleQuote<I>>,
@@ -175,7 +176,7 @@ where
     pub content: I,
     /// tailing quote char `"` or `'`
     pub tailing_quote: Or<SingleQuote<I>, DoubleQuote<I>>,
-    /// tailing pounds chars.
+    /// tailing delimiter.
     pub tailing_pounds: I,
 }
 
@@ -267,8 +268,103 @@ where
     }
 }
 
+/// Unit for literal digits.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Unit<I>
+where
+    I: CSTInput,
+{
+    Int(Int<I>),
+    Uint(Uint<I>),
+    Float(Float<I>),
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LitNumber<I>
+where
+    I: CSTInput,
+{
+    /// signature part of number.
+    pub sign: Option<Or<Plus<I>, Minus<I>>>,
+    /// integer part of number.
+    pub trunc: Option<Digits<I>>,
+    /// fractional part of number.
+    pub fract: Option<(Dot<I>, Digits<I>)>,
+    /// exponential part of number.
+    pub exp: Option<(
+        Or<Byte<I, b'E'>, Byte<I, b'e'>>,
+        Option<Or<Plus<I>, Minus<I>>>,
+        Digits<I>,
+    )>,
+    /// unit part of number.
+    pub unit: Option<Unit<I>>,
+}
+
+impl<I> Syntax<I> for LitNumber<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let sign: Option<Or<Plus<I>, Minus<I>>> = input.parse()?;
+
+        let trunc: Option<Digits<I>> = input.parse()?;
+
+        let fract: Option<(Dot<I>, Digits<I>)> = input.parse()?;
+
+        let exp: Option<(
+            Or<Byte<I, 69>, Byte<I, 101>>,
+            Option<Or<Plus<I>, Minus<I>>>,
+            Digits<I>,
+        )> = input.parse()?;
+
+        let unit: Option<Unit<I>> = input.parse()?;
+
+        if trunc.is_none() && fract.is_none() {
+            if sign.is_some() || exp.is_some() || unit.is_some() {
+                return Err(CSTError::Syntax(
+                    SyntaxKind::LitNumber,
+                    ControlFlow::Fatal,
+                    sign.to_span() + exp.to_span() + unit.to_span(),
+                ));
+            } else {
+                return Err(CSTError::Syntax(
+                    SyntaxKind::LitNumber,
+                    ControlFlow::Recovable,
+                    sign.to_span() + exp.to_span() + unit.to_span(),
+                ));
+            }
+        }
+
+        if fract.is_some() || exp.is_some() {
+            match &unit {
+                Some(Unit::Int(_)) | Some(Unit::Uint(_)) => {
+                    return Err(CSTError::Semantics(SemanticsKind::Unit, unit.to_span()));
+                }
+                _ => {}
+            }
+        }
+
+        Ok(Self {
+            sign,
+            trunc,
+            fract,
+            exp,
+            unit,
+        })
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.sign.to_span() + self.trunc.to_span() + self.fract.to_span() + self.exp.to_span()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+
     use parserc::{Span, syntax::InputSyntaxExt};
 
     use super::*;
@@ -464,6 +560,104 @@ mod tests {
                 ControlFlow::Fatal,
                 Span::Range(1..7)
             ))
+        );
+    }
+
+    #[test]
+    fn test_number() {
+        assert_eq!(
+            TokenStream::from("123").parse(),
+            Ok(LitNumber {
+                sign: None,
+                trunc: Some(Digits {
+                    input: TokenStream::from("123"),
+                    value: 123
+                }),
+                fract: None,
+                exp: None,
+                unit: None
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("123i3212").parse(),
+            Ok(LitNumber {
+                sign: None,
+                trunc: Some(Digits {
+                    input: TokenStream::from("123"),
+                    value: 123
+                }),
+                fract: None,
+                exp: None,
+                unit: Some(Unit::Int(Int {
+                    input: TokenStream::from((3, "i32")),
+                    len: 32
+                }))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-.123f64").parse(),
+            Ok(LitNumber {
+                sign: Some(Or::Second(Minus(TokenStream::from("-")))),
+                trunc: None,
+                fract: Some((
+                    Dot(TokenStream::from((1, "."))),
+                    Digits {
+                        input: TokenStream::from((2, "123")),
+                        value: 123
+                    }
+                )),
+                exp: None,
+                unit: Some(Unit::Float(Float {
+                    input: TokenStream::from((5, "f64")),
+                    len: 64
+                }))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-0.123e-10f64").parse(),
+            Ok(LitNumber {
+                sign: Some(Or::Second(Minus(TokenStream::from("-")))),
+                trunc: Some(Digits {
+                    input: TokenStream::from((1, "0")),
+                    value: 0
+                }),
+                fract: Some((
+                    Dot(TokenStream::from((2, "."))),
+                    Digits {
+                        input: TokenStream::from((3, "123")),
+                        value: 123
+                    }
+                )),
+                exp: Some((
+                    Or::Second(Byte(TokenStream::from((6, "e")))),
+                    Some(Or::Second(Minus(TokenStream::from((7, "-"))))),
+                    Digits {
+                        input: TokenStream::from((8, "10")),
+                        value: 10
+                    }
+                )),
+                unit: Some(Unit::Float(Float {
+                    input: TokenStream::from((10, "f64")),
+                    len: 64
+                }))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-e-10f64").parse::<LitNumber<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LitNumber,
+                ControlFlow::Fatal,
+                Span::Range(0..8)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from(".10i32").parse::<LitNumber<_>>(),
+            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(3..6)))
         );
     }
 }

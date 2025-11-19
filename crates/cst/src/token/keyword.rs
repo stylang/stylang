@@ -114,6 +114,50 @@ where
     }
 }
 
+/// Parser for keyword `f*`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Float<I>
+where
+    I: crate::input::CSTInput,
+{
+    /// input of this token.
+    pub input: I,
+    /// float size in bits.
+    pub len: usize,
+}
+
+impl<I> Syntax<I> for Float<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let mut content = input.clone();
+
+        next(b'f').parse(input).map_err(TokenKind::Int.map())?;
+
+        let len: usize = keyword("16")
+            .map(|_| 16)
+            .or(keyword("32").map(|_| 32))
+            .or(keyword("64").map(|_| 64))
+            .parse(input)
+            .map_err(TokenKind::Float.map())?;
+
+        let content = content.split_to(3);
+
+        Ok(Self {
+            input: content,
+            len,
+        })
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.input.to_span()
+    }
+}
+
 /// A parser for keywords.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, parserc::syntax::Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -155,5 +199,9 @@ mod tests {
 
         assert_int!(Int, 8, "i82", "i8");
         assert_int!(Uint, 8, "u82", "u8");
+
+        assert_int!(Float, 16, "f162", "f16");
+        assert_int!(Float, 32, "f322", "f32");
+        assert_int!(Float, 64, "f642", "f64");
     }
 }
