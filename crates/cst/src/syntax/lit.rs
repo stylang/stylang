@@ -10,9 +10,9 @@ use crate::{
     token::{
         S,
         keyword::{Float, Int, Rgb, Uint},
-        lit::Digits,
+        lit::{Digits, HexDigits},
         op::{Minus, Plus},
-        punct::{Comma, Dot, DoubleQuote, ParenEnd, ParenStart, Pound, SingleQuote},
+        punct::{Comma, Dot, DoubleQuote, Hex, ParenEnd, ParenStart, Pound, SingleQuote},
     },
 };
 
@@ -280,6 +280,7 @@ where
     Float(Float<I>),
 }
 
+/// A literal number value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LitNumber<I>
@@ -347,6 +348,15 @@ where
             }
         }
 
+        if let Some(Or::Second(_)) = &sign {
+            match &unit {
+                Some(Unit::Uint(_)) => {
+                    return Err(CSTError::Semantics(SemanticsKind::Unit, unit.to_span()));
+                }
+                _ => {}
+            }
+        }
+
         Ok(Self {
             sign,
             trunc,
@@ -359,6 +369,59 @@ where
     #[inline]
     fn to_span(&self) -> parserc::Span {
         self.sign.to_span() + self.trunc.to_span() + self.fract.to_span() + self.exp.to_span()
+    }
+}
+
+/// A literal hex-number value.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LitHexNumber<I>
+where
+    I: CSTInput,
+{
+    /// signature part of number.
+    pub sign: Option<Or<Plus<I>, Minus<I>>>,
+    /// leading `0x`
+    pub leading_0x: Hex<I>,
+    /// hex-digits sequence.
+    pub digits: HexDigits<I>,
+    /// optional unit part.
+    pub unit: Option<Or<Int<I>, Uint<I>>>,
+}
+
+impl<I> Syntax<I> for LitHexNumber<I>
+where
+    I: CSTInput,
+{
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let this = Self {
+            sign: input.parse()?,
+            leading_0x: input.parse()?,
+            digits: input
+                .parse()
+                .map_err(SyntaxKind::LitHexNumber.map_fatal())?,
+            unit: input.parse()?,
+        };
+
+        // has sign `-`
+        if let Some(Or::Second(_)) = &this.sign {
+            match this.unit {
+                Some(Or::Second(unit)) => {
+                    return Err(CSTError::Semantics(SemanticsKind::Unit, unit.to_span()));
+                }
+                _ => {}
+            }
+        }
+
+        Ok(this)
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.sign.to_span()
+            + self.leading_0x.to_span()
+            + self.digits.to_span()
+            + self.unit.to_span()
     }
 }
 
@@ -658,6 +721,57 @@ mod tests {
         assert_eq!(
             TokenStream::from(".10i32").parse::<LitNumber<_>>(),
             Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(3..6)))
+        );
+
+        assert_eq!(
+            TokenStream::from("-10u32").parse::<LitNumber<_>>(),
+            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(3..6)))
+        );
+    }
+
+    #[test]
+    fn test_hex_number() {
+        assert_eq!(
+            TokenStream::from("-0x10.0").parse(),
+            Ok(LitHexNumber {
+                sign: Some(Or::Second(Minus(TokenStream::from("-")))),
+                leading_0x: Hex(TokenStream::from((1, "0x"))),
+                digits: HexDigits {
+                    input: TokenStream::from((3, "10")),
+                    value: 0x10
+                },
+                unit: None
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-0x10i64").parse(),
+            Ok(LitHexNumber {
+                sign: Some(Or::Second(Minus(TokenStream::from("-")))),
+                leading_0x: Hex(TokenStream::from((1, "0x"))),
+                digits: HexDigits {
+                    input: TokenStream::from((3, "10")),
+                    value: 0x10
+                },
+                unit: Some(Or::First(Int {
+                    input: TokenStream::from((5, "i64")),
+                    len: 64
+                }))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("0x").parse::<LitHexNumber<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LitHexNumber,
+                ControlFlow::Fatal,
+                Span::Range(2..2)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("-0xffu32").parse::<LitHexNumber<_>>(),
+            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(5..8)))
         );
     }
 }

@@ -14,6 +14,7 @@ define_token_c!(Dot, b'.');
 define_token_c!(DoubleQuote, b'"');
 define_token_c!(SingleQuote, b'\'');
 define_token!(PathSep, "::");
+define_token!(Hex, "0x");
 
 #[cfg(test)]
 mod tests {

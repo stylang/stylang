@@ -75,6 +75,9 @@ pub enum TokenKind {
     /// punct `'`
     #[error("punct `'`")]
     SingleQuote,
+    /// punct `0x`
+    #[error("punct `0x`")]
+    Hex,
     /// punct `->`
     #[error("punct `->`")]
     ArrowRight,
@@ -263,6 +266,8 @@ pub enum SyntaxKind {
     Unit,
     #[error("`literal number`")]
     LitNumber,
+    #[error("`literal hex-number`")]
+    LitHexNumber,
 }
 
 impl SyntaxKind {
