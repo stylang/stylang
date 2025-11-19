@@ -1,4 +1,8 @@
-use parserc::{ControlFlow, Parser, syntax::Syntax, take_while_range_from};
+use parserc::{
+    ControlFlow, Parser,
+    syntax::{Byte, InputSyntaxExt, Or, Syntax},
+    take_while, take_while_range, take_while_range_from,
+};
 
 use crate::{
     errors::{CSTError, OverflowKind, SyntaxKind},
@@ -7,7 +11,7 @@ use crate::{
         S,
         keyword::Rgb,
         lit::Digits,
-        punct::{Comma, ParenEnd, ParenStart, Pound},
+        punct::{Comma, DoubleQuote, ParenEnd, ParenStart, Pound, SingleQuote},
     },
 };
 
@@ -54,7 +58,7 @@ where
 /// Literial rgb value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[parserc(map_err = SyntaxKind::Rgb.map())]
+#[parserc(map_err = SyntaxKind::LitRgb.map())]
 pub struct LitRgb<I>
 where
     I: CSTInput,
@@ -79,7 +83,7 @@ where
     pub paren_end: ParenEnd<I>,
 }
 
-/// Literial hex rgb value, `#fff, #00ff00,...`
+/// Literal hex rgb value, `#fff, #00ff00,...`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LitHexRgb<I>
@@ -102,11 +106,11 @@ where
 {
     #[inline]
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let leading_pound = Pound::parse(input).map_err(SyntaxKind::HexRgb.map())?;
+        let leading_pound = Pound::parse(input).map_err(SyntaxKind::LitHexRgb.map())?;
 
         let mut hexdigits = take_while_range_from(3, |c: u8| c.is_ascii_hexdigit())
             .parse(input)
-            .map_err(SyntaxKind::HexRgb.map_fatal())?;
+            .map_err(SyntaxKind::LitHexRgb.map_fatal())?;
 
         match hexdigits.len() {
             3 => {
@@ -142,7 +146,7 @@ where
             }
             _ => {
                 return Err(CSTError::Syntax(
-                    SyntaxKind::HexRgb,
+                    SyntaxKind::LitHexRgb,
                     ControlFlow::Fatal,
                     hexdigits.to_span(),
                 ));
@@ -152,6 +156,115 @@ where
 
     fn to_span(&self) -> parserc::Span {
         self.leading_pound.to_span() + self.blue.0.to_span()
+    }
+}
+
+/// A literal string value
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LitStr<I>
+where
+    I: CSTInput,
+{
+    /// leading raw string flag.
+    pub leading_raw_flag: Option<Byte<I, b'r'>>,
+    /// leading pounds chars.
+    pub leading_pounds: I,
+    /// leading quote char `"` or `'`
+    pub leading_quote: Or<SingleQuote<I>, DoubleQuote<I>>,
+    /// escape or raw literal string content.
+    pub content: I,
+    /// tailing quote char `"` or `'`
+    pub tailing_quote: Or<SingleQuote<I>, DoubleQuote<I>>,
+    /// tailing pounds chars.
+    pub tailing_pounds: I,
+}
+
+impl<I> Syntax<I> for LitStr<I>
+where
+    I: CSTInput,
+{
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let leading_raw_flag: Option<Byte<_, b'r'>> =
+            input.parse().map_err(SyntaxKind::LitStr.map())?;
+
+        let (leading_pounds, escape) = if leading_raw_flag.is_some() {
+            (take_while(|c| c == b'#').parse(input)?, false)
+        } else {
+            (input.split_to(0), true)
+        };
+
+        let leading_quote: Or<SingleQuote<_>, DoubleQuote<_>> =
+            input.parse().map_err(SyntaxKind::LitStr.map())?;
+
+        let leading_quote_c = match &leading_quote {
+            Or::First(_) => b'\'',
+            Or::Second(_) => b'"',
+        };
+
+        let mut iter = input.iter_indices();
+
+        let mut escape_next_c = false;
+
+        while let Some((offset, c)) = iter.next() {
+            if escape && escape_next_c {
+                escape_next_c = false;
+                continue;
+            }
+
+            if escape && c == b'\\' {
+                escape_next_c = true;
+                continue;
+            }
+
+            if c == leading_quote_c {
+                if leading_pounds.is_empty() {
+                    return Ok(Self {
+                        leading_raw_flag,
+                        leading_pounds,
+                        leading_quote,
+                        content: input.split_to(offset),
+                        tailing_quote: input.parse().unwrap(),
+                        tailing_pounds: input.split_to(0),
+                    });
+                }
+
+                let mut tailing = input.clone().split_off(offset + 1);
+
+                if let Some(tailing_pounds) =
+                    take_while_range(leading_pounds.len()..leading_pounds.len(), |c| c == b'#')
+                        .ok()
+                        .parse(&mut tailing)?
+                {
+                    let content = input.split_to(offset);
+                    let tailing_quote = input.parse().unwrap();
+                    input.split_to(tailing_pounds.len());
+
+                    return Ok(Self {
+                        leading_raw_flag,
+                        leading_pounds,
+                        leading_quote,
+                        content,
+                        tailing_quote,
+                        tailing_pounds: tailing_pounds,
+                    });
+                }
+            }
+        }
+
+        Err(CSTError::Syntax(
+            SyntaxKind::TailingQuote,
+            ControlFlow::Fatal,
+            input.to_span(),
+        ))
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.leading_raw_flag.to_span()
+            + self.leading_quote.to_span()
+            + self.tailing_quote.to_span()
+            + self.tailing_pounds.to_span()
     }
 }
 
@@ -270,7 +383,7 @@ mod tests {
         assert_eq!(
             TokenStream::from("#f034").parse::<LitHexRgb<_>>(),
             Err(CSTError::Syntax(
-                SyntaxKind::HexRgb,
+                SyntaxKind::LitHexRgb,
                 ControlFlow::Fatal,
                 Span::Range(1..5)
             ))
@@ -279,9 +392,78 @@ mod tests {
         assert_eq!(
             TokenStream::from("#f03411111").parse::<LitHexRgb<_>>(),
             Err(CSTError::Syntax(
-                SyntaxKind::HexRgb,
+                SyntaxKind::LitHexRgb,
                 ControlFlow::Fatal,
                 Span::Range(1..10)
+            ))
+        );
+    }
+
+    #[test]
+    fn test_lit_str() {
+        assert_eq!(
+            TokenStream::from(r#""I'm writing \" \x52\x75\x73\x74!""#).parse(),
+            Ok(LitStr {
+                leading_raw_flag: None,
+                leading_pounds: TokenStream::from(""),
+                leading_quote: Or::Second(DoubleQuote(TokenStream::from("\""))),
+                content: TokenStream::from((1, r#"I'm writing \" \x52\x75\x73\x74!"#)),
+                tailing_quote: Or::Second(DoubleQuote(TokenStream::from((33, "\"")))),
+                tailing_pounds: TokenStream::from((34, ""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from(r#"'I\'m writing \" \x52\x75\x73\x74!'"#).parse(),
+            Ok(LitStr {
+                leading_raw_flag: None,
+                leading_pounds: TokenStream::from(""),
+                leading_quote: Or::First(SingleQuote(TokenStream::from("'"))),
+                content: TokenStream::from((1, r#"I\'m writing \" \x52\x75\x73\x74!"#)),
+                tailing_quote: Or::First(SingleQuote(TokenStream::from((34, "'")))),
+                tailing_pounds: TokenStream::from((35, ""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from(r#"r"Escapes don't work here: \x3F \u{211D}""#).parse(),
+            Ok(LitStr {
+                leading_raw_flag: Some(Byte(TokenStream::from("r"))),
+                leading_pounds: TokenStream::from((1, "")),
+                leading_quote: Or::Second(DoubleQuote(TokenStream::from((1, "\"")))),
+                content: TokenStream::from((2, r#"Escapes don't work here: \x3F \u{211D}"#)),
+                tailing_quote: Or::Second(DoubleQuote(TokenStream::from((40, "\"")))),
+                tailing_pounds: TokenStream::from((41, ""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("r###\"A string with \"# in it. And even \"##!\"###").parse(),
+            Ok(LitStr {
+                leading_raw_flag: Some(Byte(TokenStream::from("r"))),
+                leading_pounds: TokenStream::from((1, "###")),
+                leading_quote: Or::Second(DoubleQuote(TokenStream::from((4, "\"")))),
+                content: TokenStream::from((5, "A string with \"# in it. And even \"##!")),
+                tailing_quote: Or::Second(DoubleQuote(TokenStream::from((42, "\"")))),
+                tailing_pounds: TokenStream::from((43, "###"))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from(r"'hello").parse::<LitStr<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::TailingQuote,
+                ControlFlow::Fatal,
+                Span::Range(1..6)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from(r#"'hello""#).parse::<LitStr<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::TailingQuote,
+                ControlFlow::Fatal,
+                Span::Range(1..7)
             ))
         );
     }

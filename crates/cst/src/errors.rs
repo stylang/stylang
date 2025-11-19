@@ -66,6 +66,12 @@ pub enum TokenKind {
     /// punct `#`
     #[error("punct `#`")]
     Pound,
+    /// punct `"`
+    #[error("punct `\"`")]
+    DoubleQuote,
+    /// punct `'`
+    #[error("punct `'`")]
+    SingleQuote,
     /// punct `->`
     #[error("punct `->`")]
     ArrowRight,
@@ -237,12 +243,16 @@ pub enum SyntaxKind {
     /// outer block document.
     #[error("`inner block doc`")]
     InnerBlockDoc,
-    #[error("`literial rgb value`")]
-    Rgb,
-    #[error("`literial hex rgb value`")]
-    HexRgb,
+    #[error("`literal rgb value`")]
+    LitRgb,
+    #[error("`literal hex rgb value`")]
+    LitHexRgb,
     #[error("`rgb component`")]
     RgbComponent,
+    #[error("`literal string`")]
+    LitStr,
+    #[error("`literal string tailing quote`")]
+    TailingQuote,
 }
 
 impl SyntaxKind {
