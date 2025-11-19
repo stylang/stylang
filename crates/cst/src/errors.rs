@@ -3,6 +3,12 @@ use parserc::{ControlFlow, ParseError, Span};
 /// Error for tokens.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum TokenKind {
+    /// Keyword `rgb`
+    #[error("keyword `rgb`")]
+    Rgb,
+    /// Keyword `color`
+    #[error("keyword `color`")]
+    Color,
     /// Keyword `set`
     #[error("keyword `set`")]
     Set,
@@ -57,6 +63,9 @@ pub enum TokenKind {
     /// punct `@`
     #[error("punct `@`")]
     At,
+    /// punct `#`
+    #[error("punct `#`")]
+    Pound,
     /// punct `->`
     #[error("punct `->`")]
     ArrowRight,
@@ -195,6 +204,9 @@ pub enum TokenKind {
     /// keyword `u8,...`
     #[error("keyword `u8,u16,...`")]
     Uint,
+    /// literial digits.
+    #[error("literial `digits`")]
+    LitDigits,
 }
 
 impl TokenKind {
@@ -225,6 +237,12 @@ pub enum SyntaxKind {
     /// outer block document.
     #[error("`inner block doc`")]
     InnerBlockDoc,
+    #[error("`literial rgb value`")]
+    Rgb,
+    #[error("`literial hex rgb value`")]
+    HexRgb,
+    #[error("`rgb component`")]
+    RgbComponent,
 }
 
 impl SyntaxKind {
@@ -232,6 +250,18 @@ impl SyntaxKind {
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Syntax(self, err.control_flow(), err.to_span())
     }
+
+    /// Map error to `SyntaxKind`
+    pub fn map_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| CSTError::Syntax(self, ControlFlow::Fatal, err.to_span())
+    }
+}
+
+/// Overflow kind
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum OverflowKind {
+    #[error("`rgb component`")]
+    RgbComponent,
 }
 
 /// Error returns by CST parsers.
@@ -248,6 +278,10 @@ pub enum CSTError {
     /// Failed to parse syntax tree.
     #[error("syntax error: expect {0}, {1:?},{2:?}")]
     Syntax(SyntaxKind, ControlFlow, Span),
+
+    /// literial value is overflow
+    #[error("literial {0:?} is overflow: {1:?}")]
+    Overflow(OverflowKind, Span),
 }
 
 impl ParseError for CSTError {
@@ -257,6 +291,7 @@ impl ParseError for CSTError {
             CSTError::Kind(kind) => kind.to_span(),
             CSTError::Token(_, _, span) => span.clone(),
             CSTError::Syntax(_, _, span) => span.clone(),
+            CSTError::Overflow(_, span) => span.clone(),
         }
     }
 
@@ -266,6 +301,7 @@ impl ParseError for CSTError {
             CSTError::Kind(kind) => kind.control_flow(),
             CSTError::Token(_, control_flow, _) => *control_flow,
             CSTError::Syntax(_, control_flow, _) => *control_flow,
+            CSTError::Overflow(_, _) => ControlFlow::Fatal,
         }
     }
 
@@ -277,6 +313,7 @@ impl ParseError for CSTError {
                 CSTError::Token(token_kind, ControlFlow::Fatal, span)
             }
             CSTError::Syntax(kind, _, span) => CSTError::Syntax(kind, ControlFlow::Fatal, span),
+            CSTError::Overflow(kind, span) => CSTError::Overflow(kind, span),
         }
     }
 }

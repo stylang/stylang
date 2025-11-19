@@ -9,6 +9,7 @@ define_token!(ArrowRight, "->");
 define_token_c!(Colon, b':');
 define_token_c!(Comma, b',');
 define_token_c!(Semi, b';');
+define_token_c!(Pound, b'#');
 define_token!(PathSep, "::");
 
 #[cfg(test)]

@@ -11,6 +11,8 @@ define_token!(View, "view");
 define_token!(String, "string");
 define_token!(Map, "map");
 define_token!(Set, "set");
+define_token!(Color, "color");
+define_token!(Rgb, "rgb");
 
 /// Parser for keyword `i*`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
