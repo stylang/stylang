@@ -291,6 +291,12 @@ pub enum SyntaxKind {
     Lit,
     #[error("`literal bool value`")]
     LitBool,
+    #[error("`attribute cfg`")]
+    Cfg,
+    #[error("`attribute cfg_attr`")]
+    CfgAttr,
+    #[error("`attribute contract`")]
+    Contract,
 }
 
 impl SyntaxKind {

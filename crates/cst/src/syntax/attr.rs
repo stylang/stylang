@@ -1,25 +1,45 @@
-use parserc::syntax::{Delimiter, Punctuated, Syntax};
+use parserc::syntax::{Delimiter, Or, Punctuated, Syntax};
 
 use crate::{
+    errors::SyntaxKind,
     input::CSTInput,
+    syntax::LitStr,
     token::{
+        Ident,
         keyword::{All, Any, KeywordNot},
-        punct::{Comma, ParenEnd, ParenStart},
+        punct::{At, Comma, ParenEnd, ParenStart},
     },
 };
 
-/// `cfg` attribute parser.
+/// `cfg` attribute.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct AttrCfg<I>
+#[parserc(map_err = SyntaxKind::Cfg.map_unhandle())]
+pub struct Cfg<I>
 where
     I: CSTInput,
 {
     /// ident of attribute `cfg`
-    #[parserc(keyword = "cfg")]
+    #[parserc(crucial, keyword = "cfg")]
     pub ident: I,
     /// predicate of this expr.
     pub predicate: Delimiter<ParenStart<I>, ParenEnd<I>, CfgPredicate<I>>,
+}
+
+/// `cfg_attr` attribute.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::Cfg.map_unhandle())]
+pub struct CfgAttr<I>
+where
+    I: CSTInput,
+{
+    /// ident of attribute `cfg`
+    #[parserc(crucial, keyword = "cfg_attr")]
+    pub ident: I,
+    /// predicate of this attribute.
+    pub predicate:
+        Delimiter<ParenStart<I>, ParenEnd<I>, (CfgPredicate<I>, Comma<I>, CfgAttrMeta<I>)>,
 }
 
 /// Predicate of `cfg` attribute.
@@ -60,18 +80,86 @@ where
     },
 }
 
+/// attribute `contract`.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::Contract.map_unhandle())]
+pub struct Contract<I>
+where
+    I: CSTInput,
+{
+    /// ident of attribute `cfg`
+    #[parserc(crucial, keyword = "contract")]
+    pub ident: I,
+    /// predicate of the `contract` attribute
+    predicate: Delimiter<ParenStart<I>, ParenEnd<I>, Or<Ident<I>, LitStr<I>>>,
+}
+
+/// attribute `runtime`.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::Contract.map_unhandle())]
+pub struct Runtime<I>(
+    /// ident of attribute `cfg`
+    #[parserc(keyword = "runtime")]
+    pub I,
+)
+where
+    I: CSTInput;
+
+/// content of `cfg_attr`.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CfgAttrMeta<I>
+where
+    I: CSTInput,
+{
+    Contract(Contract<I>),
+    Runtime(Runtime<I>),
+}
+
+/// content of attribute.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Meta<I>
+where
+    I: CSTInput,
+{
+    CfgAttr(CfgAttr<I>),
+    Cfg(Cfg<I>),
+    Runtime(Runtime<I>),
+    Contract(Contract<I>),
+}
+
+/// Compile-time structure attribute.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Attribute<I>
+where
+    I: CSTInput,
+{
+    /// leading `@` char.
+    pub leading_at: At<I>,
+    /// content of this attribute.
+    pub meta: Meta<I>,
+}
+
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::InputSyntaxExt;
+    use parserc::{ControlFlow, Span, syntax::InputSyntaxExt};
 
     use super::*;
-    use crate::{input::TokenStream, token::S};
+    use crate::{
+        errors::{CSTError, TokenKind},
+        input::TokenStream,
+        token::{S, punct::SingleQuote},
+    };
 
     #[test]
     fn test_attribute_cfg() {
         assert_eq!(
             TokenStream::from("cfg(test)").parse(),
-            Ok(AttrCfg {
+            Ok(Cfg {
                 ident: TokenStream::from("cfg"),
                 predicate: Delimiter {
                     start: ParenStart(None, TokenStream::from((3, "(")), None),
@@ -83,7 +171,7 @@ mod tests {
 
         assert_eq!(
             TokenStream::from("cfg(not(test))").parse(),
-            Ok(AttrCfg {
+            Ok(Cfg {
                 ident: TokenStream::from((0, "cfg")),
                 predicate: Delimiter {
                     start: ParenStart(None, TokenStream::from((3, "(")), None),
@@ -102,7 +190,7 @@ mod tests {
 
         assert_eq!(
             TokenStream::from("cfg ( all ( test , web3 ) )").parse(),
-            Ok(AttrCfg {
+            Ok(Cfg {
                 ident: TokenStream::from("cfg"),
                 predicate: Delimiter {
                     start: ParenStart(
@@ -145,7 +233,7 @@ mod tests {
 
         assert_eq!(
             TokenStream::from("cfg ( any ( test , web3 ) )").parse(),
-            Ok(AttrCfg {
+            Ok(Cfg {
                 ident: TokenStream::from("cfg"),
                 predicate: Delimiter {
                     start: ParenStart(
@@ -183,6 +271,105 @@ mod tests {
                         }
                     }
                 }
+            })
+        );
+    }
+
+    #[test]
+    fn test_contract() {
+        assert_eq!(
+            TokenStream::from("contract(hello)").parse(),
+            Ok(Contract {
+                ident: TokenStream::from("contract"),
+                predicate: Delimiter {
+                    start: ParenStart(None, TokenStream::from((8, "(")), None),
+                    end: ParenEnd(None, TokenStream::from((14, ")")), None),
+                    body: Or::First(Ident(TokenStream::from(TokenStream::from((9, "hello")))))
+                }
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("contract('0x...')").parse(),
+            Ok(Contract {
+                ident: TokenStream::from("contract"),
+                predicate: Delimiter {
+                    start: ParenStart(None, TokenStream::from((8, "(")), None),
+                    end: ParenEnd(None, TokenStream::from((16, ")")), None),
+                    body: Or::Second(LitStr {
+                        leading_raw_flag: None,
+                        leading_pounds: TokenStream::from((9, "")),
+                        leading_quote: Or::First(SingleQuote(TokenStream::from((9, "'")))),
+                        content: TokenStream::from((10, "0x...")),
+                        tailing_quote: Or::First(SingleQuote(TokenStream::from((15, "'")))),
+                        tailing_pounds: TokenStream::from((16, ""))
+                    }),
+                }
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("contract").parse::<Contract<_>>(),
+            Err(CSTError::Token(
+                TokenKind::ParenStart,
+                ControlFlow::Fatal,
+                Span::Range(8..8)
+            ))
+        );
+    }
+
+    #[test]
+    fn test_cfg_attr() {
+        assert_eq!(
+            TokenStream::from("@cfg_attr(all(test,web3),contract('0x...'))")
+                .parse::<Attribute<_>>(),
+            Ok(Attribute {
+                leading_at: At(None, TokenStream::from((0, "@")), None),
+                meta: Meta::CfgAttr(CfgAttr {
+                    ident: TokenStream::from((1, "cfg_attr")),
+                    predicate: Delimiter {
+                        start: ParenStart(None, TokenStream::from((9, "(")), None),
+                        end: ParenEnd(None, TokenStream::from((42, ")")), None),
+                        body: (
+                            CfgPredicate::All {
+                                keyword: All(TokenStream::from((10, "all"))),
+                                predicate: Delimiter {
+                                    start: ParenStart(None, TokenStream::from((13, "(")), None),
+                                    end: ParenEnd(None, TokenStream::from((23, ")")), None),
+                                    body: Punctuated {
+                                        pairs: vec![(
+                                            CfgPredicate::Test(TokenStream::from((14, "test"))),
+                                            Comma(None, TokenStream::from((18, ",")), None)
+                                        )],
+                                        tail: Some(Box::new(CfgPredicate::Web3(
+                                            TokenStream::from((19, "web3"))
+                                        )))
+                                    }
+                                }
+                            },
+                            Comma(None, TokenStream::from((24, ",")), None),
+                            CfgAttrMeta::Contract(Contract {
+                                ident: TokenStream::from((25, "contract")),
+                                predicate: Delimiter {
+                                    start: ParenStart(None, TokenStream::from((33, "(")), None),
+                                    end: ParenEnd(None, TokenStream::from((41, ")")), None),
+                                    body: Or::Second(LitStr {
+                                        leading_raw_flag: None,
+                                        leading_pounds: TokenStream::from((34, "")),
+                                        leading_quote: Or::First(SingleQuote(TokenStream::from((
+                                            34, "'"
+                                        )))),
+                                        content: TokenStream::from((35, "0x...")),
+                                        tailing_quote: Or::First(SingleQuote(TokenStream::from((
+                                            40, "'"
+                                        )))),
+                                        tailing_pounds: TokenStream::from((41, ""))
+                                    })
+                                }
+                            })
+                        )
+                    }
+                })
             })
         );
     }
