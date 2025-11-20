@@ -134,7 +134,7 @@ where
 /// Compile-time structure attribute.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Attribute<I>
+pub struct OuterAttribute<I>
 where
     I: CSTInput,
 {
@@ -322,8 +322,8 @@ mod tests {
     fn test_cfg_attr() {
         assert_eq!(
             TokenStream::from("@cfg_attr(all(test,web3),contract('0x...'))")
-                .parse::<Attribute<_>>(),
-            Ok(Attribute {
+                .parse::<OuterAttribute<_>>(),
+            Ok(OuterAttribute {
                 leading_at: At(None, TokenStream::from((0, "@")), None),
                 meta: Meta::CfgAttr(CfgAttr {
                     ident: TokenStream::from((1, "cfg_attr")),

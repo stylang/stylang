@@ -4,6 +4,9 @@ use parserc::{ControlFlow, ParseError, Span};
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum TokenKind {
     /// keyword `all`
+    #[error("keyword `draw`")]
+    Draw,
+    /// keyword `all`
     #[error("keyword `all`")]
     All,
     /// keyword `any`

@@ -9,7 +9,7 @@ use crate::{
     input::CSTInput,
     token::{
         S,
-        keyword::{False, Float, Int, Rgb, True, Uint},
+        keyword::{Float, Int, Rgb, Uint},
         lit::{Digits, HexDigits},
         op::{Minus, Plus},
         punct::{Comma, Dot, DoubleQuote, ParenEnd, ParenStart, Pound, SingleQuote, ZeroX},
@@ -64,8 +64,8 @@ pub enum LitBool<I>
 where
     I: CSTInput,
 {
-    True(True<I>),
-    False(False<I>),
+    True(#[parserc(keyword = "true")] I),
+    False(#[parserc(keyword = "false")] I),
 }
 
 /// Literal rgb value.
@@ -807,12 +807,12 @@ mod tests {
     fn test_bool() {
         assert_eq!(
             TokenStream::from("true").parse(),
-            Ok(Lit::Bool(LitBool::True(True(TokenStream::from("true")))))
+            Ok(Lit::Bool(LitBool::True(TokenStream::from("true"))))
         );
 
         assert_eq!(
             TokenStream::from("false").parse(),
-            Ok(Lit::Bool(LitBool::False(False(TokenStream::from("false")))))
+            Ok(Lit::Bool(LitBool::False(TokenStream::from("false"))))
         );
     }
 }

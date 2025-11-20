@@ -8,6 +8,7 @@ define_token!(Fn, "fn");
 define_token!(Struct, "struct");
 define_token!(Enum, "enum");
 define_token!(View, "view");
+define_token!(Draw, "draw");
 define_token!(String, "string");
 define_token!(Map, "map");
 define_token!(Set, "set");
