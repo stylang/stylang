@@ -16,6 +16,10 @@ define_token!(Rgb, "rgb");
 define_token!(True, "true");
 define_token!(False, "false");
 define_token!(Bool, "bool");
+define_token!(KeywordNot, "not");
+define_token!(Extern, "extern");
+define_token!(All, "all");
+define_token!(Any, "any");
 
 /// Parser for keyword `i*`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

@@ -467,14 +467,14 @@ mod tests {
             TokenStream::from("rgb(1,255,1)").parse(),
             Ok(LitRgb {
                 leading_keyword: (Rgb(TokenStream::from("rgb")), None),
-                paren_start: (ParenStart(TokenStream::from((3, "("))), None),
+                paren_start: (ParenStart(None, TokenStream::from((3, "(")), None), None),
                 red: (
                     RgbComponent {
                         input: TokenStream::from((4, "1")),
                         value: 1
                     },
                     None,
-                    Comma(TokenStream::from((5, ","))),
+                    Comma(None, TokenStream::from((5, ",")), None),
                     None
                 ),
                 green: (
@@ -483,7 +483,7 @@ mod tests {
                         value: 255
                     },
                     None,
-                    Comma(TokenStream::from((9, ","))),
+                    Comma(None, TokenStream::from((9, ",")), None),
                     None
                 ),
                 blue: (
@@ -495,7 +495,7 @@ mod tests {
                     None,
                     None
                 ),
-                paren_end: ParenEnd(TokenStream::from((11, ")")))
+                paren_end: ParenEnd(None, TokenStream::from((11, ")")), None)
             })
         );
 
@@ -503,14 +503,14 @@ mod tests {
             TokenStream::from("rgb(1,255,1,)").parse(),
             Ok(LitRgb {
                 leading_keyword: (Rgb(TokenStream::from("rgb")), None),
-                paren_start: (ParenStart(TokenStream::from((3, "("))), None),
+                paren_start: (ParenStart(None, TokenStream::from((3, "(")), None), None),
                 red: (
                     RgbComponent {
                         input: TokenStream::from((4, "1")),
                         value: 1
                     },
                     None,
-                    Comma(TokenStream::from((5, ","))),
+                    Comma(None, TokenStream::from((5, ",")), None),
                     None
                 ),
                 green: (
@@ -519,7 +519,7 @@ mod tests {
                         value: 255
                     },
                     None,
-                    Comma(TokenStream::from((9, ","))),
+                    Comma(None, TokenStream::from((9, ",")), None),
                     None
                 ),
                 blue: (
@@ -528,10 +528,10 @@ mod tests {
                         value: 1
                     },
                     None,
-                    Some(Comma(TokenStream::from((11, ",")))),
+                    Some(Comma(None, TokenStream::from((11, ",")), None)),
                     None
                 ),
-                paren_end: ParenEnd(TokenStream::from((12, ")")))
+                paren_end: ParenEnd(None, TokenStream::from((12, ")")), None)
             })
         );
 

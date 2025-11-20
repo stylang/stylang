@@ -5,3 +5,6 @@ pub use comments::*;
 
 mod lit;
 pub use lit::*;
+
+mod attr;
+pub use attr::*;

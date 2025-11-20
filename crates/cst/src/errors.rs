@@ -3,6 +3,18 @@ use parserc::{ControlFlow, ParseError, Span};
 /// Error for tokens.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum TokenKind {
+    /// keyword `all`
+    #[error("keyword `all`")]
+    All,
+    /// keyword `any`
+    #[error("keyword `any`")]
+    Any,
+    /// keyword `extern`
+    #[error("keyword `extern`")]
+    Extern,
+    /// keyword `not`
+    #[error("keyword `not`")]
+    KeywordNot,
     /// Keyword `rgb`
     #[error("keyword `bool`")]
     Bool,
