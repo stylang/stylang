@@ -3,7 +3,6 @@ use parserc::{ControlFlow, Parser, keyword, syntax::Syntax, take_till};
 use crate::{CSTError, CSTInput, SyntaxKind};
 
 /// A whitespace character sequence.
-
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Syntax)]
 #[parserc(take_while = |c:u8| c.is_ascii_whitespace())]
 pub struct S<I>(pub I)
