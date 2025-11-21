@@ -5,56 +5,15 @@ use parserc::{
 };
 
 use crate::{
-    errors::{CSTError, OverflowKind, SemanticsKind, SyntaxKind},
+    errors::{CSTError, SemanticsKind, SyntaxKind},
     input::CSTInput,
     token::{
-        S,
-        keyword::{Float, Int, Rgb, Uint},
+        keyword::{Float, Int, Uint},
         lit::{Digits, HexDigits},
         op::{Minus, Plus},
-        punct::{Comma, Dot, DoubleQuote, ParenEnd, ParenStart, Pound, SingleQuote, ZeroX},
+        punct::{Dot, DoubleQuote, Pound, SingleQuote, ZeroX},
     },
 };
-
-/// Parser for rgb component value.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RgbComponent<I>
-where
-    I: CSTInput,
-{
-    /// input of this component.
-    pub input: I,
-    /// parsed value.
-    pub value: u8,
-}
-
-impl<I> Syntax<I> for RgbComponent<I>
-where
-    I: CSTInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let digits = Digits::parse(input).map_err(SyntaxKind::RgbComponent.map())?;
-
-        if digits.value > u8::MAX as u128 {
-            return Err(crate::errors::CSTError::Overflow(
-                OverflowKind::RgbComponent,
-                digits.to_span(),
-            ));
-        }
-
-        Ok(Self {
-            input: digits.input,
-            value: digits.value as u8,
-        })
-    }
-
-    #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.input.to_span()
-    }
-}
 
 /// literal bool value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
@@ -68,37 +27,10 @@ where
     False(#[parserc(keyword = "false")] I),
 }
 
-/// Literal rgb value.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct LitRgb<I>
-where
-    I: CSTInput,
-{
-    /// leading keyword `rgb`
-    #[parserc(crucial)]
-    pub leading_keyword: (Rgb<I>, Option<S<I>>),
-    /// leading delimiter `(`
-    pub paren_start: (ParenStart<I>, Option<S<I>>),
-    /// literial value of red component.
-    pub red: (RgbComponent<I>, Option<S<I>>, Comma<I>, Option<S<I>>),
-    /// literial value of green component.
-    pub green: (RgbComponent<I>, Option<S<I>>, Comma<I>, Option<S<I>>),
-    /// literial value of blue component.
-    pub blue: (
-        RgbComponent<I>,
-        Option<S<I>>,
-        Option<Comma<I>>,
-        Option<S<I>>,
-    ),
-    /// tailing delimiter `)`
-    pub paren_end: ParenEnd<I>,
-}
-
 /// Literal hex rgb value, `#fff, #00ff00,...`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct LitHexRgb<I>
+pub struct LitRgb<I>
 where
     I: CSTInput,
 {
@@ -112,7 +44,7 @@ where
     pub blue: (I, u8),
 }
 
-impl<I> Syntax<I> for LitHexRgb<I>
+impl<I> Syntax<I> for LitRgb<I>
 where
     I: CSTInput,
 {
@@ -446,7 +378,6 @@ where
     I: CSTInput,
 {
     Rgb(LitRgb<I>),
-    HexRgb(LitHexRgb<I>),
     Str(LitStr<I>),
     Number(LitNumber<I>),
     HexNumber(LitHexNumber<I>),
@@ -462,93 +393,10 @@ mod tests {
     use crate::{errors::CSTError, input::TokenStream};
 
     #[test]
-    fn test_rgb() {
-        assert_eq!(
-            TokenStream::from("rgb(1,255,1)").parse(),
-            Ok(LitRgb {
-                leading_keyword: (Rgb(TokenStream::from("rgb")), None),
-                paren_start: (ParenStart(None, TokenStream::from((3, "(")), None), None),
-                red: (
-                    RgbComponent {
-                        input: TokenStream::from((4, "1")),
-                        value: 1
-                    },
-                    None,
-                    Comma(None, TokenStream::from((5, ",")), None),
-                    None
-                ),
-                green: (
-                    RgbComponent {
-                        input: TokenStream::from((6, "255")),
-                        value: 255
-                    },
-                    None,
-                    Comma(None, TokenStream::from((9, ",")), None),
-                    None
-                ),
-                blue: (
-                    RgbComponent {
-                        input: TokenStream::from((10, "1")),
-                        value: 1
-                    },
-                    None,
-                    None,
-                    None
-                ),
-                paren_end: ParenEnd(None, TokenStream::from((11, ")")), None)
-            })
-        );
-
-        assert_eq!(
-            TokenStream::from("rgb(1,255,1,)").parse(),
-            Ok(LitRgb {
-                leading_keyword: (Rgb(TokenStream::from("rgb")), None),
-                paren_start: (ParenStart(None, TokenStream::from((3, "(")), None), None),
-                red: (
-                    RgbComponent {
-                        input: TokenStream::from((4, "1")),
-                        value: 1
-                    },
-                    None,
-                    Comma(None, TokenStream::from((5, ",")), None),
-                    None
-                ),
-                green: (
-                    RgbComponent {
-                        input: TokenStream::from((6, "255")),
-                        value: 255
-                    },
-                    None,
-                    Comma(None, TokenStream::from((9, ",")), None),
-                    None
-                ),
-                blue: (
-                    RgbComponent {
-                        input: TokenStream::from((10, "1")),
-                        value: 1
-                    },
-                    None,
-                    Some(Comma(None, TokenStream::from((11, ",")), None)),
-                    None
-                ),
-                paren_end: ParenEnd(None, TokenStream::from((12, ")")), None)
-            })
-        );
-
-        assert_eq!(
-            TokenStream::from("rgb(256,255,1)").parse::<LitRgb<_>>(),
-            Err(CSTError::Overflow(
-                OverflowKind::RgbComponent,
-                Span::Range(4..7)
-            ))
-        );
-    }
-
-    #[test]
     fn test_hex_rgb() {
         assert_eq!(
             TokenStream::from("#fff").parse(),
-            Ok(LitHexRgb {
+            Ok(LitRgb {
                 leading_pound: Pound(TokenStream::from("#")),
                 red: (TokenStream::from((1, "f")), 0xff),
                 green: (TokenStream::from((2, "f")), 0xff),
@@ -558,7 +406,7 @@ mod tests {
 
         assert_eq!(
             TokenStream::from("#f00aa0").parse(),
-            Ok(LitHexRgb {
+            Ok(LitRgb {
                 leading_pound: Pound(TokenStream::from("#")),
                 red: (TokenStream::from((1, "f0")), 0xf0),
                 green: (TokenStream::from((3, "0a")), 0x0a),
@@ -567,7 +415,7 @@ mod tests {
         );
 
         assert_eq!(
-            TokenStream::from("#f034").parse::<LitHexRgb<_>>(),
+            TokenStream::from("#f034").parse::<LitRgb<_>>(),
             Err(CSTError::Syntax(
                 SyntaxKind::LitHexRgb,
                 ControlFlow::Fatal,
@@ -576,7 +424,7 @@ mod tests {
         );
 
         assert_eq!(
-            TokenStream::from("#f03411111").parse::<LitHexRgb<_>>(),
+            TokenStream::from("#f03411111").parse::<LitRgb<_>>(),
             Err(CSTError::Syntax(
                 SyntaxKind::LitHexRgb,
                 ControlFlow::Fatal,

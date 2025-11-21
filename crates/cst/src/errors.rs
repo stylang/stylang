@@ -300,6 +300,8 @@ pub enum SyntaxKind {
     CfgAttr,
     #[error("`attribute contract`")]
     Contract,
+    #[error("visibility predicate `crate` or `super`")]
+    VisibilityPredicate,
 }
 
 impl SyntaxKind {

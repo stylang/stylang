@@ -14,3 +14,6 @@ pub use item::*;
 
 mod ty;
 pub use ty::*;
+
+mod vs;
+pub use vs::*;
