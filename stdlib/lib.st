@@ -3,6 +3,7 @@
 //! This is also a spec for `stylang compiler instruments`.
 
 
+
 pub mod ui;
-pub mod platform;
+pub mod log;
 pub mod graphics;
