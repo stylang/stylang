@@ -12,3 +12,6 @@ pub use misc::*;
 
 mod lit;
 pub use lit::*;
+
+mod ty;
+pub use ty::*;

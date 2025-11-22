@@ -1,6 +1,9 @@
-use parserc::{ControlFlow, Parser, Span, next, syntax::Syntax, take_while, take_while_range};
+use parserc::{
+    ControlFlow, Parser, Span, next, syntax::Syntax, take_while, take_while_range,
+    take_while_range_from,
+};
 
-use crate::{CSTError, CSTInput, SyntaxKind};
+use crate::{CSTError, CSTInput, SemanticsKind, SyntaxKind, TokenKind};
 
 /// A literal string value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -135,10 +138,8 @@ where
     Nanosecond(#[parserc(keyword = "ns")] I),
     Microsecond(#[parserc(keyword = "us")] I),
     Millisecond(#[parserc(keyword = "ms")] I),
-    Second(#[parserc(keyword = "s")] I),
     Minute(#[parserc(keyword = "mins")] I),
-    Hour(#[parserc(keyword = "h")] I),
-    Day(#[parserc(keyword = "d")] I),
+    Deg(#[parserc(keyword = "deg")] I),
     Em(#[parserc(keyword = "em")] I),
     Ex(#[parserc(keyword = "ex")] I),
     Px(#[parserc(keyword = "px")] I),
@@ -148,13 +149,326 @@ where
     Pt(#[parserc(keyword = "pt")] I),
     Pc(#[parserc(keyword = "pc")] I),
     Percent(#[parserc(keyword = "%")] I),
+    Grad(#[parserc(keyword = "grad")] I),
+    Rad(#[parserc(keyword = "rad")] I),
+    Khz(#[parserc(keyword = "khz")] I),
+    Hz(#[parserc(keyword = "hz")] I),
+    Day(#[parserc(keyword = "d")] I),
+    Second(#[parserc(keyword = "s")] I),
+    Hour(#[parserc(keyword = "h")] I),
+}
+
+/// literial digits.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Digits<I>
+where
+    I: CSTInput,
+{
+    pub input: I,
+    pub value: u128,
+}
+
+impl<I> Syntax<I> for Digits<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let content = take_while_range_from(1, |c: u8| c.is_ascii_digit())
+            .parse(input)
+            .map_err(TokenKind::LitDigits.map())?;
+
+        let value = u128::from_str_radix(content.as_str(), 10).map_err(|_| {
+            CSTError::Token(TokenKind::LitDigits, ControlFlow::Fatal, content.to_span())
+        })?;
+
+        Ok(Self {
+            input: content,
+            value,
+        })
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.input.to_span()
+    }
+}
+
+/// literial hex-digits.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct HexDigits<I>
+where
+    I: CSTInput,
+{
+    pub input: I,
+    pub value: u128,
+}
+
+impl<I> Syntax<I> for HexDigits<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let content = take_while_range_from(1, |c: u8| c.is_ascii_hexdigit())
+            .parse(input)
+            .map_err(TokenKind::LitDigits.map())?;
+
+        let value = u128::from_str_radix(content.as_str(), 16).map_err(|_| {
+            CSTError::Token(TokenKind::LitDigits, ControlFlow::Fatal, content.to_span())
+        })?;
+
+        Ok(Self {
+            input: content,
+            value,
+        })
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.input.to_span()
+    }
+}
+
+/// keyword `+` or `-`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Sign<I>(#[parserc(parser = next(b'+').or(next(b'-')))] pub I)
+where
+    I: CSTInput;
+
+/// character `.`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(char = b'.')]
+pub struct DecimalPoint<I>(pub I)
+where
+    I: CSTInput;
+
+/// keyword `E` or `e`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KeywordExp<I>(#[parserc(parser = next(b'E').or(next(b'e')))] pub I)
+where
+    I: CSTInput;
+
+/// Literal number
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(semantic = number_semantic_check)]
+pub struct LitNumber<I>
+where
+    I: CSTInput,
+{
+    /// Signature char `+` or `-`
+    pub sign: Option<Sign<I>>,
+    /// integer part of this number.
+    pub trunc: Option<Digits<I>>,
+    /// fractional part of number.
+    pub fract: Option<(DecimalPoint<I>, Digits<I>)>,
+    /// exponential part of number.
+    pub exp: Option<(KeywordExp<I>, Option<Sign<I>>, Digits<I>)>,
+    /// unit part of number.
+    pub unit: Option<Unit<I>>,
+}
+
+/// Perform semantic checks on the parsed number
+fn number_semantic_check<I>(number: LitNumber<I>) -> Result<LitNumber<I>, CSTError>
+where
+    I: CSTInput,
+{
+    if number.trunc.is_none() && number.fract.is_none() {
+        return Err(CSTError::Syntax(
+            SyntaxKind::LitNumber,
+            ControlFlow::Fatal,
+            number.to_span(),
+        ));
+    }
+
+    if number.fract.is_some() || number.exp.is_some() {
+        match &number.unit {
+            Some(Unit::I8(_)) | Some(Unit::I16(_)) | Some(Unit::I32(_)) | Some(Unit::I64(_))
+            | Some(Unit::I128(_)) | Some(Unit::I256(_)) | Some(Unit::U8(_))
+            | Some(Unit::U16(_)) | Some(Unit::U32(_)) | Some(Unit::U64(_))
+            | Some(Unit::U128(_)) | Some(Unit::U256(_)) => {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::Unit,
+                    number.unit.to_span(),
+                ));
+            }
+            _ => {}
+        }
+    }
+
+    if number.sign.as_ref().map(|input| input.0.as_str()) == Some("-") {
+        match &number.unit {
+            Some(Unit::U8(_)) | Some(Unit::U16(_)) | Some(Unit::U32(_)) | Some(Unit::U64(_))
+            | Some(Unit::U128(_)) | Some(Unit::U256(_)) => {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::Unit,
+                    number.unit.to_span(),
+                ));
+            }
+            _ => {}
+        }
+    }
+
+    Ok(number)
+}
+
+/// A literal hex-number value.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(semantic = hex_number_semantic_check)]
+pub struct LitHexNumber<I>
+where
+    I: CSTInput,
+{
+    /// signature part of number.
+    pub sign: Option<Sign<I>>,
+    /// leading `0x`
+    #[parserc(crucial, keyword = "0x")]
+    pub leading_0x: I,
+    /// hex-digits sequence.
+    #[parserc(map_err = SyntaxKind::LitHexNumber.map())]
+    pub digits: HexDigits<I>,
+    /// optional unit part.
+    pub unit: Option<Unit<I>>,
+}
+
+/// Perform semantic checks on the parsed number
+fn hex_number_semantic_check<I>(number: LitHexNumber<I>) -> Result<LitHexNumber<I>, CSTError>
+where
+    I: CSTInput,
+{
+    if number.sign.as_ref().map(|input| input.0.as_str()) == Some("-") {
+        match &number.unit {
+            Some(Unit::U8(_)) | Some(Unit::U16(_)) | Some(Unit::U32(_)) | Some(Unit::U64(_))
+            | Some(Unit::U128(_)) | Some(Unit::U256(_)) => {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::Unit,
+                    number.unit.to_span(),
+                ));
+            }
+            _ => {}
+        }
+    }
+
+    Ok(number)
+}
+
+/// literal bool value.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::LitBool.map_unhandle())]
+pub enum LitBool<I>
+where
+    I: CSTInput,
+{
+    True(#[parserc(keyword = "true")] I),
+    False(#[parserc(keyword = "false")] I),
+}
+
+/// Literal hex rgb value, `#fff, #00ff00,...`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LitRgb<I>
+where
+    I: CSTInput,
+{
+    /// leading punct `#`
+    pub leading_pound: I,
+    /// red component,
+    pub red: (I, u8),
+    /// green component,
+    pub green: (I, u8),
+    /// blue component,
+    pub blue: (I, u8),
+}
+
+impl<I> Syntax<I> for LitRgb<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let leading_pound = next(b'#')
+            .parse(input)
+            .map_err(SyntaxKind::LitHexRgb.map())?;
+
+        let mut hexdigits = take_while_range_from(3, |c: u8| c.is_ascii_hexdigit())
+            .parse(input)
+            .map_err(SyntaxKind::LitHexRgb.map_fatal())?;
+
+        match hexdigits.len() {
+            3 => {
+                let bytes = hexdigits.as_bytes();
+
+                let r = (bytes[0] as char).to_digit(16).unwrap();
+                let g = (bytes[1] as char).to_digit(16).unwrap();
+                let b = (bytes[2] as char).to_digit(16).unwrap();
+
+                return Ok(Self {
+                    leading_pound,
+                    red: (hexdigits.split_to(1), (r + r * 16) as u8),
+                    green: (hexdigits.split_to(1), (g + g * 16) as u8),
+                    blue: (hexdigits.split_to(1), (b + b * 16) as u8),
+                });
+            }
+            6 => {
+                let bytes = hexdigits.as_bytes();
+
+                let r = (bytes[0] as char).to_digit(16).unwrap() * 16
+                    + (bytes[1] as char).to_digit(16).unwrap();
+                let g = (bytes[2] as char).to_digit(16).unwrap() * 16
+                    + (bytes[3] as char).to_digit(16).unwrap();
+                let b = (bytes[4] as char).to_digit(16).unwrap() * 16
+                    + (bytes[5] as char).to_digit(16).unwrap();
+
+                return Ok(Self {
+                    leading_pound,
+                    red: (hexdigits.split_to(2), r as u8),
+                    green: (hexdigits.split_to(2), g as u8),
+                    blue: (hexdigits.split_to(2), b as u8),
+                });
+            }
+            _ => {
+                return Err(CSTError::Syntax(
+                    SyntaxKind::LitHexRgb,
+                    ControlFlow::Fatal,
+                    hexdigits.to_span(),
+                ));
+            }
+        }
+    }
+
+    fn to_span(&self) -> parserc::Span {
+        self.leading_pound.to_span() + self.blue.0.to_span()
+    }
+}
+
+/// A literal value expr.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::Lit.map_unhandle())]
+pub enum Lit<I>
+where
+    I: CSTInput,
+{
+    Rgb(LitRgb<I>),
+    Str(LitStr<I>),
+    Number(LitNumber<I>),
+    HexNumber(LitHexNumber<I>),
+    Bool(LitBool<I>),
 }
 
 #[cfg(test)]
 mod tests {
     use parserc::syntax::InputSyntaxExt;
 
-    use crate::TokenStream;
+    use crate::{SemanticsKind, TokenStream};
 
     use super::*;
 
@@ -203,6 +517,54 @@ mod tests {
         check_unit!(Pt, "pt", "pt");
         check_unit!(Pc, "pc", "pc");
         check_unit!(Percent, "%~", "%");
+
+        check_unit!(Deg, "deg~", "deg");
+        check_unit!(Grad, "grad~", "grad");
+        check_unit!(Rad, "rad~", "rad");
+
+        check_unit!(Hz, "hz~", "hz");
+        check_unit!(Khz, "khz~", "khz");
+    }
+
+    #[test]
+    fn test_hex_rgb() {
+        assert_eq!(
+            TokenStream::from("#fff").parse(),
+            Ok(LitRgb {
+                leading_pound: TokenStream::from("#"),
+                red: (TokenStream::from((1, "f")), 0xff),
+                green: (TokenStream::from((2, "f")), 0xff),
+                blue: (TokenStream::from((3, "f")), 0xff)
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("#f00aa0").parse(),
+            Ok(LitRgb {
+                leading_pound: TokenStream::from("#"),
+                red: (TokenStream::from((1, "f0")), 0xf0),
+                green: (TokenStream::from((3, "0a")), 0x0a),
+                blue: (TokenStream::from((5, "a0")), 0xa0)
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("#f034").parse::<LitRgb<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LitHexRgb,
+                ControlFlow::Fatal,
+                Span::Range(1..5)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("#f03411111").parse::<LitRgb<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LitHexRgb,
+                ControlFlow::Fatal,
+                Span::Range(1..10)
+            ))
+        );
     }
 
     #[test]
@@ -262,6 +624,156 @@ mod tests {
                 ControlFlow::Fatal,
                 Span::Range(1..6)
             ))
+        );
+    }
+
+    #[test]
+    fn test_number() {
+        assert_eq!(
+            TokenStream::from("123").parse(),
+            Ok(LitNumber {
+                sign: None,
+                trunc: Some(Digits {
+                    input: TokenStream::from("123"),
+                    value: 123
+                }),
+                fract: None,
+                exp: None,
+                unit: None
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("123i3212").parse(),
+            Ok(LitNumber {
+                sign: None,
+                trunc: Some(Digits {
+                    input: TokenStream::from("123"),
+                    value: 123
+                }),
+                fract: None,
+                exp: None,
+                unit: Some(Unit::I32(TokenStream::from((3, "i32"))))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-.123f64").parse(),
+            Ok(LitNumber {
+                sign: Some(Sign(TokenStream::from("-"))),
+                trunc: None,
+                fract: Some((
+                    DecimalPoint(TokenStream::from((1, "."))),
+                    Digits {
+                        input: TokenStream::from((2, "123")),
+                        value: 123
+                    }
+                )),
+                exp: None,
+                unit: Some(Unit::F64(TokenStream::from((5, "f64"))))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-0.123e-10f64").parse(),
+            Ok(LitNumber {
+                sign: Some(Sign(TokenStream::from("-"))),
+                trunc: Some(Digits {
+                    input: TokenStream::from((1, "0")),
+                    value: 0
+                }),
+                fract: Some((
+                    DecimalPoint(TokenStream::from((2, "."))),
+                    Digits {
+                        input: TokenStream::from((3, "123")),
+                        value: 123
+                    }
+                )),
+                exp: Some((
+                    KeywordExp(TokenStream::from((6, "e"))),
+                    Some(Sign(TokenStream::from((7, "-")))),
+                    Digits {
+                        input: TokenStream::from((8, "10")),
+                        value: 10
+                    }
+                )),
+                unit: Some(Unit::F64(TokenStream::from((10, "f64"))))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-e-10f64").parse::<LitNumber<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LitNumber,
+                ControlFlow::Fatal,
+                Span::Range(0..8)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from(".10i32").parse::<LitNumber<_>>(),
+            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(3..6)))
+        );
+
+        assert_eq!(
+            TokenStream::from("-10u32").parse::<LitNumber<_>>(),
+            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(3..6)))
+        );
+    }
+
+    #[test]
+    fn test_hex_number() {
+        assert_eq!(
+            TokenStream::from("-0x10.0").parse(),
+            Ok(LitHexNumber {
+                sign: Some(Sign(TokenStream::from("-"))),
+                leading_0x: TokenStream::from((1, "0x")),
+                digits: HexDigits {
+                    input: TokenStream::from((3, "10")),
+                    value: 0x10
+                },
+                unit: None
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("-0x10i64").parse(),
+            Ok(LitHexNumber {
+                sign: Some(Sign(TokenStream::from("-"))),
+                leading_0x: TokenStream::from((1, "0x")),
+                digits: HexDigits {
+                    input: TokenStream::from((3, "10")),
+                    value: 0x10
+                },
+                unit: Some(Unit::I64(TokenStream::from((5, "i64"))))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("0x").parse::<LitHexNumber<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LitHexNumber,
+                ControlFlow::Fatal,
+                Span::Range(2..2)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("-0xffu32").parse::<LitHexNumber<_>>(),
+            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(5..8)))
+        );
+    }
+
+    #[test]
+    fn test_bool() {
+        assert_eq!(
+            TokenStream::from("true").parse(),
+            Ok(LitBool::True(TokenStream::from("true")))
+        );
+
+        assert_eq!(
+            TokenStream::from("false").parse(),
+            Ok(LitBool::False(TokenStream::from("false")))
         );
     }
 }
