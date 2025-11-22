@@ -3,7 +3,7 @@ use parserc::{
     take_while_range_from,
 };
 
-use crate::{CSTError, CSTInput, SemanticsKind, SyntaxKind, TokenKind};
+use crate::{CSTError, CSTInput, SyntaxKind, TokenKind};
 
 /// A literal string value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -111,51 +111,6 @@ where
             + self.delimiter_end.to_span()
             + self.tailing_pounds.to_span()
     }
-}
-
-/// Unit of literal numbers.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum Unit<I>
-where
-    I: CSTInput,
-{
-    I8(#[parserc(keyword = "i8")] I),
-    I16(#[parserc(keyword = "i16")] I),
-    I32(#[parserc(keyword = "i32")] I),
-    I64(#[parserc(keyword = "i64")] I),
-    I128(#[parserc(keyword = "i128")] I),
-    I256(#[parserc(keyword = "i256")] I),
-    U8(#[parserc(keyword = "u8")] I),
-    U16(#[parserc(keyword = "u16")] I),
-    U32(#[parserc(keyword = "u32")] I),
-    U64(#[parserc(keyword = "u64")] I),
-    U128(#[parserc(keyword = "u128")] I),
-    U256(#[parserc(keyword = "u256")] I),
-    F16(#[parserc(keyword = "f16")] I),
-    F32(#[parserc(keyword = "f32")] I),
-    F64(#[parserc(keyword = "f64")] I),
-    Nanosecond(#[parserc(keyword = "ns")] I),
-    Microsecond(#[parserc(keyword = "us")] I),
-    Millisecond(#[parserc(keyword = "ms")] I),
-    Minute(#[parserc(keyword = "mins")] I),
-    Deg(#[parserc(keyword = "deg")] I),
-    Em(#[parserc(keyword = "em")] I),
-    Ex(#[parserc(keyword = "ex")] I),
-    Px(#[parserc(keyword = "px")] I),
-    In(#[parserc(keyword = "in")] I),
-    Cm(#[parserc(keyword = "cm")] I),
-    Mm(#[parserc(keyword = "mm")] I),
-    Pt(#[parserc(keyword = "pt")] I),
-    Pc(#[parserc(keyword = "pc")] I),
-    Percent(#[parserc(keyword = "%")] I),
-    Grad(#[parserc(keyword = "grad")] I),
-    Rad(#[parserc(keyword = "rad")] I),
-    Khz(#[parserc(keyword = "khz")] I),
-    Hz(#[parserc(keyword = "hz")] I),
-    Day(#[parserc(keyword = "d")] I),
-    Second(#[parserc(keyword = "s")] I),
-    Hour(#[parserc(keyword = "h")] I),
 }
 
 /// literial digits.
@@ -270,8 +225,6 @@ where
     pub fract: Option<(DecimalPoint<I>, Digits<I>)>,
     /// exponential part of number.
     pub exp: Option<(KeywordExp<I>, Option<Sign<I>>, Digits<I>)>,
-    /// unit part of number.
-    pub unit: Option<Unit<I>>,
 }
 
 /// Perform semantic checks on the parsed number
@@ -287,41 +240,12 @@ where
         ));
     }
 
-    if number.fract.is_some() || number.exp.is_some() {
-        match &number.unit {
-            Some(Unit::I8(_)) | Some(Unit::I16(_)) | Some(Unit::I32(_)) | Some(Unit::I64(_))
-            | Some(Unit::I128(_)) | Some(Unit::I256(_)) | Some(Unit::U8(_))
-            | Some(Unit::U16(_)) | Some(Unit::U32(_)) | Some(Unit::U64(_))
-            | Some(Unit::U128(_)) | Some(Unit::U256(_)) => {
-                return Err(CSTError::Semantics(
-                    SemanticsKind::Unit,
-                    number.unit.to_span(),
-                ));
-            }
-            _ => {}
-        }
-    }
-
-    if number.sign.as_ref().map(|input| input.0.as_str()) == Some("-") {
-        match &number.unit {
-            Some(Unit::U8(_)) | Some(Unit::U16(_)) | Some(Unit::U32(_)) | Some(Unit::U64(_))
-            | Some(Unit::U128(_)) | Some(Unit::U256(_)) => {
-                return Err(CSTError::Semantics(
-                    SemanticsKind::Unit,
-                    number.unit.to_span(),
-                ));
-            }
-            _ => {}
-        }
-    }
-
     Ok(number)
 }
 
 /// A literal hex-number value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[parserc(semantic = hex_number_semantic_check)]
 pub struct LitHexNumber<I>
 where
     I: CSTInput,
@@ -334,29 +258,6 @@ where
     /// hex-digits sequence.
     #[parserc(map_err = SyntaxKind::LitHexNumber.map())]
     pub digits: HexDigits<I>,
-    /// optional unit part.
-    pub unit: Option<Unit<I>>,
-}
-
-/// Perform semantic checks on the parsed number
-fn hex_number_semantic_check<I>(number: LitHexNumber<I>) -> Result<LitHexNumber<I>, CSTError>
-where
-    I: CSTInput,
-{
-    if number.sign.as_ref().map(|input| input.0.as_str()) == Some("-") {
-        match &number.unit {
-            Some(Unit::U8(_)) | Some(Unit::U16(_)) | Some(Unit::U32(_)) | Some(Unit::U64(_))
-            | Some(Unit::U128(_)) | Some(Unit::U256(_)) => {
-                return Err(CSTError::Semantics(
-                    SemanticsKind::Unit,
-                    number.unit.to_span(),
-                ));
-            }
-            _ => {}
-        }
-    }
-
-    Ok(number)
 }
 
 /// literal bool value.
@@ -371,84 +272,6 @@ where
     False(#[parserc(keyword = "false")] I),
 }
 
-/// Literal hex rgb value, `#fff, #00ff00,...`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct LitRgb<I>
-where
-    I: CSTInput,
-{
-    /// leading punct `#`
-    pub leading_pound: I,
-    /// red component,
-    pub red: (I, u8),
-    /// green component,
-    pub green: (I, u8),
-    /// blue component,
-    pub blue: (I, u8),
-}
-
-impl<I> Syntax<I> for LitRgb<I>
-where
-    I: CSTInput,
-{
-    #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let leading_pound = next(b'#')
-            .parse(input)
-            .map_err(SyntaxKind::LitHexRgb.map())?;
-
-        let mut hexdigits = take_while_range_from(3, |c: u8| c.is_ascii_hexdigit())
-            .parse(input)
-            .map_err(SyntaxKind::LitHexRgb.map_fatal())?;
-
-        match hexdigits.len() {
-            3 => {
-                let bytes = hexdigits.as_bytes();
-
-                let r = (bytes[0] as char).to_digit(16).unwrap();
-                let g = (bytes[1] as char).to_digit(16).unwrap();
-                let b = (bytes[2] as char).to_digit(16).unwrap();
-
-                return Ok(Self {
-                    leading_pound,
-                    red: (hexdigits.split_to(1), (r + r * 16) as u8),
-                    green: (hexdigits.split_to(1), (g + g * 16) as u8),
-                    blue: (hexdigits.split_to(1), (b + b * 16) as u8),
-                });
-            }
-            6 => {
-                let bytes = hexdigits.as_bytes();
-
-                let r = (bytes[0] as char).to_digit(16).unwrap() * 16
-                    + (bytes[1] as char).to_digit(16).unwrap();
-                let g = (bytes[2] as char).to_digit(16).unwrap() * 16
-                    + (bytes[3] as char).to_digit(16).unwrap();
-                let b = (bytes[4] as char).to_digit(16).unwrap() * 16
-                    + (bytes[5] as char).to_digit(16).unwrap();
-
-                return Ok(Self {
-                    leading_pound,
-                    red: (hexdigits.split_to(2), r as u8),
-                    green: (hexdigits.split_to(2), g as u8),
-                    blue: (hexdigits.split_to(2), b as u8),
-                });
-            }
-            _ => {
-                return Err(CSTError::Syntax(
-                    SyntaxKind::LitHexRgb,
-                    ControlFlow::Fatal,
-                    hexdigits.to_span(),
-                ));
-            }
-        }
-    }
-
-    fn to_span(&self) -> parserc::Span {
-        self.leading_pound.to_span() + self.blue.0.to_span()
-    }
-}
-
 /// A literal value expr.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -457,7 +280,6 @@ pub enum Lit<I>
 where
     I: CSTInput,
 {
-    Rgb(LitRgb<I>),
     Str(LitStr<I>),
     Number(LitNumber<I>),
     HexNumber(LitHexNumber<I>),
@@ -468,104 +290,9 @@ where
 mod tests {
     use parserc::syntax::InputSyntaxExt;
 
-    use crate::{SemanticsKind, TokenStream};
+    use crate::TokenStream;
 
     use super::*;
-
-    #[test]
-    fn test_unit() {
-        macro_rules! check_unit {
-            ($ident: ident, $input: literal, $match: literal) => {
-                assert_eq!(
-                    TokenStream::from($input).parse(),
-                    Ok(Unit::$ident(TokenStream::from($match))),
-                );
-            };
-        }
-
-        check_unit!(I8, "i8~", "i8");
-        check_unit!(I16, "i16~", "i16");
-        check_unit!(I32, "i32~", "i32");
-        check_unit!(I64, "i64~", "i64");
-        check_unit!(I128, "i128~", "i128");
-        check_unit!(I256, "i256~", "i256");
-
-        check_unit!(U8, "u8~", "u8");
-        check_unit!(U16, "u16~", "u16");
-        check_unit!(U32, "u32~", "u32");
-        check_unit!(U64, "u64~", "u64");
-        check_unit!(U128, "u128~", "u128");
-        check_unit!(U256, "u256~", "u256");
-
-        check_unit!(F16, "f16~", "f16");
-        check_unit!(F32, "f32~", "f32");
-        check_unit!(F64, "f64~", "f64");
-
-        check_unit!(Nanosecond, "ns~", "ns");
-        check_unit!(Microsecond, "us~", "us");
-        check_unit!(Millisecond, "ms~", "ms");
-        check_unit!(Second, "s~", "s");
-        check_unit!(Minute, "minss", "mins");
-        check_unit!(Hour, "hrs", "h");
-        check_unit!(Day, "day", "d");
-        check_unit!(Em, "em~", "em");
-        check_unit!(Ex, "ex", "ex");
-        check_unit!(Px, "px", "px");
-        check_unit!(In, "in~", "in");
-        check_unit!(Cm, "cm", "cm");
-        check_unit!(Mm, "mm~", "mm");
-        check_unit!(Pt, "pt", "pt");
-        check_unit!(Pc, "pc", "pc");
-        check_unit!(Percent, "%~", "%");
-
-        check_unit!(Deg, "deg~", "deg");
-        check_unit!(Grad, "grad~", "grad");
-        check_unit!(Rad, "rad~", "rad");
-
-        check_unit!(Hz, "hz~", "hz");
-        check_unit!(Khz, "khz~", "khz");
-    }
-
-    #[test]
-    fn test_hex_rgb() {
-        assert_eq!(
-            TokenStream::from("#fff").parse(),
-            Ok(LitRgb {
-                leading_pound: TokenStream::from("#"),
-                red: (TokenStream::from((1, "f")), 0xff),
-                green: (TokenStream::from((2, "f")), 0xff),
-                blue: (TokenStream::from((3, "f")), 0xff)
-            })
-        );
-
-        assert_eq!(
-            TokenStream::from("#f00aa0").parse(),
-            Ok(LitRgb {
-                leading_pound: TokenStream::from("#"),
-                red: (TokenStream::from((1, "f0")), 0xf0),
-                green: (TokenStream::from((3, "0a")), 0x0a),
-                blue: (TokenStream::from((5, "a0")), 0xa0)
-            })
-        );
-
-        assert_eq!(
-            TokenStream::from("#f034").parse::<LitRgb<_>>(),
-            Err(CSTError::Syntax(
-                SyntaxKind::LitHexRgb,
-                ControlFlow::Fatal,
-                Span::Range(1..5)
-            ))
-        );
-
-        assert_eq!(
-            TokenStream::from("#f03411111").parse::<LitRgb<_>>(),
-            Err(CSTError::Syntax(
-                SyntaxKind::LitHexRgb,
-                ControlFlow::Fatal,
-                Span::Range(1..10)
-            ))
-        );
-    }
 
     #[test]
     fn test_lit_str() {
@@ -639,7 +366,6 @@ mod tests {
                 }),
                 fract: None,
                 exp: None,
-                unit: None
             })
         );
 
@@ -653,7 +379,6 @@ mod tests {
                 }),
                 fract: None,
                 exp: None,
-                unit: Some(Unit::I32(TokenStream::from((3, "i32"))))
             })
         );
 
@@ -670,7 +395,6 @@ mod tests {
                     }
                 )),
                 exp: None,
-                unit: Some(Unit::F64(TokenStream::from((5, "f64"))))
             })
         );
 
@@ -697,7 +421,6 @@ mod tests {
                         value: 10
                     }
                 )),
-                unit: Some(Unit::F64(TokenStream::from((10, "f64"))))
             })
         );
 
@@ -706,18 +429,8 @@ mod tests {
             Err(CSTError::Syntax(
                 SyntaxKind::LitNumber,
                 ControlFlow::Fatal,
-                Span::Range(0..8)
+                Span::Range(0..5)
             ))
-        );
-
-        assert_eq!(
-            TokenStream::from(".10i32").parse::<LitNumber<_>>(),
-            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(3..6)))
-        );
-
-        assert_eq!(
-            TokenStream::from("-10u32").parse::<LitNumber<_>>(),
-            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(3..6)))
         );
     }
 
@@ -732,7 +445,6 @@ mod tests {
                     input: TokenStream::from((3, "10")),
                     value: 0x10
                 },
-                unit: None
             })
         );
 
@@ -745,7 +457,6 @@ mod tests {
                     input: TokenStream::from((3, "10")),
                     value: 0x10
                 },
-                unit: Some(Unit::I64(TokenStream::from((5, "i64"))))
             })
         );
 
@@ -756,11 +467,6 @@ mod tests {
                 ControlFlow::Fatal,
                 Span::Range(2..2)
             ))
-        );
-
-        assert_eq!(
-            TokenStream::from("-0xffu32").parse::<LitHexNumber<_>>(),
-            Err(CSTError::Semantics(SemanticsKind::Unit, Span::Range(5..8)))
         );
     }
 

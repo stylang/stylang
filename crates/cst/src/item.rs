@@ -5,6 +5,18 @@ use crate::{
     OuterLineDoc, ParenEnd, ParenStart, S, Semi, Type, Visibility, input::CSTInput,
 };
 
+/// Meta data of item or field
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Meta<I>
+where
+    I: CSTInput,
+{
+    OuterLineDoc(OuterLineDoc<I>),
+    OuterBlockDoc(OuterBlockDoc<I>),
+    OuterAttribute(OuterAttribute<I>),
+}
+
 /// field list of struct or enum variant.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -14,11 +26,15 @@ where
 {
     /// named fields: { xx:tt,... }
     Named(
-        Delimiter<BraceStart<I>, BraceEnd<I>, Punctuated<(Ident<I>, Colon<I>, Type<I>), Comma<I>>>,
+        Delimiter<
+            BraceStart<I>,
+            BraceEnd<I>,
+            Punctuated<(Vec<Meta<I>>, Ident<I>, Colon<I>, Type<I>), Comma<I>>,
+        >,
     ),
 
     /// unnamed fields: (tt,...);
-    Unnamed(Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<Type<I>, Comma<I>>>),
+    Unnamed(Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<(Vec<Meta<I>>, Type<I>), Comma<I>>>),
 }
 
 /// struct / tuple struct item.
@@ -116,7 +132,7 @@ mod tests {
     #[test]
     fn test_struct() {
         assert_eq!(
-            TokenStream::from("pub struct A(i32,string)\n;").parse(),
+            TokenStream::from("pub struct A(/** hello world */i32,string)\n;").parse(),
             Ok(ItemStruct {
                 visibility: Some(Visibility {
                     keyword: TokenStream::from((0, "pub")),
@@ -131,15 +147,25 @@ mod tests {
                     start: ParenStart(None, TokenStream::from((12, "(")), None),
                     end: ParenEnd(
                         None,
-                        TokenStream::from((23, ")")),
-                        Some(S(TokenStream::from((24, "\n"))))
+                        TokenStream::from((41, ")")),
+                        Some(S(TokenStream::from((42, "\n"))))
                     ),
                     body: Punctuated {
                         pairs: vec![(
-                            Type::I32(TokenStream::from((13, "i32"))),
-                            Comma(None, TokenStream::from((16, ",")), None)
+                            (
+                                vec![Meta::OuterBlockDoc(OuterBlockDoc {
+                                    start: TokenStream::from((13, "/**")),
+                                    lines: TokenStream::from((16, " hello world ")),
+                                    end: TokenStream::from((29, "*/"))
+                                })],
+                                Type::I32(TokenStream::from((31, "i32")))
+                            ),
+                            Comma(None, TokenStream::from((34, ",")), None)
                         )],
-                        tail: Some(Box::new(Type::String(TokenStream::from((17, "string")))))
+                        tail: Some(Box::new((
+                            vec![],
+                            Type::String(TokenStream::from((35, "string")))
+                        )))
                     }
                 })
             })
@@ -171,6 +197,7 @@ mod tests {
                     body: Punctuated {
                         pairs: vec![(
                             (
+                                vec![],
                                 Ident(TokenStream::from((15, "a"))),
                                 Colon(None, TokenStream::from((16, ":")), None),
                                 Type::I32(TokenStream::from((17, "i32")))
@@ -178,6 +205,7 @@ mod tests {
                             Comma(None, TokenStream::from((20, ",")), None)
                         )],
                         tail: Some(Box::new((
+                            vec![],
                             Ident(TokenStream::from((21, "_"))),
                             Colon(
                                 None,

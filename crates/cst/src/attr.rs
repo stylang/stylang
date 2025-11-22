@@ -112,7 +112,7 @@ where
 /// content of attribute.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum Meta<I>
+pub enum AttrMeta<I>
 where
     I: CSTInput,
 {
@@ -132,7 +132,7 @@ where
     /// leading `@` char.
     pub leading_at: At<I>,
     /// content of this attribute.
-    pub meta: Meta<I>,
+    pub meta: AttrMeta<I>,
 }
 
 #[cfg(test)]
@@ -316,7 +316,7 @@ mod tests {
                 .parse::<OuterAttribute<_>>(),
             Ok(OuterAttribute {
                 leading_at: At(None, TokenStream::from((0, "@")), None),
-                meta: Meta::CfgAttr(CfgAttr {
+                meta: AttrMeta::CfgAttr(CfgAttr {
                     ident: TokenStream::from((1, "cfg_attr")),
                     predicate: Delimiter {
                         start: ParenStart(None, TokenStream::from((9, "(")), None),
