@@ -1,9 +1,10 @@
-use parserc::{ControlFlow, Parser, keyword, syntax::Syntax, take_till};
+use parserc::{ControlFlow, Parser, keyword, next_if, syntax::Syntax, take_till, take_while};
 
 use crate::{CSTError, CSTInput, SyntaxKind};
 
 /// A whitespace character sequence.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Syntax)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[parserc(take_while = |c:u8| c.is_ascii_whitespace())]
 pub struct S<I>(pub I)
 where
@@ -277,18 +278,107 @@ where
     }
 }
 
+/// Ident of type/variable.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Ident<I>(pub I)
+where
+    I: crate::input::CSTInput;
+
+impl<I> Syntax<I> for Ident<I>
+where
+    I: crate::input::CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let mut content = input.clone();
+
+        next_if(|c: u8| c == b'_' || c.is_ascii_alphabetic())
+            .parse(input)
+            .map_err(crate::errors::TokenKind::Ident.map())?;
+
+        let other = take_while(|c: u8| c == b'_' || c.is_ascii_alphanumeric())
+            .parse(input)
+            .map_err(crate::errors::TokenKind::Ident.map())?;
+
+        let content = content.split_to(1 + other.len());
+
+        Ok(Self(content))
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.0.to_span()
+    }
+}
+
+/// Ident of xml tag
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct XmlIdent<I>(pub I)
+where
+    I: crate::input::CSTInput;
+
+impl<I> Syntax<I> for XmlIdent<I>
+where
+    I: crate::input::CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let mut content = input.clone();
+
+        next_if(|c: u8| c == b'_' || c == b'-' || c.is_ascii_alphabetic())
+            .parse(input)
+            .map_err(crate::errors::TokenKind::XmlIdent.map())?;
+
+        let other = take_while(|c: u8| c == b'_' || c == b'-' || c.is_ascii_alphanumeric())
+            .parse(input)
+            .map_err(crate::errors::TokenKind::XmlIdent.map())?;
+
+        let content = content.split_to(1 + other.len());
+
+        Ok(Self(content))
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.0.to_span()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use parserc::{Span, syntax::InputSyntaxExt};
 
     use super::*;
-    use crate::TokenStream;
+    use crate::{TokenKind, TokenStream};
+
+    #[test]
+    fn test_ident() {
+        assert_eq!(
+            TokenStream::from("-hello").parse::<Ident<_>>(),
+            Err(CSTError::Token(
+                TokenKind::Ident,
+                ControlFlow::Recovable,
+                Span::Range(0..1)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("9hello").parse::<XmlIdent<_>>(),
+            Err(CSTError::Token(
+                TokenKind::XmlIdent,
+                ControlFlow::Recovable,
+                Span::Range(0..1)
+            ))
+        );
+    }
 
     #[test]
     fn s() {
         assert_eq!(
-            TokenStream::from(" \t\r\n").parse(),
-            Ok(S(TokenStream::from(" \t\r\n")))
+            TokenStream::from("\t \r\n_hell9o_10-").parse(),
+            Ok(S(TokenStream::from("\t \r\n")))
         );
     }
 
