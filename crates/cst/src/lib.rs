@@ -6,24 +6,3 @@ pub use errors::*;
 
 mod input;
 pub use input::*;
-
-mod misc;
-pub use misc::*;
-
-mod lit;
-pub use lit::*;
-
-mod ty;
-pub use ty::*;
-
-mod punct;
-pub use punct::*;
-
-mod vs;
-pub use vs::*;
-
-mod attr;
-pub use attr::*;
-
-mod item;
-pub use item::*;
