@@ -1,6 +1,6 @@
-use parserc::syntax::{Delimiter, Syntax};
+use parserc::syntax::{Delimiter, Or, Syntax};
 
-use crate::{ParenEnd, ParenStart, errors::SyntaxKind, input::CSTInput};
+use crate::{ParenEnd, ParenStart, S, errors::SyntaxKind, input::CSTInput};
 
 /// The predicate of `Visibility` expr.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
@@ -25,18 +25,21 @@ where
     #[parserc(keyword = "pub")]
     pub keyword: I,
     /// optional predicate.
-    pub predicate: Option<Delimiter<ParenStart<I>, ParenEnd<I>, VisibilityPredicate<I>>>,
+    pub predicate: Or<Delimiter<ParenStart<I>, ParenEnd<I>, VisibilityPredicate<I>>, S<I>>,
 }
 
 #[cfg(test)]
 mod tests {
     use parserc::{
         ControlFlow, Span,
-        syntax::{Delimiter, InputSyntaxExt},
+        syntax::{Delimiter, InputSyntaxExt, Or},
     };
 
-    use super::*;
-    use crate::{CSTError, S, TokenStream};
+    use crate::{
+        ParenEnd, ParenStart, S, Visibility, VisibilityPredicate,
+        errors::{CSTError, SyntaxKind},
+        input::TokenStream,
+    };
 
     #[test]
     fn test_vs() {
@@ -44,21 +47,25 @@ mod tests {
             TokenStream::from("pub ").parse(),
             Ok(Visibility {
                 keyword: TokenStream::from("pub"),
-                predicate: None
+                predicate: Or::Second(S(TokenStream::from((3, " ")))),
             })
         );
 
         assert_eq!(
-            TokenStream::from("pub (super)").parse(),
+            TokenStream::from("pub (super) ").parse(),
             Ok(Visibility {
                 keyword: TokenStream::from((0, "pub")),
-                predicate: Some(Delimiter {
+                predicate: Or::First(Delimiter {
                     start: ParenStart(
                         Some(S(TokenStream::from((3, " ")))),
                         TokenStream::from((4, "(")),
                         None
                     ),
-                    end: ParenEnd(None, TokenStream::from((10, ")")), None),
+                    end: ParenEnd(
+                        None,
+                        TokenStream::from((10, ")")),
+                        Some(S(TokenStream::from((11, " "))))
+                    ),
                     body: VisibilityPredicate::Super(TokenStream::from((5, "super")))
                 })
             })
@@ -68,7 +75,7 @@ mod tests {
             TokenStream::from("pub (crate)").parse(),
             Ok(Visibility {
                 keyword: TokenStream::from((0, "pub")),
-                predicate: Some(Delimiter {
+                predicate: Or::First(Delimiter {
                     start: ParenStart(
                         Some(S(TokenStream::from((3, " ")))),
                         TokenStream::from((4, "(")),
