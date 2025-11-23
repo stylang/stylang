@@ -27,5 +27,5 @@ fn main() {
     let f: Force = 12kg * 10ms_2;
 
     // The result is `Accel`
-    let acc = 10KN / 2kg;
+    let acc = 10kN / f;
 }

@@ -2,7 +2,64 @@ use parserc::{ControlFlow, ParseError, Span};
 
 /// Error for tokens.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum TokenKind {}
+pub enum TokenKind {
+    #[error("punct `{{`")]
+    BraceStart,
+    #[error("punct `}}`")]
+    BraceEnd,
+    #[error("punct `[`")]
+    BracketStart,
+    #[error("punct `]`")]
+    BracketEnd,
+    #[error("punct `(`")]
+    ParenStart,
+    #[error("punct `)`")]
+    ParenEnd,
+    #[error("punct `@`")]
+    At,
+    #[error("punct `->`")]
+    ArrowRight,
+    #[error("punct `:`")]
+    Colon,
+    #[error("punct `,`")]
+    Comma,
+    #[error("punct `;`")]
+    Semi,
+    #[error("punct `::`")]
+    PathSep,
+    #[error("keyword `fn`")]
+    Fn,
+    #[error("keyword `struct`")]
+    Struct,
+    #[error("keyword `enum`")]
+    Enum,
+    #[error("keyword `impl`")]
+    Impl,
+    #[error("keyword `trait`")]
+    Trait,
+    #[error("keyword `extern`")]
+    Extern,
+    #[error("keyword `type`")]
+    Type,
+    #[error("keyword `use`")]
+    Use,
+    #[error("keyword `mod`")]
+    Mod,
+    #[error("keyword `pub`")]
+    Pub,
+    /// ident character sequence.
+    #[error("type `name`")]
+    Ident,
+    /// xml ident character sequence.
+    #[error("xml tag `name`")]
+    XmlIdent,
+    /// literial digits.
+    #[error("literial `digits`")]
+    LitDigits,
+    /// literial hex-digits.
+    #[error("literial `hex-digits`")]
+    LitHexDigits,
+}
 
 impl TokenKind {
     /// Map error to this kind.
@@ -13,7 +70,40 @@ impl TokenKind {
 
 /// Error for syntax tree.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SyntaxKind {}
+pub enum SyntaxKind {
+    /// line comment
+    #[error("`line comment`")]
+    LineComment,
+    /// block comment
+    #[error("`block comment`")]
+    BlockComment,
+    /// outer line document
+    #[error("`outer line doc`")]
+    OuterLineDoc,
+    /// outer block document.
+    #[error("`outer block doc`")]
+    OuterBlockDoc,
+    /// inner line document
+    #[error("`inner line doc`")]
+    InnerLineDoc,
+    /// outer block document.
+    #[error("`inner block doc`")]
+    InnerBlockDoc,
+    #[error("literial string tailing `\"`")]
+    TailingQuote,
+    #[error("`literal expr`")]
+    Lit,
+    #[error("`literal bool value`")]
+    LitBool,
+    #[error("literal `number`")]
+    LitNumber,
+    #[error("literal `hex-number`")]
+    LitHexNumber,
+    #[error("`literal string`")]
+    LitStr,
+    #[error("Visibility predicates `crate` or `super`")]
+    VisibilityPredicate,
+}
 
 impl SyntaxKind {
     /// Map unhandle error
