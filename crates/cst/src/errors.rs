@@ -27,6 +27,8 @@ pub enum TokenKind {
     Semi,
     #[error("punct `::`")]
     PathSep,
+    #[error("punct `|`")]
+    Or,
     #[error("keyword `fn`")]
     Fn,
     #[error("keyword `struct`")]
@@ -103,6 +105,8 @@ pub enum SyntaxKind {
     LitStr,
     #[error("Visibility predicates `crate` or `super`")]
     VisibilityPredicate,
+    #[error("type union expr `right operand`.")]
+    TypeUnionOperand,
 }
 
 impl SyntaxKind {

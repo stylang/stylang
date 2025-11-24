@@ -1,6 +1,6 @@
 use parserc::syntax::{Delimiter, Punctuated, Syntax};
 
-use crate::{BracketEnd, BracketStart, CSTInput, Comma, Digits, ParenEnd, ParenStart, Semi};
+use crate::{BracketEnd, BracketStart, CSTInput, Comma, Digits, Or, ParenEnd, ParenStart, Semi};
 
 /// Type of `stylang` value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
@@ -58,12 +58,23 @@ where
     ),
 }
 
+/// A type with extension `union` expr.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ExprType<I>
+where
+    I: CSTInput,
+{
+    pub first: Type<I>,
+    pub rest: Vec<(Or<I>, Type<I>)>,
+}
+
 #[cfg(test)]
 mod tests {
     use parserc::syntax::{Delimiter, InputSyntaxExt};
 
     use super::*;
-    use crate::{Digits, TokenStream};
+    use crate::{Digits, S, TokenStream};
 
     #[test]
     fn test_ty() {
@@ -186,6 +197,34 @@ mod tests {
         assert_eq!(
             TokenStream::from("freq").parse(),
             Ok(Type::Freq(TokenStream::from("freq")))
+        );
+    }
+
+    #[test]
+    fn test_ty_union() {
+        assert_eq!(
+            TokenStream::from("i32 | u32 | length").parse::<ExprType<_>>(),
+            Ok(ExprType {
+                first: Type::I32(TokenStream::from((0, "i32"))),
+                rest: vec![
+                    (
+                        Or(
+                            Some(S(TokenStream::from((3, " ")))),
+                            TokenStream::from((4, "|")),
+                            Some(S(TokenStream::from((5, " "))))
+                        ),
+                        Type::U32(TokenStream::from((6, "u32")))
+                    ),
+                    (
+                        Or(
+                            Some(S(TokenStream::from((9, " ")))),
+                            TokenStream::from((10, "|")),
+                            Some(S(TokenStream::from((11, " "))))
+                        ),
+                        Type::Length(TokenStream::from((12, "length")))
+                    )
+                ]
+            })
         );
     }
 }

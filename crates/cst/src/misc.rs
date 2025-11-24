@@ -62,6 +62,7 @@ def_punct!(Colon, ":");
 def_punct!(Comma, ",");
 def_punct!(Semi, ";");
 def_punct!(PathSep, "::");
+def_punct!(Or, "|");
 
 /// line comment.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
