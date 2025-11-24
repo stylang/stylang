@@ -1,6 +1,26 @@
 use parserc::syntax::{Delimiter, Punctuated, Syntax};
 
-use crate::{BracketEnd, BracketStart, CSTInput, Comma, Digits, Or, ParenEnd, ParenStart, Semi};
+use crate::{
+    ArrowRight, BracketEnd, BracketStart, CSTInput, Comma, Digits, Or, ParenEnd, ParenStart, Semi,
+    SyntaxKind,
+};
+
+/// A bare function type: `fn(usize) -> bool`.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::BareFn.map_unhandle())]
+pub struct TypeBareFn<I>
+where
+    I: CSTInput,
+{
+    /// keyword `fn`
+    #[parserc(crucial, keyword = "fn")]
+    pub keyword: I,
+    /// input base fn arguments.
+    pub inputs: Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<Type<I>, Comma<I>>>,
+    /// Return type of a function signature.
+    pub output: Option<(ArrowRight<I>, Box<Type<I>>)>,
+}
 
 /// Type of `stylang` value.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
@@ -56,6 +76,8 @@ where
         #[parserc(crucial, keyword = "set")] I,
         Delimiter<BracketStart<I>, BracketEnd<I>, Box<Type<I>>>,
     ),
+    /// bare function `fn(string) -> i32`
+    BareFn(TypeBareFn<I>),
 }
 
 /// A type with extension `union` expr.
@@ -112,39 +134,39 @@ mod tests {
             ))
         );
 
-        // assert_eq!(
-        //     TokenStream::from("[fn() -> view]").parse::<Type<_>>(),
-        //     Ok(Type::Sequence(Delimiter {
-        //         start: BracketStart(None, TokenStream::from((0, "[")), None),
-        //         end: BracketEnd(None, TokenStream::from((13, "]")), None),
-        //         body: (
-        //             Box::new(Type::Fn(TypeFn {
-        //                 keyword: TokenStream::from((1, "fn")),
-        //                 call_params: Delimiter {
-        //                     start: ParenStart(None, TokenStream::from((3, "(")), None),
-        //                     end: ParenEnd(
-        //                         None,
-        //                         TokenStream::from((4, ")")),
-        //                         Some(S(TokenStream::from((5, " "))))
-        //                     ),
-        //                     body: Punctuated {
-        //                         pairs: vec![],
-        //                         tail: None
-        //                     }
-        //                 },
-        //                 returns_param: Some((
-        //                     ArrowRight(
-        //                         None,
-        //                         TokenStream::from((6, "->")),
-        //                         Some(S(TokenStream::from((8, " "))))
-        //                     ),
-        //                     Box::new(Type::View(TokenStream::from((9, "view"))))
-        //                 ))
-        //             })),
-        //             None
-        //         )
-        //     }))
-        // );
+        assert_eq!(
+            TokenStream::from("[fn() -> view]").parse::<Type<_>>(),
+            Ok(Type::Sequence(Delimiter {
+                start: BracketStart(None, TokenStream::from((0, "[")), None),
+                end: BracketEnd(None, TokenStream::from((13, "]")), None),
+                body: (
+                    Box::new(Type::BareFn(TypeBareFn {
+                        keyword: TokenStream::from((1, "fn")),
+                        inputs: Delimiter {
+                            start: ParenStart(None, TokenStream::from((3, "(")), None),
+                            end: ParenEnd(
+                                None,
+                                TokenStream::from((4, ")")),
+                                Some(S(TokenStream::from((5, " "))))
+                            ),
+                            body: Punctuated {
+                                pairs: vec![],
+                                tail: None
+                            }
+                        },
+                        output: Some((
+                            ArrowRight(
+                                None,
+                                TokenStream::from((6, "->")),
+                                Some(S(TokenStream::from((8, " "))))
+                            ),
+                            Box::new(Type::View(TokenStream::from((9, "view"))))
+                        ))
+                    })),
+                    None
+                )
+            }))
+        );
 
         assert_eq!(
             TokenStream::from("map[string,draw]").parse(),

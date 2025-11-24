@@ -107,6 +107,8 @@ pub enum SyntaxKind {
     VisibilityPredicate,
     #[error("type union expr `right operand`.")]
     TypeUnionOperand,
+    #[error("type `bare fn`.")]
+    BareFn,
 }
 
 impl SyntaxKind {
