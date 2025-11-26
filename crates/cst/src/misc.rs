@@ -59,10 +59,15 @@ def_punct!(ParenEnd, ")");
 def_punct!(At, "@");
 def_punct!(ArrowRight, "->");
 def_punct!(Colon, ":");
+def_punct!(ColonColon, "::");
 def_punct!(Comma, ",");
 def_punct!(Semi, ";");
 def_punct!(PathSep, "::");
 def_punct!(Or, "|");
+def_punct!(AngleBracketStart, "<");
+def_punct!(AngleBracketEnd, ">");
+def_punct!(Eequal, "=");
+def_punct!(Question, "?");
 
 /// line comment.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

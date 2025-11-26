@@ -21,3 +21,6 @@ pub use vs::*;
 
 mod pat;
 pub use pat::*;
+
+mod generic;
+pub use generic::*;

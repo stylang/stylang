@@ -21,6 +21,8 @@ pub enum TokenKind {
     ArrowRight,
     #[error("punct `:`")]
     Colon,
+    #[error("punct `::`")]
+    ColonColon,
     #[error("punct `,`")]
     Comma,
     #[error("punct `;`")]
@@ -29,6 +31,14 @@ pub enum TokenKind {
     PathSep,
     #[error("punct `|`")]
     Or,
+    #[error("punct `<`")]
+    AngleBracketStart,
+    #[error("punct `>`")]
+    AngleBracketEnd,
+    #[error("punct `=`")]
+    Eequal,
+    #[error("punct `?`")]
+    Question,
     #[error("keyword `fn`")]
     Fn,
     #[error("keyword `struct`")]
