@@ -119,6 +119,8 @@ pub enum SyntaxKind {
     TypeUnionOperand,
     #[error("type `bare fn`.")]
     BareFn,
+    #[error("type `path`")]
+    Path,
 }
 
 impl SyntaxKind {

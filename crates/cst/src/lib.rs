@@ -24,3 +24,6 @@ pub use pat::*;
 
 mod generic;
 pub use generic::*;
+
+mod path;
+pub use path::*;

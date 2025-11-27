@@ -59,7 +59,6 @@ def_punct!(ParenEnd, ")");
 def_punct!(At, "@");
 def_punct!(ArrowRight, "->");
 def_punct!(Colon, ":");
-def_punct!(ColonColon, "::");
 def_punct!(Comma, ",");
 def_punct!(Semi, ";");
 def_punct!(PathSep, "::");

@@ -1,8 +1,8 @@
 use parserc::syntax::{Delimiter, Punctuated, Syntax};
 
 use crate::{
-    ArrowRight, BracketEnd, BracketStart, CSTInput, Comma, Digits, Or, ParenEnd, ParenStart, Semi,
-    SyntaxKind,
+    ArrowRight, BracketEnd, BracketStart, CSTInput, Comma, Digits, Or, ParenEnd, ParenStart, Path,
+    Semi, SyntaxKind,
 };
 
 /// A bare function type: `fn(usize) -> bool`.
@@ -78,6 +78,8 @@ where
     ),
     /// bare function `fn(string) -> i32`
     BareFn(TypeBareFn<I>),
+    /// A path like std::slice::Iter
+    Path(Path<I>),
 }
 
 /// A type with extension `union` expr.
