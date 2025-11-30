@@ -61,6 +61,10 @@ pub enum TokenKind {
     Mod,
     #[error("keyword `pub`")]
     Pub,
+    #[error("keyword `const`")]
+    Const,
+    #[error("keyword `where`")]
+    Where,
     /// ident character sequence.
     #[error("type `name`")]
     Ident,
