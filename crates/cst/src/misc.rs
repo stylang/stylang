@@ -67,6 +67,7 @@ def_punct!(AngleBracketStart, "<");
 def_punct!(AngleBracketEnd, ">");
 def_punct!(Eequal, "=");
 def_punct!(Question, "?");
+def_punct!(Plus, "+");
 
 /// line comment.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

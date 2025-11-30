@@ -1,15 +1,19 @@
-use parserc::syntax::Syntax;
+use parserc::syntax::{Or, Punctuated, Syntax};
 
-use crate::{CSTInput, Colon, Eequal, Ident, Lit, Question, Type};
+use crate::{CSTInput, Colon, Eequal, Ident, Lit, Path, Plus, Question, Type};
+
 /// A trait used as a bound on a type parameter.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+
 pub struct TraitBound<I>
 where
     I: CSTInput,
 {
     /// A modifier on a trait bound, currently only used for the ? in ?Sized.
-    modifier: Option<Question<I>>,
+    pub modifier: Option<Question<I>>,
+    /// The Foo<&'a T> in for<'a> Foo<&'a T>
+    pub path: Path<I>,
 }
 
 /// An individual generic argument, like  T, or Item = T.
@@ -19,22 +23,64 @@ pub enum GenericArgument<I>
 where
     I: CSTInput,
 {
+    /// A binding (equality constraint) on an associated type: the Item = u8 in Iterator<Item = u8>.
+    Associated {
+        ident: Ident<I>,
+        eq: Eequal<I>,
+        ty: Or<Type<I>, Lit<I>>,
+    },
+    /// An associated type bound: Iterator<Item: Display>.
+    Constraint {
+        ident: Ident<I>,
+        colon: Colon<I>,
+        bounds: Punctuated<TraitBound<I>, Plus<I>>,
+    },
     /// A type argument.
     Type(Type<I>),
-    /// A binding (equality constraint) on an associated type: the Item = u8 in Iterator<Item = u8>.
-    Associated(Ident<I>, Eequal<I>, Type<I>),
-    /// An equality constraint on an associated constant: the PANIC = false in Trait<PANIC = false>.
-    AssociatedConst(Ident<I>, Eequal<I>, Lit<I>),
 }
 
-/// A generic type parameter: `T: Into<String>`.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct TypeParam<I>
-where
-    I: CSTInput,
-{
-    /// Name of generic type parameter.
-    pub name: Ident<I>,
-    pub bounds: Option<Colon<I>>,
+#[cfg(test)]
+mod test {
+
+    use parserc::syntax::{InputSyntaxExt, Punctuated};
+
+    use crate::{GenericArgument, Ident, Path, PathSegment, Question, TokenStream, TraitBound};
+
+    #[test]
+    fn test_trait_bound() {
+        assert_eq!(
+            TokenStream::from("?Sizied").parse::<TraitBound<_>>(),
+            Ok(TraitBound {
+                modifier: Some(Question(None, TokenStream::from((0, "?")), None)),
+                path: Path {
+                    leading_pathsep: None,
+                    segments: Punctuated {
+                        pairs: vec![],
+                        tail: Some(Box::new(PathSegment {
+                            ident: Ident(TokenStream::from((1, "Sizied"))),
+                            arguments: None
+                        }))
+                    }
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn test_generic_argument() {
+        println!(
+            "{:?}",
+            TokenStream::from("T = u8").parse::<GenericArgument<_>>()
+        );
+
+        println!(
+            "{:?}",
+            TokenStream::from("N = 19").parse::<GenericArgument<_>>()
+        );
+
+        println!(
+            "{:?}",
+            TokenStream::from("T: Display + Eq + ").parse::<GenericArgument<_>>()
+        );
+    }
 }

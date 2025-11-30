@@ -35,7 +35,7 @@ where
     /// segment name.
     pub ident: Ident<I>,
     /// path arguments.
-    pub arguments: PathArguments<I>,
+    pub arguments: Option<PathArguments<I>>,
 }
 
 /// A path at which a named item is exported (e.g. std::collections::HashMap).
@@ -64,5 +64,65 @@ where
         ))
     } else {
         Ok(path)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use parserc::syntax::{Delimiter, InputSyntaxExt, Or, Punctuated};
+
+    use crate::{
+        AngleBracketEnd, AngleBracketStart, Eequal, GenericArgument, Ident, Path, PathArguments,
+        PathSegment, PathSep, S, TokenStream, Type,
+    };
+
+    #[test]
+    fn test_path() {
+        assert_eq!(
+            TokenStream::from("std::iter::Iteartor<Item = u8>").parse(),
+            Ok(Path {
+                leading_pathsep: None,
+                segments: Punctuated {
+                    pairs: vec![
+                        (
+                            PathSegment {
+                                ident: Ident(TokenStream::from((0, "std"))),
+                                arguments: None
+                            },
+                            PathSep(None, TokenStream::from((3, "::")), None)
+                        ),
+                        (
+                            PathSegment {
+                                ident: Ident(TokenStream::from((5, "iter"))),
+                                arguments: None
+                            },
+                            PathSep(None, TokenStream::from((9, "::")), None)
+                        )
+                    ],
+                    tail: Some(Box::new(PathSegment {
+                        ident: Ident(TokenStream::from((11, "Iteartor"))),
+                        arguments: Some(PathArguments {
+                            leading_pathsep: None,
+                            args: Delimiter {
+                                start: AngleBracketStart(None, TokenStream::from((19, "<")), None),
+                                end: AngleBracketEnd(None, TokenStream::from((29, ">")), None),
+                                body: Punctuated {
+                                    pairs: vec![],
+                                    tail: Some(Box::new(GenericArgument::Associated {
+                                        ident: Ident(TokenStream::from((20, "Item"))),
+                                        eq: Eequal(
+                                            Some(S(TokenStream::from((24, " ")))),
+                                            TokenStream::from((25, "=")),
+                                            Some(S(TokenStream::from((26, " "))))
+                                        ),
+                                        ty: Or::First(Type::U8(TokenStream::from((27, "u8"))))
+                                    }))
+                                }
+                            }
+                        })
+                    }))
+                }
+            })
+        );
     }
 }

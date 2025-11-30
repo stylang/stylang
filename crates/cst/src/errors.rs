@@ -31,6 +31,8 @@ pub enum TokenKind {
     PathSep,
     #[error("punct `|`")]
     Or,
+    #[error("punct `+`")]
+    Plus,
     #[error("punct `<`")]
     AngleBracketStart,
     #[error("punct `>`")]
@@ -170,6 +172,8 @@ impl OverflowKind {
 pub enum SemanticsKind {
     #[error("`number unit`")]
     Unit,
+    #[error("trait bound modifier `?`")]
+    TraitBoundModifier,
 }
 
 impl SemanticsKind {
