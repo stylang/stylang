@@ -104,8 +104,8 @@ mod test {
 
     use crate::{
         AngleBracketEnd, AngleBracketStart, Colon, Comma, Const, Digits, Eequal, GenericArgument,
-        GenericParam, Generics, Ident, Lit, LitNumber, Path, PathSegment, Plus, Question, S,
-        TokenStream, TraitBound, Type, Where, WhereClause, WherePredicate,
+        GenericParam, Generics, Ident, Lit, LitNumber, Path, PathArguments, PathSegment, PathSep,
+        Plus, Question, S, TokenStream, TraitBound, Type, Where, WhereClause, WherePredicate,
     };
 
     #[test]
@@ -434,6 +434,108 @@ mod test {
                         )
                     ],
                     tail: None
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn test_where_clause_path() {
+        assert_eq!(
+            TokenStream::from("where T: std::iter::Iterator<Item = char>").parse(),
+            Ok(WhereClause {
+                keyword: Where(
+                    TokenStream::from((0, "where")),
+                    Some(S(TokenStream::from((5, " "))))
+                ),
+                predicates: Punctuated {
+                    pairs: vec![],
+                    tail: Some(Box::new(WherePredicate {
+                        ident: Ident(TokenStream::from((6, "T"))),
+                        colon: Colon(
+                            None,
+                            TokenStream::from((7, ":")),
+                            Some(S(TokenStream::from((8, " "))))
+                        ),
+                        bounds: Punctuated {
+                            pairs: vec![],
+                            tail: Some(Box::new(TraitBound {
+                                modifier: None,
+                                path: Path {
+                                    leading_pathsep: None,
+                                    segments: Punctuated {
+                                        pairs: vec![
+                                            (
+                                                PathSegment {
+                                                    ident: Ident(TokenStream::from((9, "std"))),
+                                                    arguments: None
+                                                },
+                                                PathSep(None, TokenStream::from((12, "::")), None)
+                                            ),
+                                            (
+                                                PathSegment {
+                                                    ident: Ident(TokenStream::from((14, "iter"))),
+                                                    arguments: None
+                                                },
+                                                PathSep(None, TokenStream::from((18, "::")), None)
+                                            )
+                                        ],
+                                        tail: Some(Box::new(PathSegment {
+                                            ident: Ident(TokenStream::from((20, "Iterator"))),
+                                            arguments: Some(PathArguments {
+                                                leading_pathsep: None,
+                                                args: Delimiter {
+                                                    start: AngleBracketStart(
+                                                        None,
+                                                        TokenStream::from((28, "<")),
+                                                        None
+                                                    ),
+                                                    end: AngleBracketEnd(
+                                                        None,
+                                                        TokenStream::from((40, ">")),
+                                                        None
+                                                    ),
+                                                    body: Punctuated {
+                                                        pairs: vec![],
+                                                        tail: Some(Box::new(
+                                                            GenericArgument::Associated {
+                                                                ident: Ident(TokenStream::from((
+                                                                    29, "Item"
+                                                                ))),
+                                                                eq: Eequal(
+                                                                    Some(S(TokenStream::from((
+                                                                        33, " "
+                                                                    )))),
+                                                                    TokenStream::from((34, "=")),
+                                                                    Some(S(TokenStream::from((
+                                                                        35, " "
+                                                                    ))))
+                                                                ),
+                                                                ty: Or::First(Type::Path(Path {
+                                                                    leading_pathsep: None,
+                                                                    segments: Punctuated {
+                                                                        pairs: vec![],
+                                                                        tail: Some(Box::new(PathSegment {
+                                                                            ident: Ident(
+                                                                                TokenStream::from(
+                                                                                    (36, "char")
+                                                                                )
+                                                                            ),
+                                                                            arguments: None
+                                                                        }))
+                                                                    }
+                                                                }))
+                                                            }
+                                                        ))
+                                                    }
+                                                }
+                                            })
+                                        }))
+                                    }
+                                }
+                            }))
+                        }
+                    }))
                 }
             })
         );
