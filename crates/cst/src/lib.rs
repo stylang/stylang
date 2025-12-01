@@ -27,3 +27,6 @@ pub use generic::*;
 
 mod path;
 pub use path::*;
+
+mod attr;
+pub use attr::*;

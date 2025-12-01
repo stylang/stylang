@@ -156,9 +156,15 @@ where
     I: CSTInput,
 {
     if number.trunc.is_none() && number.fract.is_none() {
+        let control_flow = if number.sign.is_none() && number.exp.is_none() {
+            ControlFlow::Recovable
+        } else {
+            ControlFlow::Fatal
+        };
+
         return Err(CSTError::Syntax(
             SyntaxKind::LitNumber,
-            ControlFlow::Fatal,
+            control_flow,
             number.to_span(),
         ));
     }

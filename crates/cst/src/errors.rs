@@ -127,6 +127,10 @@ pub enum SyntaxKind {
     BareFn,
     #[error("type `path`")]
     Path,
+    #[error("attribute `name`")]
+    AttrName,
+    #[error("attribute `argument`")]
+    AttrArgument,
 }
 
 impl SyntaxKind {
