@@ -1,143 +1,32 @@
+//! The types used for `CST` parsing error reports.
+
 use parserc::{ControlFlow, ParseError, Span};
 
-/// Error for tokens.
+/// Error for parsing token or keyword.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum TokenKind {
-    #[error("punct `{{`")]
-    BraceStart,
-    #[error("punct `}}`")]
-    BraceEnd,
-    #[error("punct `[`")]
-    BracketStart,
-    #[error("punct `]`")]
-    BracketEnd,
-    #[error("punct `(`")]
-    ParenStart,
-    #[error("punct `)`")]
-    ParenEnd,
-    #[error("punct `@`")]
-    At,
-    #[error("punct `->`")]
-    ArrowRight,
-    #[error("punct `:`")]
-    Colon,
-    #[error("punct `::`")]
-    ColonColon,
-    #[error("punct `,`")]
-    Comma,
-    #[error("punct `;`")]
-    Semi,
-    #[error("punct `::`")]
-    PathSep,
-    #[error("punct `|`")]
-    Or,
-    #[error("punct `+`")]
-    Plus,
-    #[error("punct `<`")]
-    AngleBracketStart,
-    #[error("punct `>`")]
-    AngleBracketEnd,
-    #[error("punct `=`")]
-    Eequal,
-    #[error("punct `?`")]
-    Question,
-    #[error("punct `&`")]
-    And,
-    #[error("keyword `fn`")]
-    Fn_,
-    #[error("keyword `struct`")]
-    Struct,
-    #[error("keyword `enum`")]
-    Enum,
-    #[error("keyword `impl`")]
-    Impl,
-    #[error("keyword `trait`")]
-    Trait,
-    #[error("keyword `extern`")]
-    Extern,
-    #[error("keyword `type`")]
-    Type,
-    #[error("keyword `use`")]
-    Use,
-    #[error("keyword `mod`")]
-    Mod,
-    #[error("keyword `pub`")]
-    Pub,
-    #[error("keyword `const`")]
-    Const,
-    #[error("keyword `where`")]
-    Where,
-    #[error("keyword `mut`")]
-    Mut,
-    #[error("keyword `self`")]
-    Self_,
-    /// ident character sequence.
-    #[error("type `name`")]
-    Ident,
-    /// xml ident character sequence.
-    #[error("xml tag `name`")]
-    XmlIdent,
-    /// literial digits.
-    #[error("literial `digits`")]
-    LitDigits,
-    /// literial hex-digits.
-    #[error("literial `hex-digits`")]
-    LitHexDigits,
-}
+pub enum TokenKind {}
 
 impl TokenKind {
-    /// Map error to this kind.
+    /// Map error to `TokenKind`
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Token(self, err.control_flow(), err.to_span())
+    }
+
+    /// Map unhandle error
+    pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| {
+            if let CSTError::Kind(kind) = &err {
+                CSTError::Token(self, kind.control_flow(), kind.to_span())
+            } else {
+                err
+            }
+        }
     }
 }
 
 /// Error for syntax tree.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SyntaxKind {
-    /// line comment
-    #[error("`line comment`")]
-    LineComment,
-    /// block comment
-    #[error("`block comment`")]
-    BlockComment,
-    /// outer line document
-    #[error("`outer line doc`")]
-    OuterLineDoc,
-    /// outer block document.
-    #[error("`outer block doc`")]
-    OuterBlockDoc,
-    /// inner line document
-    #[error("`inner line doc`")]
-    InnerLineDoc,
-    /// outer block document.
-    #[error("`inner block doc`")]
-    InnerBlockDoc,
-    #[error("literial string tailing `\"`")]
-    TailingQuote,
-    #[error("`literal expr`")]
-    Lit,
-    #[error("`literal bool value`")]
-    LitBool,
-    #[error("literal `number`")]
-    LitNumber,
-    #[error("literal `hex-number`")]
-    LitHexNumber,
-    #[error("`literal string`")]
-    LitStr,
-    #[error("Visibility predicates `crate` or `super`")]
-    VisibilityPredicate,
-    #[error("type union expr `right operand`.")]
-    TypeUnionOperand,
-    #[error("type `bare fn`.")]
-    BareFn,
-    #[error("type `path`")]
-    Path,
-    #[error("attribute `name`")]
-    AttrName,
-    #[error("attribute `argument`")]
-    AttrArgument,
-}
+pub enum SyntaxKind {}
 
 impl SyntaxKind {
     /// Map unhandle error
@@ -183,12 +72,7 @@ impl OverflowKind {
 
 /// Semantics error.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SemanticsKind {
-    #[error("`number unit`")]
-    Unit,
-    #[error("trait bound modifier `?`")]
-    TraitBoundModifier,
-}
+pub enum SemanticsKind {}
 
 impl SemanticsKind {
     /// Map error to this kind.
@@ -202,26 +86,26 @@ impl SemanticsKind {
     }
 }
 
-/// Error returns by CST parsers.
+/// Error information container for `CST` parsing.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum CSTError {
     /// Unhandle parserc `Errors`.
     #[error(transparent)]
     Kind(#[from] parserc::Kind),
 
-    /// Failed to parse token.
-    #[error("token error: expect {0}, {1:?},{2:?}")]
+    /// Reports a lexer error.
+    #[error("lexer error: expect {0}, {1:?},{2:?}")]
     Token(TokenKind, ControlFlow, Span),
 
-    /// Failed to parse syntax tree.
+    /// Reports a syntax error.
     #[error("syntax error: expect {0}, {1:?},{2:?}")]
     Syntax(SyntaxKind, ControlFlow, Span),
 
-    /// literial value is overflow
-    #[error("literial {0:?} is overflow: {1:?}")]
+    /// Reports a literal value is overflow.
+    #[error("literal value {0:?} is overflow: {1:?}")]
     Overflow(OverflowKind, Span),
 
-    /// Semantics error
+    /// Reports a semantics error
     #[error("unexpect/invalid: {0}, {1:?}")]
     Semantics(SemanticsKind, Span),
 }
