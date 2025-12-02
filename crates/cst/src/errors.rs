@@ -2,21 +2,81 @@
 
 use parserc::{ControlFlow, ParseError, Span};
 
-/// Error for parsing token or keyword.
+/// Error for parsing puncts.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum TokenKind {}
+pub enum PunctKind {
+    #[error("punct `{{`")]
+    BraceStart,
+    #[error("punct `}}`")]
+    BraceEnd,
+    #[error("punct `[`")]
+    BracketStart,
+    #[error("punct `]`")]
+    BracketEnd,
+    #[error("punct `(`")]
+    ParenStart,
+    #[error("punct `)`")]
+    ParenEnd,
+    #[error("punct `@`")]
+    At,
+    #[error("punct `->`")]
+    ArrowRight,
+    #[error("punct `:`")]
+    Colon,
+    #[error("punct `,`")]
+    Comma,
+    #[error("punct `;`")]
+    Semi,
+    #[error("punct `::`")]
+    PathSep,
+}
 
-impl TokenKind {
+impl PunctKind {
     /// Map error to `TokenKind`
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
-        |err: CSTError| CSTError::Token(self, err.control_flow(), err.to_span())
+        |err: CSTError| CSTError::Punct(self, err.control_flow(), err.to_span())
     }
 
     /// Map unhandle error
     pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| {
             if let CSTError::Kind(kind) = &err {
-                CSTError::Token(self, kind.control_flow(), kind.to_span())
+                CSTError::Punct(self, kind.control_flow(), kind.to_span())
+            } else {
+                err
+            }
+        }
+    }
+}
+
+/// Error for parsing keyword.
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum KeywordKind {
+    #[error("keyword `struct`")]
+    Struct,
+    #[error("keyword `enum`")]
+    Enum,
+    #[error("keyword `fn`")]
+    Fn,
+    #[error("keyword `mut`")]
+    Mut,
+    #[error("keyword `self`")]
+    SelfObject,
+    #[error("keyword `Self`")]
+    SelfClass,
+}
+
+impl KeywordKind {
+    /// Map error to `TokenKind`
+    pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| CSTError::Keyword(self, err.control_flow(), err.to_span())
+    }
+
+    /// Map unhandle error
+    pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| {
+            if let CSTError::Kind(kind) = &err {
+                CSTError::Keyword(self, kind.control_flow(), kind.to_span())
             } else {
                 err
             }
@@ -94,8 +154,12 @@ pub enum CSTError {
     Kind(#[from] parserc::Kind),
 
     /// Reports a lexer error.
-    #[error("lexer error: expect {0}, {1:?},{2:?}")]
-    Token(TokenKind, ControlFlow, Span),
+    #[error("punct error: expect {0}, {1:?},{2:?}")]
+    Punct(PunctKind, ControlFlow, Span),
+
+    /// Reports a lexer error.
+    #[error("punct error: expect {0}, {1:?},{2:?}")]
+    Keyword(KeywordKind, ControlFlow, Span),
 
     /// Reports a syntax error.
     #[error("syntax error: expect {0}, {1:?},{2:?}")]
@@ -115,7 +179,8 @@ impl ParseError for CSTError {
     fn to_span(&self) -> Span {
         match self {
             CSTError::Kind(kind) => kind.to_span(),
-            CSTError::Token(_, _, span) => span.clone(),
+            CSTError::Punct(_, _, span) => span.clone(),
+            CSTError::Keyword(_, _, span) => span.clone(),
             CSTError::Syntax(_, _, span) => span.clone(),
             CSTError::Semantics(_, span) => span.clone(),
             CSTError::Overflow(_, span) => span.clone(),
@@ -126,7 +191,8 @@ impl ParseError for CSTError {
     fn control_flow(&self) -> parserc::ControlFlow {
         match self {
             CSTError::Kind(kind) => kind.control_flow(),
-            CSTError::Token(_, control_flow, _) => *control_flow,
+            CSTError::Punct(_, control_flow, _) => *control_flow,
+            CSTError::Keyword(_, control_flow, _) => *control_flow,
             CSTError::Syntax(_, control_flow, _) => *control_flow,
             CSTError::Overflow(_, _) => ControlFlow::Fatal,
             CSTError::Semantics(_, _) => ControlFlow::Fatal,
@@ -137,8 +203,11 @@ impl ParseError for CSTError {
     fn into_fatal(self) -> Self {
         match self {
             CSTError::Kind(kind) => CSTError::Kind(kind.into_fatal()),
-            CSTError::Token(token_kind, _, span) => {
-                CSTError::Token(token_kind, ControlFlow::Fatal, span)
+            CSTError::Punct(token_kind, _, span) => {
+                CSTError::Punct(token_kind, ControlFlow::Fatal, span)
+            }
+            CSTError::Keyword(token_kind, _, span) => {
+                CSTError::Keyword(token_kind, ControlFlow::Fatal, span)
             }
             CSTError::Syntax(kind, _, span) => CSTError::Syntax(kind, ControlFlow::Fatal, span),
             CSTError::Overflow(kind, span) => CSTError::Overflow(kind, span),

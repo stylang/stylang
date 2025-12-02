@@ -3,3 +3,6 @@
 
 pub mod errors;
 pub mod input;
+pub mod keyword;
+pub mod misc;
+pub mod punct;
