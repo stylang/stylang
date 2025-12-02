@@ -30,3 +30,12 @@ pub use path::*;
 
 mod attr;
 pub use attr::*;
+
+mod outer;
+pub use outer::*;
+
+mod item_fn;
+pub use item_fn::*;
+
+mod item_struct;
+pub use item_struct::*;

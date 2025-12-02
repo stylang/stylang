@@ -5,7 +5,7 @@ use crate::{At, CSTInput, Comma, Eequal, Ident, Lit, ParenEnd, ParenStart, Path,
 /// Outer attribute.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Attribute<I>
+pub struct OuterAttr<I>
 where
     I: CSTInput,
 {
@@ -16,14 +16,14 @@ where
     pub name: Ident<I>,
     /// argument list of this attribute.
     pub arguments:
-        Option<Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<AttributeArgument<I>, Comma<I>>>>,
+        Option<Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<AttrArgument<I>, Comma<I>>>>,
 }
 
 /// Argument of attribute.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[parserc(map_err = SyntaxKind::AttrArgument.map_unhandle())]
-pub enum AttributeArgument<I>
+pub enum AttrArgument<I>
 where
     I: CSTInput,
 {
@@ -44,15 +44,15 @@ mod tests {
     use parserc::syntax::{Delimiter, InputSyntaxExt, Or, Punctuated};
 
     use crate::{
-        At, Attribute, AttributeArgument, Comma, Eequal, Ident, ParenEnd, ParenStart, Path,
-        PathSegment, PathSep, S, TokenStream,
+        At, AttrArgument, Comma, Eequal, Ident, OuterAttr, ParenEnd, ParenStart, Path, PathSegment,
+        PathSep, S, TokenStream,
     };
 
     #[test]
     fn test_attr() {
         assert_eq!(
-            TokenStream::from("@ runtime()").parse::<Attribute<_>>(),
-            Ok(Attribute {
+            TokenStream::from("@ runtime()").parse::<OuterAttr<_>>(),
+            Ok(OuterAttr {
                 leading_at: At(
                     None,
                     TokenStream::from((0, "@")),
@@ -71,8 +71,8 @@ mod tests {
         );
 
         assert_eq!(
-            TokenStream::from("@attribute(Target::All, ty = Derive)").parse::<Attribute<_>>(),
-            Ok(Attribute {
+            TokenStream::from("@attribute(Target::All, ty = Derive)").parse::<OuterAttr<_>>(),
+            Ok(OuterAttr {
                 leading_at: At(None, TokenStream::from((0, "@")), None),
                 name: Ident(TokenStream::from((1, "attribute"))),
                 arguments: Some(Delimiter {
@@ -80,7 +80,7 @@ mod tests {
                     end: ParenEnd(None, TokenStream::from((35, ")")), None),
                     body: Punctuated {
                         pairs: vec![(
-                            AttributeArgument::Unamed(Or::Second(Path {
+                            AttrArgument::Unamed(Or::Second(Path {
                                 leading_pathsep: None,
                                 segments: Punctuated {
                                     pairs: vec![(
@@ -102,7 +102,7 @@ mod tests {
                                 Some(S(TokenStream::from((23, " "))))
                             )
                         )],
-                        tail: Some(Box::new(AttributeArgument::Named {
+                        tail: Some(Box::new(AttrArgument::Named {
                             name: Ident(TokenStream::from((24, "ty"))),
                             eq: Eequal(
                                 Some(S(TokenStream::from((26, " ")))),

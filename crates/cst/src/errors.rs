@@ -41,8 +41,10 @@ pub enum TokenKind {
     Eequal,
     #[error("punct `?`")]
     Question,
+    #[error("punct `&`")]
+    And,
     #[error("keyword `fn`")]
-    Fn,
+    Fn_,
     #[error("keyword `struct`")]
     Struct,
     #[error("keyword `enum`")]
@@ -65,6 +67,10 @@ pub enum TokenKind {
     Const,
     #[error("keyword `where`")]
     Where,
+    #[error("keyword `mut`")]
+    Mut,
+    #[error("keyword `self`")]
+    Self_,
     /// ident character sequence.
     #[error("type `name`")]
     Ident,

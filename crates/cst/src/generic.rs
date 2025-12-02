@@ -42,7 +42,7 @@ where
     Type(Type<I>),
 }
 
-/// A generic type parameter, or const generic: T: Into<String>, 'a: 'b, const LEN: usize.
+/// A generic type parameter, or const generic: `T: Into<String>, 'a: 'b, const LEN: usize`.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum GenericParam<I>

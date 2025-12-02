@@ -56,7 +56,7 @@ where
     View(#[parserc(keyword = "view")] I),
     /// ...type
     Variadic(#[parserc(crucial, keyword = "...")] I, Box<Type<I>>),
-    /// Sequence, [T] or [T;N]
+    /// Sequence, `[T] or [T;N]`
     Sequence(
         Delimiter<BracketStart<I>, BracketEnd<I>, (Box<Type<I>>, Option<(Semi<I>, Digits<I>)>)>,
     ),

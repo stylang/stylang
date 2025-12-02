@@ -92,6 +92,7 @@ def_punct!(BracketEnd, "]");
 def_punct!(ParenStart, "(");
 def_punct!(ParenEnd, ")");
 def_punct!(At, "@");
+def_punct!(And, "&");
 def_punct!(ArrowRight, "->");
 def_punct!(Colon, ":");
 def_punct!(Comma, ",");
@@ -106,6 +107,22 @@ def_punct!(Plus, "+");
 
 def_keyword!(Const, "const");
 def_keyword!(Where, "where");
+def_keyword!(Fn_, "fn");
+def_keyword!(Extern, "extern");
+def_keyword!(Mut, "mut");
+def_keyword!(Struct, "struct");
+def_keyword!(Enum, "enum");
+
+/// Self keyword `self` or `Self`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Self_<I>
+where
+    I: CSTInput,
+{
+    Class(#[parserc(keyword = "Self")] I),
+    Object(#[parserc(keyword = "self")] I),
+}
 
 /// line comment.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
