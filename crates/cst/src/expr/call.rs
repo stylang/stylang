@@ -4,6 +4,7 @@ use parserc::{
 };
 
 use crate::{
+    errors::SyntaxKind,
     expr::{Expr, ExprPath},
     input::CSTInput,
     punct::{Comma, ParenEnd, ParenStart},
@@ -30,9 +31,10 @@ where
         let mut func = ExprPath::into_parser()
             .map(|expr| Expr::Path(expr))
             .boxed()
-            .parse(input)?;
+            .parse(input)
+            .map_err(SyntaxKind::ExprCall.map())?;
 
-        let mut args = input.parse()?;
+        let mut args = input.parse().map_err(SyntaxKind::ExprCall.map())?;
 
         while let Some(next_call) = input.parse()? {
             func = Box::new(Expr::Call(Self { func, args }));

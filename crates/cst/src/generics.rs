@@ -15,7 +15,6 @@ use crate::{
 /// A trait used as a bound on a type parameter.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-
 pub struct TraitBound<I>
 where
     I: CSTInput,

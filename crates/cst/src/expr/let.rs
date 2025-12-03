@@ -2,7 +2,7 @@ use parserc::{Parser, syntax::Syntax};
 
 use crate::{
     errors::{CSTError, SyntaxKind},
-    expr::{Expr, ExprArray, ExprLit, ExprPath},
+    expr::{Expr, ExprArray, ExprBlock, ExprCall, ExprLit, ExprPath},
     input::CSTInput,
     keyword::Let,
     pat::Pat,
@@ -28,13 +28,15 @@ where
 }
 
 #[inline]
-fn parse_let_init_expr<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
+pub(crate) fn parse_let_init_expr<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
 where
     I: CSTInput,
 {
     ExprArray::into_parser()
         .map(|expr| Expr::Array(expr))
+        .or(ExprBlock::into_parser().map(|expr| Expr::Block(expr)))
         .or(ExprLit::into_parser().map(|expr| Expr::Lit(expr)))
+        .or(ExprCall::into_parser().map(|expr| Expr::Call(expr)))
         .or(ExprPath::into_parser().map(|expr| Expr::Path(expr)))
         .boxed()
         .parse(input)

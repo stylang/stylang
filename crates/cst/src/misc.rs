@@ -5,6 +5,7 @@ use parserc::{ControlFlow, Parser as _, keyword, next_if, syntax::Syntax, take_t
 use crate::{
     errors::{CSTError, SyntaxKind},
     input::CSTInput,
+    punct::Colon,
 };
 
 /// whitespace characters: `\r,\n,...`
@@ -350,6 +351,13 @@ where
         self.0.to_span()
     }
 }
+
+/// A lifetime labeling a for, while, or loop.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Label<I>(#[parserc(keyword = "'")] pub I, pub Ident<I>, pub Colon<I>)
+where
+    I: CSTInput;
 
 #[cfg(test)]
 mod tests {

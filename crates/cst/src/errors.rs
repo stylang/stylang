@@ -88,6 +88,8 @@ pub enum KeywordKind {
     As,
     #[error("keyword `let`")]
     Let,
+    #[error("keyword `else`")]
+    Else,
 }
 
 impl KeywordKind {
@@ -147,10 +149,14 @@ pub enum SyntaxKind {
     AttrArgument,
     #[error("pub `super/crate`")]
     VisibilityPredicate,
-    #[error("expr assign `operand`")]
-    AssignOperand,
-    #[error("`init expr` of let expr")]
+    #[error("expr `assign left operand`")]
+    AssignLeftOperand,
+    #[error("expr `assign right operand`")]
+    AssignRightOperand,
+    #[error("expr `let init`")]
     LetInitExpr,
+    #[error("expr `call`")]
+    ExprCall,
 }
 
 impl SyntaxKind {

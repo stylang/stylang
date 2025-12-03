@@ -61,3 +61,4 @@ define_keyword!(Where, "where");
 define_keyword!(Extern, "extern");
 define_keyword!(As, "as");
 define_keyword!(Let, "let");
+define_keyword!(Else, "else");
