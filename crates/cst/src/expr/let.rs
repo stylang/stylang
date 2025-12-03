@@ -46,28 +46,49 @@ mod tests {
     use parserc::syntax::{InputSyntaxExt, Punctuated};
 
     use crate::{
-        expr::{Expr, ExprPath},
+        expr::{Expr, ExprLet, ExprPath},
         input::TokenStream,
-        misc::Ident,
+        keyword::Let,
+        misc::{Ident, S},
+        pat::Pat,
         path::{Path, PathSegment},
+        punct::{Equal, PathSep},
     };
 
     #[test]
     fn test_let() {
         assert_eq!(
             TokenStream::from("let a = Target::Field").parse::<Expr<_>>(),
-            Ok(Expr::Path(ExprPath {
-                qself: None,
-                path: Path {
-                    leading_pathsep: None,
-                    segments: Punctuated {
-                        pairs: vec![],
-                        tail: Some(Box::new(PathSegment {
-                            ident: Ident(TokenStream::from((0, "let"))),
-                            arguments: None
-                        }))
+            Ok(Expr::Let(ExprLet {
+                keyword: Let(
+                    TokenStream::from((0, "let")),
+                    Some(S(TokenStream::from((3, " "))))
+                ),
+                pat: Box::new(Pat::Ident(Ident(TokenStream::from((4, "a"))))),
+                eq: Equal(
+                    Some(S(TokenStream::from((5, " ")))),
+                    TokenStream::from((6, "=")),
+                    Some(S(TokenStream::from((7, " "))))
+                ),
+                expr: Box::new(Expr::Path(ExprPath {
+                    qself: None,
+                    path: Path {
+                        leading_pathsep: None,
+                        segments: Punctuated {
+                            pairs: vec![(
+                                PathSegment {
+                                    ident: Ident(TokenStream::from((8, "Target"))),
+                                    arguments: None
+                                },
+                                PathSep(None, TokenStream::from((14, "::")), None)
+                            )],
+                            tail: Some(Box::new(PathSegment {
+                                ident: Ident(TokenStream::from((16, "Field"))),
+                                arguments: None
+                            }))
+                        }
                     }
-                }
+                }))
             }))
         );
     }

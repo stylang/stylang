@@ -15,5 +15,8 @@ pub use path::*;
 mod r#let;
 pub use r#let::*;
 
+mod call;
+pub use call::*;
+
 mod expr;
 pub use expr::*;

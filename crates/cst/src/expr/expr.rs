@@ -1,7 +1,7 @@
 use parserc::syntax::Syntax;
 
 use crate::{
-    expr::{ExprArray, ExprAssgin, ExprLet, ExprLit, ExprPath},
+    expr::{ExprArray, ExprAssgin, ExprCall, ExprLet, ExprLit, ExprPath},
     input::CSTInput,
 };
 
@@ -15,6 +15,7 @@ where
     Array(ExprArray<I>),
     Assign(ExprAssgin<I>),
     Lit(ExprLit<I>),
-    Path(ExprPath<I>),
     Let(ExprLet<I>),
+    Call(ExprCall<I>),
+    Path(ExprPath<I>),
 }
