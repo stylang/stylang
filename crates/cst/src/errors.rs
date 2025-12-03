@@ -41,6 +41,10 @@ pub enum PunctKind {
     Plus,
     #[error("punct `-`")]
     Minus,
+    #[error("punct `+=`")]
+    PlusEq,
+    #[error("punct `-=`")]
+    MinusEq,
     #[error("punct `=`")]
     Equal,
     #[error("punct `&`")]
@@ -57,7 +61,7 @@ pub enum PunctKind {
     LtEq,
     #[error("punct `<<`")]
     Shl,
-    #[error("punct `<<`")]
+    #[error("punct `<<=`")]
     ShlEq,
     #[error("punct `>`")]
     Gt,
@@ -69,8 +73,12 @@ pub enum PunctKind {
     ShrEq,
     #[error("punct `*`")]
     Star,
+    #[error("punct `*=`")]
+    StarEq,
     #[error("punct `**`")]
     StarStar,
+    #[error("punct `**=`")]
+    StarStarEq,
     #[error("punct `/`")]
     Slash,
     #[error("punct `/=`")]
@@ -79,6 +87,8 @@ pub enum PunctKind {
     Rem,
     #[error("punct `%=`")]
     RemEq,
+    #[error("punct `==`")]
+    EqEq,
     #[error("punct `^`")]
     Caret,
     #[error("punct `^=`")]
@@ -197,6 +207,12 @@ pub enum SyntaxKind {
     LetInitExpr,
     #[error("expr `call`")]
     ExprCall,
+    #[error("expr binary `left operand`")]
+    ExprBinaryLeftOperand,
+    #[error("expr binary `right operand`")]
+    ExprBinaryRightOperand,
+    #[error("expr binary `op`")]
+    ExprBinaryOp,
 }
 
 impl SyntaxKind {

@@ -1,7 +1,7 @@
 use parserc::syntax::Syntax;
 
 use crate::{
-    expr::{ExprArray, ExprAssgin, ExprBlock, ExprCall, ExprLet, ExprLit, ExprPath},
+    expr::{ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprLet, ExprLit, ExprPath},
     input::CSTInput,
 };
 
@@ -12,6 +12,7 @@ pub enum Expr<I>
 where
     I: CSTInput,
 {
+    Binary(ExprBinary<I>),
     Array(ExprArray<I>),
     Block(ExprBlock<I>),
     Assign(ExprAssgin<I>),

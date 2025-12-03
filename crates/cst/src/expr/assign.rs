@@ -15,7 +15,7 @@ where
     I: CSTInput,
 {
     /// left Operand expression.
-    #[parserc(parser = parse_assgin_operand)]
+    #[parserc(parser = parse_left_operand)]
     pub left: Box<Expr<I>>,
     /// punct `=`
     #[parserc(crucial)]
@@ -26,14 +26,12 @@ where
 }
 
 #[inline]
-fn parse_assgin_operand<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
+pub(super) fn parse_left_operand<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
 where
     I: CSTInput,
 {
-    ExprArray::into_parser()
-        .map(|expr| Expr::Array(expr))
-        .or(ExprLit::into_parser().map(|expr| Expr::Lit(expr)))
-        .or(ExprPath::into_parser().map(|expr| Expr::Path(expr)))
+    ExprPath::into_parser()
+        .map(|expr| Expr::Path(expr))
         .boxed()
         .parse(input)
         .map_err(SyntaxKind::AssignLeftOperand.map_unhandle())
