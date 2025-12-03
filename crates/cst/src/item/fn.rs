@@ -35,6 +35,7 @@ where
     /// optional vs
     pub vs: Option<Visibility<I>>,
     /// required prefix `extern`
+    #[parserc(crucial)]
     pub keyword_extern: Extern<I>,
     /// keyword `fn`
     pub keyword_fn: Fn_<I>,
@@ -46,4 +47,19 @@ where
     pub output: Option<(ArrowRight<I>, Box<Type<I>>)>,
     /// end token `;`
     pub semi: Semi<I>,
+}
+
+#[cfg(test)]
+mod tests {
+    use parserc::syntax::InputSyntaxExt;
+
+    use crate::{input::TokenStream, item::ItemExternFn};
+
+    #[test]
+    fn test_extern_fn() {
+        println!(
+            "{:?}",
+            TokenStream::from("extern fn test() -> u8 ;").parse::<ItemExternFn<_>>()
+        );
+    }
 }

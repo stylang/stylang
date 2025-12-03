@@ -6,5 +6,5 @@ pub use attr::*;
 mod outer;
 pub use outer::*;
 
-mod fn_;
-pub use fn_::*;
+mod r#fn;
+pub use r#fn::*;
