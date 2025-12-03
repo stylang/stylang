@@ -9,6 +9,7 @@ pub mod item;
 pub mod keyword;
 pub mod misc;
 pub mod pat;
+pub mod path;
 pub mod punct;
 pub mod ty;
 pub mod vs;

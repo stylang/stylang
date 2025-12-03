@@ -1,80 +1,14 @@
 //! The possible types that a `stylang` value could have.
 
-use parserc::{
-    ControlFlow,
-    syntax::{Delimiter, Punctuated, Syntax},
-};
+use parserc::syntax::{Delimiter, Punctuated, Syntax};
 
 use crate::{
-    errors::{CSTError, SyntaxKind},
+    errors::SyntaxKind,
     expr::Digits,
-    generics::GenericArgument,
     input::CSTInput,
-    misc::Ident,
-    punct::{
-        AngleBracketEnd, AngleBracketStart, ArrowRight, BracketEnd, BracketStart, Comma, Or,
-        ParenEnd, ParenStart, PathSep, Semi,
-    },
+    path::Path,
+    punct::{ArrowRight, BracketEnd, BracketStart, Comma, Or, ParenEnd, ParenStart, Semi},
 };
-
-/// Angle bracketed arguments of a path segment.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct PathArguments<I>
-where
-    I: CSTInput,
-{
-    /// optional leading `::`
-    pub leading_pathsep: Option<PathSep<I>>,
-    /// angle bracketd arguments.
-    pub args: Delimiter<
-        AngleBracketStart<I>,
-        AngleBracketEnd<I>,
-        Punctuated<GenericArgument<I>, Comma<I>>,
-    >,
-}
-
-/// A segment of a path together with any path arguments on that segment.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct PathSegment<I>
-where
-    I: CSTInput,
-{
-    /// segment name.
-    pub ident: Ident<I>,
-    /// path arguments.
-    pub arguments: Option<PathArguments<I>>,
-}
-
-/// A path at which a named item is exported (e.g. std::collections::HashMap).
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[parserc(semantic = check_path)]
-pub struct Path<I>
-where
-    I: CSTInput,
-{
-    /// optional leading `::`
-    pub leading_pathsep: Option<PathSep<I>>,
-    /// segments of path.
-    pub segments: Punctuated<PathSegment<I>, PathSep<I>>,
-}
-
-fn check_path<I>(path: Path<I>) -> Result<Path<I>, CSTError>
-where
-    I: CSTInput,
-{
-    if path.leading_pathsep.is_none() && path.segments.is_empty() {
-        Err(CSTError::Syntax(
-            SyntaxKind::Path,
-            ControlFlow::Recovable,
-            path.to_span(),
-        ))
-    } else {
-        Ok(path)
-    }
-}
 
 /// A bare function type: `fn(usize) -> bool`.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]

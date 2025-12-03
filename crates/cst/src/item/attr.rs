@@ -1,12 +1,11 @@
-use parserc::syntax::{Delimiter, Or, Punctuated, Syntax};
+use parserc::syntax::{Delimiter, Punctuated, Syntax};
 
 use crate::{
     errors::SyntaxKind,
-    expr::Lit,
+    expr::Expr,
     input::CSTInput,
     misc::Ident,
     punct::{At, Comma, Equal, ParenEnd, ParenStart},
-    ty::Path,
 };
 
 /// Outer attribute.
@@ -40,17 +39,23 @@ where
         /// punct `=`
         eq: Equal<I>,
         /// argument value.
-        expr: Or<Lit<I>, Path<I>>,
+        expr: Expr<I>,
     },
     /// unamed argument.
-    Unamed(Or<Lit<I>, Path<I>>),
+    Unamed(Expr<I>),
 }
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::{Delimiter, InputSyntaxExt, Or, Punctuated};
+    use parserc::syntax::{Delimiter, InputSyntaxExt, Punctuated};
 
-    use crate::{input::TokenStream, misc::S, punct::PathSep, ty::PathSegment};
+    use crate::{
+        expr::ExprPath,
+        input::TokenStream,
+        misc::S,
+        path::{Path, PathSegment},
+        punct::PathSep,
+    };
 
     use super::*;
 
@@ -86,20 +91,23 @@ mod tests {
                     end: ParenEnd(None, TokenStream::from((35, ")")), None),
                     body: Punctuated {
                         pairs: vec![(
-                            AttrArgument::Unamed(Or::Second(Path {
-                                leading_pathsep: None,
-                                segments: Punctuated {
-                                    pairs: vec![(
-                                        PathSegment {
-                                            ident: Ident(TokenStream::from((11, "Target"))),
+                            AttrArgument::Unamed(Expr::Path(ExprPath {
+                                qself: None,
+                                path: Path {
+                                    leading_pathsep: None,
+                                    segments: Punctuated {
+                                        pairs: vec![(
+                                            PathSegment {
+                                                ident: Ident(TokenStream::from((11, "Target"))),
+                                                arguments: None
+                                            },
+                                            PathSep(None, TokenStream::from((17, "::")), None)
+                                        )],
+                                        tail: Some(Box::new(PathSegment {
+                                            ident: Ident(TokenStream::from((19, "All"))),
                                             arguments: None
-                                        },
-                                        PathSep(None, TokenStream::from((17, "::")), None)
-                                    )],
-                                    tail: Some(Box::new(PathSegment {
-                                        ident: Ident(TokenStream::from((19, "All"))),
-                                        arguments: None
-                                    }))
+                                        }))
+                                    }
                                 }
                             })),
                             Comma(
@@ -115,20 +123,23 @@ mod tests {
                                 TokenStream::from((27, "=")),
                                 Some(S(TokenStream::from((28, " "))))
                             ),
-                            expr: Or::Second(Path {
-                                leading_pathsep: None,
-                                segments: Punctuated {
-                                    pairs: vec![],
-                                    tail: Some(Box::new(PathSegment {
-                                        ident: Ident(TokenStream::from((29, "Derive"))),
-                                        arguments: None
-                                    }))
+                            expr: Expr::Path(ExprPath {
+                                qself: None,
+                                path: Path {
+                                    leading_pathsep: None,
+                                    segments: Punctuated {
+                                        pairs: vec![],
+                                        tail: Some(Box::new(PathSegment {
+                                            ident: Ident(TokenStream::from((29, "Derive"))),
+                                            arguments: None
+                                        }))
+                                    }
                                 }
                             })
                         }))
                     }
                 })
             })
-        )
+        );
     }
 }

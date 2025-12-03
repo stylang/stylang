@@ -84,6 +84,10 @@ pub enum KeywordKind {
     Where,
     #[error("keyword `extern`")]
     Extern,
+    #[error("keyword `as`")]
+    As,
+    #[error("keyword `let`")]
+    Let,
 }
 
 impl KeywordKind {
@@ -143,6 +147,10 @@ pub enum SyntaxKind {
     AttrArgument,
     #[error("pub `super/crate`")]
     VisibilityPredicate,
+    #[error("expr assign `operand`")]
+    AssignOperand,
+    #[error("`init expr` of let expr")]
+    LetInitExpr,
 }
 
 impl SyntaxKind {

@@ -51,15 +51,84 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::InputSyntaxExt;
+    use parserc::syntax::{Delimiter, InputSyntaxExt, Punctuated};
 
-    use crate::{input::TokenStream, item::ItemExternFn};
+    use crate::{
+        input::TokenStream,
+        item::ItemExternFn,
+        keyword::{Extern, Fn_},
+        misc::{Ident, S},
+        punct::{ArrowRight, ParenEnd, ParenStart, Semi},
+        ty::Type,
+    };
 
     #[test]
     fn test_extern_fn() {
-        println!(
-            "{:?}",
-            TokenStream::from("extern fn test() -> u8 ;").parse::<ItemExternFn<_>>()
+        assert_eq!(
+            TokenStream::from("extern fn test() -> u8 ;").parse::<ItemExternFn<_>>(),
+            Ok(ItemExternFn {
+                vs: None,
+                keyword_extern: Extern(
+                    TokenStream::from((0, "extern")),
+                    Some(S(TokenStream::from((6, " "))))
+                ),
+                keyword_fn: Fn_(
+                    TokenStream::from((7, "fn")),
+                    Some(S(TokenStream::from((9, " "))))
+                ),
+                ident: Ident(TokenStream::from((10, "test"))),
+                inputs: Delimiter {
+                    start: ParenStart(None, TokenStream::from((14, "(")), None),
+                    end: ParenEnd(
+                        None,
+                        TokenStream::from((15, ")")),
+                        Some(S(TokenStream::from((16, " "))))
+                    ),
+                    body: Punctuated {
+                        pairs: vec![],
+                        tail: None
+                    }
+                },
+                output: Some((
+                    ArrowRight(
+                        None,
+                        TokenStream::from((17, "->")),
+                        Some(S(TokenStream::from((19, " "))))
+                    ),
+                    Box::new(Type::U8(TokenStream::from((20, "u8"))))
+                )),
+                semi: Semi(
+                    Some(S(TokenStream::from((22, " ")))),
+                    TokenStream::from((23, ";")),
+                    None
+                )
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("extern fn test();").parse::<ItemExternFn<_>>(),
+            Ok(ItemExternFn {
+                vs: None,
+                keyword_extern: Extern(
+                    TokenStream::from((0, "extern")),
+                    Some(S(TokenStream::from((6, " "))))
+                ),
+                keyword_fn: Fn_(
+                    TokenStream::from((7, "fn")),
+                    Some(S(TokenStream::from((9, " "))))
+                ),
+                ident: Ident(TokenStream::from((10, "test"))),
+                inputs: Delimiter {
+                    start: ParenStart(None, TokenStream::from((14, "(")), None),
+                    end: ParenEnd(None, TokenStream::from((15, ")")), None),
+                    body: Punctuated {
+                        pairs: vec![],
+                        tail: None
+                    }
+                },
+                output: None,
+                semi: Semi(None, TokenStream::from((16, ";")), None)
+            })
         );
     }
 }

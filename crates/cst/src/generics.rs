@@ -3,12 +3,13 @@
 use parserc::syntax::{Delimiter, Or, Punctuated, Syntax};
 
 use crate::{
-    expr::Lit,
+    expr::ExprLit,
     input::CSTInput,
     keyword::{Const, Where},
     misc::Ident,
+    path::Path,
     punct::{AngleBracketEnd, AngleBracketStart, Colon, Comma, Equal, Plus, Question},
-    ty::{Path, Type},
+    ty::Type,
 };
 
 /// A trait used as a bound on a type parameter.
@@ -36,7 +37,7 @@ where
     Associated {
         ident: Ident<I>,
         eq: Equal<I>,
-        ty: Or<Type<I>, Lit<I>>,
+        ty: Or<Type<I>, ExprLit<I>>,
     },
     /// An associated type bound: Iterator<Item: Display>.
     Constraint {
@@ -61,7 +62,7 @@ where
         ident: Ident<I>,
         colon: Colon<I>,
         ty: Type<I>,
-        default: Option<(Equal<I>, Lit<I>)>,
+        default: Option<(Equal<I>, ExprLit<I>)>,
     },
     Type {
         ident: Ident<I>,
@@ -112,7 +113,7 @@ mod test {
         expr::{Digits, LitNumber},
         input::TokenStream,
         misc::S,
-        ty::PathSegment,
+        path::PathSegment,
     };
 
     use super::*;
@@ -161,7 +162,7 @@ mod test {
                     TokenStream::from((2, "=")),
                     Some(S(TokenStream::from((3, " "))))
                 ),
-                ty: Or::Second(Lit::Number(LitNumber {
+                ty: Or::Second(ExprLit::Number(LitNumber {
                     sign: None,
                     trunc: Some(Digits {
                         input: TokenStream::from((4, "19")),

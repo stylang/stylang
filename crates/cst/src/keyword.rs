@@ -59,3 +59,5 @@ define_keyword!(Mut, "mut");
 define_keyword!(Const, "const");
 define_keyword!(Where, "where");
 define_keyword!(Extern, "extern");
+define_keyword!(As, "as");
+define_keyword!(Let, "let");
