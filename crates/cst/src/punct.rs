@@ -1,3 +1,5 @@
+//! puncts for stylang parser.
+
 macro_rules! define_punct {
     ($ident: ident, $value: literal) => {
         #[doc = "define punct `"]
@@ -49,4 +51,11 @@ define_punct!(ArrowRight, "->");
 define_punct!(Colon, ":");
 define_punct!(Comma, ",");
 define_punct!(Semi, ";");
+define_punct!(Or, "|");
 define_punct!(PathSep, "::");
+define_punct!(AngleBracketStart, "<");
+define_punct!(AngleBracketEnd, ">");
+define_punct!(Question, "?");
+define_punct!(Equal, "=");
+define_punct!(Plus, "+");
+define_punct!(And, "&");

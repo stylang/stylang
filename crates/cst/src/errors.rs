@@ -29,6 +29,20 @@ pub enum PunctKind {
     Semi,
     #[error("punct `::`")]
     PathSep,
+    #[error("punct `|`")]
+    Or,
+    #[error("punct `<`")]
+    AngleBracketStart,
+    #[error("punct `>`")]
+    AngleBracketEnd,
+    #[error("punct `?`")]
+    Question,
+    #[error("punct `+`")]
+    Plus,
+    #[error("punct `=`")]
+    Equal,
+    #[error("punct `&`")]
+    And,
 }
 
 impl PunctKind {
@@ -57,13 +71,19 @@ pub enum KeywordKind {
     #[error("keyword `enum`")]
     Enum,
     #[error("keyword `fn`")]
-    Fn,
+    Fn_,
     #[error("keyword `mut`")]
     Mut,
     #[error("keyword `self`")]
     SelfObject,
     #[error("keyword `Self`")]
     SelfClass,
+    #[error("keyword `const`")]
+    Const,
+    #[error("keyword `where`")]
+    Where,
+    #[error("keyword `extern`")]
+    Extern,
 }
 
 impl KeywordKind {
@@ -86,7 +106,44 @@ impl KeywordKind {
 
 /// Error for syntax tree.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SyntaxKind {}
+pub enum SyntaxKind {
+    #[error("`line comment`")]
+    LineComment,
+    #[error("`outer line document`")]
+    OuterLineDoc,
+    #[error("`inner line document`")]
+    InnerLineDoc,
+    #[error("`block comment`")]
+    BlockComment,
+    #[error("`outer block document`")]
+    OuterBlockDoc,
+    #[error("`inner block document`")]
+    InnerBlockDoc,
+    #[error("`ident`")]
+    Ident,
+    #[error("`xml ident`")]
+    XmlIdent,
+    #[error("`literal string`")]
+    LitStr,
+    #[error("`tailing quote token`")]
+    TailingQuote,
+    #[error("`literal digits`")]
+    LitDigits,
+    #[error("`literal number`")]
+    LitNumber,
+    #[error("`literal hex-number`")]
+    LitHexNumber,
+    #[error("`literal bool`")]
+    LitBool,
+    #[error("`A bare function type`")]
+    BareFn,
+    #[error("`item path`")]
+    Path,
+    #[error("`attribute argument`")]
+    AttrArgument,
+    #[error("pub `super/crate`")]
+    VisibilityPredicate,
+}
 
 impl SyntaxKind {
     /// Map unhandle error

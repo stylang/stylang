@@ -1,3 +1,5 @@
+//! Defines keywords.
+//!
 use parserc::syntax::Syntax;
 
 use crate::{errors::KeywordKind, input::CSTInput};
@@ -52,5 +54,8 @@ where
 
 define_keyword!(Struct, "struct");
 define_keyword!(Enum, "enum");
-define_keyword!(Fn, "fn");
+define_keyword!(Fn_, "fn");
 define_keyword!(Mut, "mut");
+define_keyword!(Const, "const");
+define_keyword!(Where, "where");
+define_keyword!(Extern, "Extern");
