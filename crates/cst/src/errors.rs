@@ -39,10 +39,50 @@ pub enum PunctKind {
     Question,
     #[error("punct `+`")]
     Plus,
+    #[error("punct `-`")]
+    Minus,
     #[error("punct `=`")]
     Equal,
     #[error("punct `&`")]
     And,
+    #[error("punct `&&`")]
+    AndAnd,
+    #[error("punct `&=`")]
+    AndEq,
+    #[error("punct `||`")]
+    OrOr,
+    #[error("punct `<`")]
+    Lt,
+    #[error("punct `<=`")]
+    LtEq,
+    #[error("punct `<<`")]
+    Shl,
+    #[error("punct `<<`")]
+    ShlEq,
+    #[error("punct `>`")]
+    Gt,
+    #[error("punct `>=`")]
+    GtEq,
+    #[error("punct `>>`")]
+    Shr,
+    #[error("punct `>>=`")]
+    ShrEq,
+    #[error("punct `*`")]
+    Star,
+    #[error("punct `**`")]
+    StarStar,
+    #[error("punct `/`")]
+    Slash,
+    #[error("punct `/=`")]
+    SlashEq,
+    #[error("punct `%`")]
+    Rem,
+    #[error("punct `%=`")]
+    RemEq,
+    #[error("punct `^`")]
+    Caret,
+    #[error("punct `^=`")]
+    CaretEq,
 }
 
 impl PunctKind {

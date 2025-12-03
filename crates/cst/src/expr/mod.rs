@@ -21,5 +21,8 @@ pub use call::*;
 mod block;
 pub use block::*;
 
+mod binary;
+pub use binary::*;
+
 mod expr;
 pub use expr::*;
