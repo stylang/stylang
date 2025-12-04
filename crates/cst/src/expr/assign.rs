@@ -1,8 +1,8 @@
-use parserc::{Parser, syntax::Syntax};
+use parserc::syntax::Syntax;
 
 use crate::{
-    errors::{CSTError, SyntaxKind},
-    expr::{Expr, ExprArray, ExprBlock, ExprCall, ExprLit, ExprPath},
+    errors::SyntaxKind,
+    expr::{Expr, parse_left_hand_operand},
     input::CSTInput,
     punct::Equal,
 };
@@ -15,42 +15,14 @@ where
     I: CSTInput,
 {
     /// left Operand expression.
-    #[parserc(parser = parse_left_operand)]
+    #[parserc(parser = parse_left_hand_operand)]
     pub left: Box<Expr<I>>,
     /// punct `=`
     #[parserc(crucial)]
     pub eq: Equal<I>,
     /// right Operand expression.
-    #[parserc(parser = parse_assgin_right_operand)]
+    #[parserc(map_err = SyntaxKind::AssignRightOperand.map_unhandle())]
     pub right: Box<Expr<I>>,
-}
-
-#[inline]
-pub(super) fn parse_left_operand<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
-where
-    I: CSTInput,
-{
-    ExprPath::into_parser()
-        .map(|expr| Expr::Path(expr))
-        .boxed()
-        .parse(input)
-        .map_err(SyntaxKind::AssignLeftOperand.map_unhandle())
-}
-
-#[inline]
-fn parse_assgin_right_operand<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
-where
-    I: CSTInput,
-{
-    ExprArray::into_parser()
-        .map(|expr| Expr::Array(expr))
-        .or(ExprBlock::into_parser().map(|expr| Expr::Block(expr)))
-        .or(ExprCall::into_parser().map(|expr| Expr::Call(expr)))
-        .or(ExprPath::into_parser().map(|expr| Expr::Path(expr)))
-        .or(ExprLit::into_parser().map(|expr| Expr::Lit(expr)))
-        .boxed()
-        .parse(input)
-        .map_err(SyntaxKind::AssignRightOperand.map_unhandle())
 }
 
 #[cfg(test)]
@@ -58,7 +30,7 @@ mod tests {
     use parserc::syntax::{InputSyntaxExt, Punctuated};
 
     use crate::{
-        expr::{Digits, Expr, LitNumber},
+        expr::{Digits, Expr, ExprLit, ExprPath, LitNumber},
         input::TokenStream,
         misc::{Ident, S},
         path::{Path, PathSegment},

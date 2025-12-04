@@ -1,7 +1,11 @@
-use parserc::syntax::Syntax;
+use parserc::{Parser, syntax::Syntax};
 
 use crate::{
-    expr::{ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprLet, ExprLit, ExprPath},
+    errors::{CSTError, SyntaxKind},
+    expr::{
+        ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprLet, ExprLit, ExprPath,
+        ExprUnary,
+    },
     input::CSTInput,
 };
 
@@ -12,6 +16,7 @@ pub enum Expr<I>
 where
     I: CSTInput,
 {
+    Unary(ExprUnary<I>),
     Binary(ExprBinary<I>),
     Array(ExprArray<I>),
     Block(ExprBlock<I>),
@@ -20,4 +25,16 @@ where
     Let(ExprLet<I>),
     Call(ExprCall<I>),
     Path(ExprPath<I>),
+}
+
+#[inline]
+pub(super) fn parse_left_hand_operand<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
+where
+    I: CSTInput,
+{
+    ExprPath::into_parser()
+        .map(|expr| Expr::Path(expr))
+        .boxed()
+        .parse(input)
+        .map_err(SyntaxKind::AssignLeftOperand.map_unhandle())
 }

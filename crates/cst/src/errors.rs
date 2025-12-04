@@ -93,6 +93,8 @@ pub enum PunctKind {
     Caret,
     #[error("punct `^=`")]
     CaretEq,
+    #[error("punct `!`")]
+    Not,
 }
 
 impl PunctKind {

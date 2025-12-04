@@ -24,5 +24,8 @@ pub use block::*;
 mod binary;
 pub use binary::*;
 
+mod unary;
+pub use unary::*;
+
 mod expr;
 pub use expr::*;

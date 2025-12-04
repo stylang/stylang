@@ -5,11 +5,11 @@ use parserc::{
 
 use crate::{
     errors::SyntaxKind,
-    expr::{Expr, parse_left_operand},
+    expr::{Expr, parse_left_hand_operand},
     input::CSTInput,
     punct::{
-        AndAnd, Caret, CaretEq, EqEq, Gt, GtEq, Lt, LtEq, Minus, MinusEq, OrOr, Plus, Rem, RemEq,
-        Shl, ShlEq, Shr, ShrEq, Slash, SlashEq, Star, StarEq, StarStar, StarStarEq,
+        AndAnd, Caret, CaretEq, EqEq, Gt, GtEq, Lt, LtEq, Minus, MinusEq, OrOr, Plus, PlusEq, Rem,
+        RemEq, Shl, ShlEq, Shr, ShrEq, Slash, SlashEq, Star, StarEq, StarStar, StarStarEq,
     },
 };
 
@@ -21,7 +21,7 @@ pub enum BinOp<I>
 where
     I: CSTInput,
 {
-    AddAssign(Plus<I>),
+    AddAssign(PlusEq<I>),
     Add(Plus<I>),
     SubAssign(MinusEq<I>),
     Sub(Minus<I>),
@@ -69,8 +69,8 @@ where
 {
     #[inline]
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let mut left =
-            parse_left_operand(input).map_err(SyntaxKind::ExprBinaryLeftOperand.map_unhandle())?;
+        let mut left = parse_left_hand_operand(input)
+            .map_err(SyntaxKind::ExprBinaryLeftOperand.map_unhandle())?;
 
         let mut op = input.parse()?;
 
@@ -111,6 +111,50 @@ mod tests {
         punct::Plus,
     };
 
+    use super::*;
+
+    #[test]
+    fn test_binop() {
+        macro_rules! make_test {
+            ($ident:ident, $punct: ident, $input: literal ,$expect: literal) => {
+                assert_eq!(
+                    TokenStream::from($input).parse(),
+                    Ok(BinOp::$ident($punct(
+                        None,
+                        TokenStream::from($expect),
+                        None
+                    )))
+                )
+            };
+        }
+
+        make_test!(AddAssign, PlusEq, "+==", "+=");
+        make_test!(Add, Plus, "++", "+");
+        make_test!(SubAssign, MinusEq, "-=+", "-=");
+        make_test!(Sub, Minus, "--", "-");
+        make_test!(MulAssign, StarEq, "*==", "*=");
+        make_test!(SqrtAssign, StarStarEq, "**==", "**=");
+        make_test!(Sqrt, StarStar, "**/", "**");
+        make_test!(Mul, Star, "*", "*");
+        make_test!(DivAssign, SlashEq, "/==", "/=");
+        make_test!(Div, Slash, "/", "/");
+        make_test!(RemAssign, RemEq, "%==", "%=");
+        make_test!(Rem, Rem, "%", "%");
+        make_test!(Eq, EqEq, "==/", "==");
+        make_test!(And, AndAnd, "&&=", "&&");
+        make_test!(Or, OrOr, "||=", "||");
+        make_test!(BitXorEq, CaretEq, "^==", "^=");
+        make_test!(BitXor, Caret, "^", "^");
+        make_test!(Le, LtEq, "<=/", "<=");
+        make_test!(ShlAssign, ShlEq, "<<=<", "<<=");
+        make_test!(Shl, Shl, "<</", "<<");
+        make_test!(Lt, Lt, "</", "<");
+        make_test!(ShrAssign, ShrEq, ">>=/", ">>=");
+        make_test!(Shr, Shr, ">>/", ">>");
+        make_test!(Ge, GtEq, ">=/", ">=");
+        make_test!(Gt, Gt, ">/", ">");
+    }
+
     #[test]
     fn test_binary() {
         assert_eq!(
@@ -129,7 +173,7 @@ mod tests {
                         }
                     }
                 })),
-                op: BinOp::AddAssign(Plus(
+                op: BinOp::Add(Plus(
                     Some(S(TokenStream::from((1, " ")))),
                     TokenStream::from((2, "+")),
                     Some(S(TokenStream::from((3, " "))))
