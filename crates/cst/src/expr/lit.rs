@@ -231,7 +231,7 @@ where
 }
 
 /// Perform semantic checks on the parsed number
-fn number_semantic_check<I>(number: LitNumber<I>) -> Result<LitNumber<I>, CSTError>
+fn number_semantic_check<I>(_input: &mut I, number: LitNumber<I>) -> Result<LitNumber<I>, CSTError>
 where
     I: CSTInput,
 {

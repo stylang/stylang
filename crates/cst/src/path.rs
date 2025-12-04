@@ -55,7 +55,7 @@ where
     pub segments: Punctuated<PathSegment<I>, PathSep<I>>,
 }
 
-fn check_path<I>(path: Path<I>) -> Result<Path<I>, CSTError>
+fn check_path<I>(input: &mut I, path: Path<I>) -> Result<Path<I>, CSTError>
 where
     I: CSTInput,
 {
@@ -63,7 +63,7 @@ where
         Err(CSTError::Syntax(
             SyntaxKind::Path,
             ControlFlow::Recovable,
-            path.to_span(),
+            input.to_span_at(1),
         ))
     } else {
         Ok(path)

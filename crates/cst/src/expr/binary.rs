@@ -1,11 +1,11 @@
 use parserc::{
-    ParseError,
+    Parser,
     syntax::{InputSyntaxExt, Syntax},
 };
 
 use crate::{
     errors::SyntaxKind,
-    expr::{Expr, parse_left_hand_operand},
+    expr::{Expr, ExprUnary, parse_op_lhs, parse_op_rhs},
     input::CSTInput,
     punct::{
         AndAnd, Caret, CaretEq, EqEq, Gt, GtEq, Lt, LtEq, Minus, MinusEq, OrOr, Plus, PlusEq, Rem,
@@ -69,21 +69,31 @@ where
 {
     #[inline]
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let mut left = parse_left_hand_operand(input)
+        let mut left = ExprUnary::into_parser()
+            .map(|expr| Expr::Unary(expr))
+            .boxed()
+            .or(parse_op_lhs)
+            .parse(input)
             .map_err(SyntaxKind::ExprBinaryLeftOperand.map_unhandle())?;
 
         let mut op = input.parse()?;
 
-        let mut right = input
-            .parse()
-            .map_err(|err| SyntaxKind::ExprBinaryRightOperand.map_unhandle()(err).into_fatal())?;
+        let mut right = ExprUnary::into_parser()
+            .map(|expr| Expr::Unary(expr))
+            .boxed()
+            .or(parse_op_rhs)
+            .parse(input)
+            .map_err(SyntaxKind::ExprBinaryRightOperand.map_fatal())?;
 
         while let Some(next_call) = input.parse()? {
             left = Box::new(Expr::Binary(Self { left, op, right }));
             op = next_call;
-            right = input.parse().map_err(|err| {
-                SyntaxKind::ExprBinaryRightOperand.map_unhandle()(err).into_fatal()
-            })?;
+            right = ExprUnary::into_parser()
+                .map(|expr| Expr::Unary(expr))
+                .boxed()
+                .or(parse_op_rhs)
+                .parse(input)
+                .map_err(SyntaxKind::ExprBinaryRightOperand.map_fatal())?;
         }
 
         Ok(Self { left, op, right })

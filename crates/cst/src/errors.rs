@@ -215,6 +215,8 @@ pub enum SyntaxKind {
     ExprBinaryRightOperand,
     #[error("expr binary `op`")]
     ExprBinaryOp,
+    #[error("expr unary `right operand`")]
+    ExprUnaryRightOprand,
 }
 
 impl SyntaxKind {

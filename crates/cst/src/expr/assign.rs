@@ -2,7 +2,7 @@ use parserc::syntax::Syntax;
 
 use crate::{
     errors::SyntaxKind,
-    expr::{Expr, parse_left_hand_operand},
+    expr::{Expr, parse_op_lhs},
     input::CSTInput,
     punct::Equal,
 };
@@ -15,7 +15,7 @@ where
     I: CSTInput,
 {
     /// left Operand expression.
-    #[parserc(parser = parse_left_hand_operand)]
+    #[parserc(parser = parse_op_lhs)]
     pub left: Box<Expr<I>>,
     /// punct `=`
     #[parserc(crucial)]
