@@ -1,7 +1,7 @@
 use parserc::syntax::{Delimiter, Punctuated, Syntax};
 
 use crate::{
-    expr::Expr,
+    expr::{Expr, group::Composable},
     input::CSTInput,
     punct::{BracketEnd, BracketStart, Comma},
 };
@@ -14,6 +14,24 @@ pub struct ExprArray<I>(
 )
 where
     I: CSTInput;
+
+impl<I> Composable<I> for ExprArray<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn priority(&self) -> usize {
+        1
+    }
+
+    #[inline]
+    fn compose<F>(self, _: usize, _: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        unreachable!("`ExprArray` cannot be used as an operand on the left-hand side.")
+    }
+}
 
 #[cfg(test)]
 mod tests {

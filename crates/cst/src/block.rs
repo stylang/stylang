@@ -3,7 +3,7 @@
 use parserc::syntax::{Delimiter, Syntax};
 
 use crate::{
-    expr::{Expr, ExprBlock, parse_let_init_expr},
+    expr::{Expr, ExprBlock},
     input::CSTInput,
     keyword::{Else, Let},
     pat::Pat,
@@ -20,7 +20,6 @@ where
     /// leading equal punct `=`
     pub eq: Equal<I>,
     /// init expr.
-    #[parserc(parser = parse_let_init_expr)]
     pub expr: Box<Expr<I>>,
     /// diverge `else` block.
     pub diverge: Option<(Else<I>, Box<ExprBlock<I>>)>,

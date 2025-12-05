@@ -5,6 +5,7 @@ use parserc::{
 
 use crate::{
     errors::{CSTError, SyntaxKind},
+    expr::{Expr, group::Composable},
     input::CSTInput,
 };
 
@@ -292,6 +293,22 @@ where
     Hex(LitHexNumber<I>),
     Bool(LitBool<I>),
     String(LitStr<I>),
+}
+
+impl<I> Composable<I> for ExprLit<I>
+where
+    I: CSTInput,
+{
+    fn priority(&self) -> usize {
+        1
+    }
+
+    fn compose<F>(self, _: usize, f: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        f(Expr::Lit(self))
+    }
 }
 
 #[cfg(test)]

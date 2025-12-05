@@ -1,14 +1,12 @@
-use parserc::{
-    Parser,
-    syntax::{Delimiter, InputSyntaxExt, Punctuated, Syntax},
-};
+use parserc::syntax::{Delimiter, Punctuated};
 
 use crate::{
-    errors::SyntaxKind,
-    expr::{Expr, ExprPath},
+    expr::{Expr, group::Composable},
     input::CSTInput,
     punct::{Comma, ParenEnd, ParenStart},
 };
+
+pub type CallArgs<I> = Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<Expr<I>, Comma<I>>>;
 
 /// A function call expression: invoke(a, b).
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -20,33 +18,24 @@ where
     /// function body.
     pub func: Box<Expr<I>>,
     /// call arguments.
-    pub args: Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<Expr<I>, Comma<I>>>,
+    pub args: CallArgs<I>,
 }
 
-impl<I> Syntax<I> for ExprCall<I>
+impl<I> Composable<I> for ExprCall<I>
 where
     I: CSTInput,
 {
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let mut func = ExprPath::into_parser()
-            .map(|expr| Expr::Path(expr))
-            .boxed()
-            .parse(input)
-            .map_err(SyntaxKind::ExprCall.map())?;
-
-        let mut args = input.parse().map_err(SyntaxKind::ExprCall.map())?;
-
-        while let Some(next_call) = input.parse()? {
-            func = Box::new(Expr::Call(Self { func, args }));
-            args = next_call;
-        }
-
-        Ok(Self { func, args })
+    #[inline]
+    fn priority(&self) -> usize {
+        1
     }
 
     #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.func.to_span() + self.args.to_span()
+    fn compose<F>(self, _priority: usize, f: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        f(Expr::Call(self))
     }
 }
 
@@ -56,7 +45,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        expr::{Digits, Expr, ExprLit, LitNumber},
+        expr::{Digits, Expr, ExprLit, ExprPath, LitNumber},
         input::TokenStream,
         misc::Ident,
         path::{Path, PathSegment},

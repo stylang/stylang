@@ -2,7 +2,7 @@ use parserc::syntax::Syntax;
 
 use crate::{
     errors::SyntaxKind,
-    expr::{Expr, parse_op_lhs},
+    expr::{Expr, ExprPath, group::Composable},
     input::CSTInput,
     punct::Equal,
 };
@@ -15,7 +15,10 @@ where
     I: CSTInput,
 {
     /// left Operand expression.
-    #[parserc(parser = parse_op_lhs)]
+    #[parserc(
+        parser = ExprPath::into_parser().map(|expr|Expr::Path(expr)).boxed(),
+        map_err = SyntaxKind::AssignLeftOperand.map_unhandle()
+    )]
     pub left: Box<Expr<I>>,
     /// punct `=`
     #[parserc(crucial)]
@@ -23,6 +26,24 @@ where
     /// right Operand expression.
     #[parserc(map_err = SyntaxKind::AssignRightOperand.map_unhandle())]
     pub right: Box<Expr<I>>,
+}
+
+impl<I> Composable<I> for ExprAssgin<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn priority(&self) -> usize {
+        1
+    }
+
+    #[inline]
+    fn compose<F>(self, _: usize, _: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        unreachable!("`ExprAssgin` cannot be used as an operand on the left-hand side.")
+    }
 }
 
 #[cfg(test)]

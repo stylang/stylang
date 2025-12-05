@@ -2,7 +2,7 @@ use parserc::syntax::Syntax;
 
 use crate::{
     errors::SyntaxKind,
-    expr::{Expr, parse_op_rhs},
+    expr::{Expr, group::Composable, parse_rhs},
     input::CSTInput,
     punct::{Minus, Not, Star},
 };
@@ -31,8 +31,27 @@ where
     #[parserc(crucial)]
     pub op: UnaryOp<I>,
     /// right operand.
-    #[parserc(parser = parse_op_rhs)]
+    #[parserc(
+        parser = parse_rhs.boxed(),
+        map_err = SyntaxKind::ExprUnaryRightOprand.map_unhandle()
+    )]
     pub right: Box<Expr<I>>,
+}
+
+impl<I> Composable<I> for ExprUnary<I>
+where
+    I: CSTInput,
+{
+    fn priority(&self) -> usize {
+        1
+    }
+
+    fn compose<F>(self, _: usize, f: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        f(Expr::Unary(self))
+    }
 }
 
 #[cfg(test)]
@@ -134,6 +153,32 @@ mod test {
                             }))
                         }
                     }
+                }))
+            }))
+        );
+    }
+
+    #[test]
+    fn test_nested_unary() {
+        assert_eq!(
+            TokenStream::from("!*a").parse::<Expr<_>>(),
+            Ok(Expr::Unary(ExprUnary {
+                op: UnaryOp::Not(Not(None, TokenStream::from((0, "!")), None)),
+                right: Box::new(Expr::Unary(ExprUnary {
+                    op: UnaryOp::Deref(Star(None, TokenStream::from((1, "*")), None)),
+                    right: Box::new(Expr::Path(ExprPath {
+                        qself: None,
+                        path: Path {
+                            leading_pathsep: None,
+                            segments: Punctuated {
+                                pairs: vec![],
+                                tail: Some(Box::new(PathSegment {
+                                    ident: Ident(TokenStream::from((2, "a"))),
+                                    arguments: None
+                                }))
+                            }
+                        }
+                    }))
                 }))
             }))
         );

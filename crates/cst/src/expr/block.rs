@@ -1,6 +1,11 @@
 use parserc::syntax::Syntax;
 
-use crate::{block::Block, input::CSTInput, misc::Label};
+use crate::{
+    block::Block,
+    expr::{Expr, group::Composable},
+    input::CSTInput,
+    misc::Label,
+};
 
 /// A blocked scope: `{ ... }`.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
@@ -13,6 +18,24 @@ where
     pub label: Option<Label<I>>,
     /// A braced block containing Rust statements.
     pub block: Block<I>,
+}
+
+impl<I> Composable<I> for ExprBlock<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn priority(&self) -> usize {
+        1
+    }
+
+    #[inline]
+    fn compose<F>(self, _priority: usize, f: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        f(Expr::Block(self))
+    }
 }
 
 #[cfg(test)]

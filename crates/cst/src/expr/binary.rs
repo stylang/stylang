@@ -1,15 +1,13 @@
-use parserc::{
-    Parser,
-    syntax::{InputSyntaxExt, Syntax},
-};
+use parserc::syntax::Syntax;
 
 use crate::{
     errors::SyntaxKind,
-    expr::{Expr, ExprUnary, parse_op_lhs, parse_op_rhs},
+    expr::{Expr, group::Composable},
     input::CSTInput,
     punct::{
-        AndAnd, Caret, CaretEq, EqEq, Gt, GtEq, Lt, LtEq, Minus, MinusEq, OrOr, Plus, PlusEq, Rem,
-        RemEq, Shl, ShlEq, Shr, ShrEq, Slash, SlashEq, Star, StarEq, StarStar, StarStarEq,
+        And, AndAnd, AndEq, Caret, CaretEq, EqEq, Equal, Gt, GtEq, Lt, LtEq, Minus, MinusEq, NotEq,
+        Or, OrEq, OrOr, Plus, PlusEq, Rem, RemEq, Shl, ShlEq, Shr, ShrEq, Slash, SlashEq, Star,
+        StarEq, StarStar, StarStarEq,
     },
 };
 
@@ -21,31 +19,119 @@ pub enum BinOp<I>
 where
     I: CSTInput,
 {
+    /// operator `+=`, level 12,
     AddAssign(PlusEq<I>),
-    Add(Plus<I>),
+    /// operator `-=`, level 12,
     SubAssign(MinusEq<I>),
-    Sub(Minus<I>),
+    /// operator `*=`, level 12,
     MulAssign(StarEq<I>),
+    /// operator `**=`, level 12,
     SqrtAssign(StarStarEq<I>),
-    Sqrt(StarStar<I>),
-    Mul(Star<I>),
+    /// operator `/=`, level 12,
     DivAssign(SlashEq<I>),
-    Div(Slash<I>),
+    /// operator `|=`, level 12,
+    BitOrAssign(OrEq<I>),
+    /// operator `&=`, level 12,
+    BitAndAssign(AndEq<I>),
+    /// operator `%=`, level 12,
     RemAssign(RemEq<I>),
-    Rem(Rem<I>),
-    Eq(EqEq<I>),
-    And(AndAnd<I>),
-    Or(OrOr<I>),
-    BitXorEq(CaretEq<I>),
-    BitXor(Caret<I>),
-    Le(LtEq<I>),
+    /// operator `<<=`, level 12,
     ShlAssign(ShlEq<I>),
-    Shl(Shl<I>),
-    Lt(Lt<I>),
+    /// operator `>>=`, level 12,
     ShrAssign(ShrEq<I>),
+    /// operator `^=`, level 12,
+    BitXorAssign(CaretEq<I>),
+
+    /// operator `**`, level 2
+    Sqrt(StarStar<I>),
+
+    /// operator `*`, level 3,
+    Mul(Star<I>),
+    /// operator `/`, level 3,
+    Div(Slash<I>),
+    /// operator `%`, level 3,
+    Rem(Rem<I>),
+
+    /// operator `+`, level 4,
+    Add(Plus<I>),
+    /// operator `-`, level 4,
+    Sub(Minus<I>),
+
+    /// operator `<<`, level 5,
+    Shl(Shl<I>),
+    /// operator `<<`, level 5,
     Shr(Shr<I>),
+
+    /// operator `&&`, level 10,
+    And(AndAnd<I>),
+
+    /// operator `||`, level 11,
+    Or(OrOr<I>),
+
+    /// operator `&`, level 6,
+    BitAnd(And<I>),
+    /// operator `^`, level 7,
+    BitXor(Caret<I>),
+    /// operator `|`, level 8,
+    BitOr(Or<I>),
+
+    /// operator `==`, level 9,
+    Eq(EqEq<I>),
+    /// operator `!=`, level 9,
+    NotEq(NotEq<I>),
+    /// operator `<=`, level 9,
+    Le(LtEq<I>),
+    /// operator `<`, level 9,
+    Lt(Lt<I>),
+    /// operator `>=`, level 9,
     Ge(GtEq<I>),
+    /// operator `>`, level 9,
     Gt(Gt<I>),
+
+    /// operator `=`, level 12,
+    Assign(Equal<I>),
+}
+
+#[allow(unused)]
+impl<I> BinOp<I>
+where
+    I: CSTInput,
+{
+    pub(super) fn priority(&self) -> usize {
+        match self {
+            BinOp::Sqrt(_) => 2,
+            BinOp::Mul(_) => 3,
+            BinOp::Div(_) => 3,
+            BinOp::Rem(_) => 3,
+            BinOp::Add(_) => 4,
+            BinOp::Sub(_) => 4,
+            BinOp::Shl(_) => 5,
+            BinOp::Shr(_) => 5,
+            BinOp::BitAnd(_) => 6,
+            BinOp::BitXor(_) => 7,
+            BinOp::BitOr(_) => 8,
+            BinOp::Eq(_) => 9,
+            BinOp::NotEq(_) => 9,
+            BinOp::Le(_) => 9,
+            BinOp::Lt(_) => 9,
+            BinOp::Ge(_) => 9,
+            BinOp::Gt(_) => 9,
+            BinOp::And(_) => 10,
+            BinOp::Or(_) => 11,
+            BinOp::Assign(_) => 12,
+            BinOp::AddAssign(_) => 12,
+            BinOp::SubAssign(_) => 12,
+            BinOp::MulAssign(_) => 12,
+            BinOp::SqrtAssign(_) => 12,
+            BinOp::DivAssign(_) => 12,
+            BinOp::BitOrAssign(_) => 12,
+            BinOp::BitAndAssign(_) => 12,
+            BinOp::RemAssign(_) => 12,
+            BinOp::ShlAssign(_) => 12,
+            BinOp::ShrAssign(_) => 12,
+            BinOp::BitXorAssign(_) => 12,
+        }
+    }
 }
 
 /// A binary operation: `a + b`, `a += b`.
@@ -63,45 +149,26 @@ where
     pub right: Box<Expr<I>>,
 }
 
-impl<I> Syntax<I> for ExprBinary<I>
+impl<I> Composable<I> for ExprBinary<I>
 where
     I: CSTInput,
 {
     #[inline]
-    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let mut left = ExprUnary::into_parser()
-            .map(|expr| Expr::Unary(expr))
-            .boxed()
-            .or(parse_op_lhs)
-            .parse(input)
-            .map_err(SyntaxKind::ExprBinaryLeftOperand.map_unhandle())?;
-
-        let mut op = input.parse()?;
-
-        let mut right = ExprUnary::into_parser()
-            .map(|expr| Expr::Unary(expr))
-            .boxed()
-            .or(parse_op_rhs)
-            .parse(input)
-            .map_err(SyntaxKind::ExprBinaryRightOperand.map_fatal())?;
-
-        while let Some(next_call) = input.parse()? {
-            left = Box::new(Expr::Binary(Self { left, op, right }));
-            op = next_call;
-            right = ExprUnary::into_parser()
-                .map(|expr| Expr::Unary(expr))
-                .boxed()
-                .or(parse_op_rhs)
-                .parse(input)
-                .map_err(SyntaxKind::ExprBinaryRightOperand.map_fatal())?;
-        }
-
-        Ok(Self { left, op, right })
+    fn priority(&self) -> usize {
+        2
     }
 
     #[inline]
-    fn to_span(&self) -> parserc::Span {
-        self.left.to_span() + self.right.to_span()
+    fn compose<F>(mut self, priority: usize, f: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        if self.priority() > priority {
+            self.right = Box::new((*self.right).compose(priority, f));
+            Expr::Binary(self)
+        } else {
+            f(Expr::Binary(self))
+        }
     }
 }
 
@@ -153,7 +220,7 @@ mod tests {
         make_test!(Eq, EqEq, "==/", "==");
         make_test!(And, AndAnd, "&&=", "&&");
         make_test!(Or, OrOr, "||=", "||");
-        make_test!(BitXorEq, CaretEq, "^==", "^=");
+        make_test!(BitXorAssign, CaretEq, "^==", "^=");
         make_test!(BitXor, Caret, "^", "^");
         make_test!(Le, LtEq, "<=/", "<=");
         make_test!(ShlAssign, ShlEq, "<<=<", "<<=");

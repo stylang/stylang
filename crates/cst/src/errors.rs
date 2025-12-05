@@ -55,6 +55,8 @@ pub enum PunctKind {
     AndEq,
     #[error("punct `||`")]
     OrOr,
+    #[error("punct `|=`")]
+    OrEq,
     #[error("punct `<`")]
     Lt,
     #[error("punct `<=`")]
@@ -89,12 +91,16 @@ pub enum PunctKind {
     RemEq,
     #[error("punct `==`")]
     EqEq,
+    #[error("punct `!=`")]
+    NotEq,
     #[error("punct `^`")]
     Caret,
     #[error("punct `^=`")]
     CaretEq,
     #[error("punct `!`")]
     Not,
+    #[error("punct `.`")]
+    Dot,
 }
 
 impl PunctKind {
@@ -217,6 +223,10 @@ pub enum SyntaxKind {
     ExprBinaryOp,
     #[error("expr unary `right operand`")]
     ExprUnaryRightOprand,
+    #[error("expr `field`")]
+    ExprField,
+    #[error("expr `field dot`")]
+    ExprFieldDot,
 }
 
 impl SyntaxKind {

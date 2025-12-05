@@ -1,8 +1,7 @@
-use parserc::{Parser, syntax::Syntax};
+use parserc::syntax::Syntax;
 
 use crate::{
-    errors::{CSTError, SyntaxKind},
-    expr::{Expr, ExprArray, ExprBlock, ExprCall, ExprLit, ExprPath},
+    expr::{Expr, group::Composable},
     input::CSTInput,
     keyword::Let,
     pat::Pat,
@@ -23,24 +22,23 @@ where
     /// punct `=`
     pub eq: Equal<I>,
     /// right Operand expression.
-    #[parserc(parser = parse_let_init_expr)]
     pub expr: Box<Expr<I>>,
 }
 
-#[inline]
-pub(crate) fn parse_let_init_expr<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
+impl<I> Composable<I> for ExprLet<I>
 where
     I: CSTInput,
 {
-    ExprArray::into_parser()
-        .map(|expr| Expr::Array(expr))
-        .or(ExprBlock::into_parser().map(|expr| Expr::Block(expr)))
-        .or(ExprLit::into_parser().map(|expr| Expr::Lit(expr)))
-        .or(ExprCall::into_parser().map(|expr| Expr::Call(expr)))
-        .or(ExprPath::into_parser().map(|expr| Expr::Path(expr)))
-        .boxed()
-        .parse(input)
-        .map_err(SyntaxKind::LetInitExpr.map_unhandle())
+    fn priority(&self) -> usize {
+        1
+    }
+
+    fn compose<F>(self, _: usize, _f: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        unreachable!("`ExprLet` cannot be used as an operand on the left-hand side.")
+    }
 }
 
 #[cfg(test)]

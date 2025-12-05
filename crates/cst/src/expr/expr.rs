@@ -3,54 +3,192 @@ use parserc::{Parser, syntax::Syntax};
 use crate::{
     errors::{CSTError, SyntaxKind},
     expr::{
-        ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprLet, ExprLit, ExprPath,
-        ExprUnary,
+        BinOp, CallArgs, ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprClosure,
+        ExprConst, ExprFiled, ExprLet, ExprLit, ExprPath, ExprUnary, Member, group::Composable,
     },
     input::CSTInput,
+    punct::Dot,
 };
 
 /// A stylang expression.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Expr<I>
 where
     I: CSTInput,
 {
-    Binary(ExprBinary<I>),
-    Unary(ExprUnary<I>),
+    Field(ExprFiled<I>),
     Call(ExprCall<I>),
-    Array(ExprArray<I>),
+    Binary(ExprBinary<I>),
+
+    ///////////////////
+    /// lhs
+    Const(ExprConst<I>),
+    Unary(ExprUnary<I>),
     Block(ExprBlock<I>),
-    Assign(ExprAssgin<I>),
     Lit(ExprLit<I>),
-    Let(ExprLet<I>),
     Path(ExprPath<I>),
+
+    ///////////////
+    /// rhs
+    Closure(ExprClosure<I>),
+    Assign(ExprAssgin<I>),
+    Let(ExprLet<I>),
+    Array(ExprArray<I>),
 }
 
-#[inline]
-pub(super) fn parse_op_lhs<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
+impl<I> Syntax<I> for Expr<I>
 where
     I: CSTInput,
 {
-    ExprPath::into_parser()
-        .map(|expr| Expr::Path(expr))
-        .boxed()
-        .parse(input)
-        .map_err(SyntaxKind::AssignLeftOperand.map_unhandle())
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        if let Some(expr) = ExprAssgin::into_parser()
+            .map(Expr::Assign)
+            .or(ExprArray::into_parser().map(Expr::Array))
+            .or(ExprLet::into_parser().map(Expr::Let))
+            .or(ExprArray::into_parser().map(Expr::Array))
+            .or(ExprClosure::into_parser().map(Expr::Closure))
+            .ok()
+            .parse(input)?
+        {
+            return Ok(expr);
+        }
+
+        let mut lhs = parse_lhs(input)?;
+
+        loop {
+            if let Some(op) = BinOp::into_parser().ok().parse(input)? {
+                let rhs =
+                    parse_rhs(input).map_err(SyntaxKind::ExprBinaryRightOperand.map_fatal())?;
+
+                lhs = lhs.compose(op.priority(), |expr| {
+                    Expr::Binary(ExprBinary {
+                        left: Box::new(expr),
+                        op,
+                        right: Box::new(rhs),
+                    })
+                });
+
+                continue;
+            }
+
+            if let Some(dot) = Dot::into_parser().ok().parse(input)? {
+                let member = Member::parse(input)?;
+
+                lhs = lhs.compose(1, |expr| {
+                    Expr::Field(ExprFiled {
+                        base: Box::new(expr),
+                        dot,
+                        member,
+                    })
+                });
+
+                continue;
+            }
+
+            if let Some(args) = CallArgs::into_parser().ok().parse(input)? {
+                lhs = lhs.compose(1, |expr| {
+                    Expr::Call(ExprCall {
+                        func: Box::new(expr),
+                        args,
+                    })
+                });
+
+                continue;
+            }
+
+            break;
+        }
+
+        Ok(lhs)
+    }
+
+    fn to_span(&self) -> parserc::Span {
+        match self {
+            Expr::Field(expr) => expr.base.to_span() + expr.member.to_span(),
+            Expr::Closure(expr) => expr.to_span(),
+            Expr::Const(expr) => expr.to_span(),
+            Expr::Binary(expr) => expr.left.to_span() + expr.right.to_span(),
+            Expr::Unary(expr) => expr.to_span(),
+            Expr::Call(expr) => expr.func.to_span() + expr.args.to_span(),
+            Expr::Array(expr) => expr.to_span(),
+            Expr::Block(expr) => expr.to_span(),
+            Expr::Assign(expr) => expr.to_span(),
+            Expr::Lit(expr) => expr.to_span(),
+            Expr::Let(expr) => expr.to_span(),
+            Expr::Path(expr) => expr.to_span(),
+        }
+    }
 }
 
-#[inline]
-pub(super) fn parse_op_rhs<I>(input: &mut I) -> Result<Box<Expr<I>>, CSTError>
+impl<I> Composable<I> for Expr<I>
 where
     I: CSTInput,
 {
-    ExprCall::into_parser()
-        .map(|expr| Expr::Call(expr))
-        .or(ExprArray::into_parser().map(|expr| Expr::Array(expr)))
-        .or(ExprBlock::into_parser().map(|expr| Expr::Block(expr)))
-        .or(ExprLit::into_parser().map(|expr| Expr::Lit(expr)))
-        .or(ExprPath::into_parser().map(|expr| Expr::Path(expr)))
-        .boxed()
+    fn priority(&self) -> usize {
+        match self {
+            Expr::Field(expr) => expr.priority(),
+            Expr::Call(expr) => expr.priority(),
+            Expr::Binary(expr) => expr.priority(),
+            Expr::Const(expr) => expr.priority(),
+            Expr::Unary(expr) => expr.priority(),
+            Expr::Block(expr) => expr.priority(),
+            Expr::Lit(expr) => expr.priority(),
+            Expr::Path(expr) => expr.priority(),
+            Expr::Closure(expr) => expr.priority(),
+            Expr::Assign(expr) => expr.priority(),
+            Expr::Let(expr) => expr.priority(),
+            Expr::Array(expr) => expr.priority(),
+        }
+    }
+
+    fn compose<F>(self, priority: usize, f: F) -> Expr<I>
+    where
+        F: FnOnce(Expr<I>) -> Expr<I>,
+    {
+        match self {
+            Expr::Field(expr) => expr.compose(priority, f),
+            Expr::Call(expr) => expr.compose(priority, f),
+            Expr::Binary(expr) => expr.compose(priority, f),
+            Expr::Const(expr) => expr.compose(priority, f),
+            Expr::Unary(expr) => expr.compose(priority, f),
+            Expr::Block(expr) => expr.compose(priority, f),
+            Expr::Lit(expr) => expr.compose(priority, f),
+            Expr::Path(expr) => expr.compose(priority, f),
+            Expr::Closure(expr) => expr.compose(priority, f),
+            Expr::Assign(expr) => expr.compose(priority, f),
+            Expr::Let(expr) => expr.compose(priority, f),
+            Expr::Array(expr) => expr.compose(priority, f),
+        }
+    }
+}
+
+#[inline]
+fn parse_lhs<I>(input: &mut I) -> Result<Expr<I>, CSTError>
+where
+    I: CSTInput,
+{
+    ExprConst::into_parser()
+        .map(Expr::Const)
+        .or(ExprUnary::into_parser().map(Expr::Unary))
+        .or(ExprBlock::into_parser().map(Expr::Block))
+        .or(ExprLit::into_parser().map(Expr::Lit))
+        .or(ExprPath::into_parser().map(Expr::Path))
         .parse(input)
-        .map_err(SyntaxKind::AssignLeftOperand.map_unhandle())
+}
+
+#[inline]
+pub(super) fn parse_rhs<I>(input: &mut I) -> Result<Expr<I>, CSTError>
+where
+    I: CSTInput,
+{
+    ExprArray::into_parser()
+        .map(Expr::Array)
+        .or(ExprArray::into_parser().map(Expr::Array))
+        .or(ExprConst::into_parser().map(Expr::Const))
+        .or(ExprUnary::into_parser().map(Expr::Unary))
+        .or(ExprBlock::into_parser().map(Expr::Block))
+        .or(ExprLit::into_parser().map(Expr::Lit))
+        .or(ExprPath::into_parser().map(Expr::Path))
+        .parse(input)
 }
