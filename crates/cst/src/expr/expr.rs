@@ -4,8 +4,8 @@ use crate::{
     errors::{CSTError, SemanticsKind, SyntaxKind},
     expr::{
         BinOp, CallArgs, ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprClosure,
-        ExprConst, ExprFiled, ExprIndex, ExprLet, ExprLit, ExprMethodCall, ExprParen, ExprPath,
-        ExprUnary, Index, Member, group::Composable,
+        ExprConst, ExprFiled, ExprIndex, ExprInfer, ExprLet, ExprLit, ExprMethodCall, ExprParen,
+        ExprPath, ExprUnary, Index, Member, group::Composable,
     },
     input::CSTInput,
     path::PathArguments,
@@ -19,6 +19,7 @@ pub enum Expr<I>
 where
     I: CSTInput,
 {
+    Infer(ExprInfer<I>),
     Field(ExprFiled<I>),
     Call(ExprCall<I>),
     Index(ExprIndex<I>),
@@ -50,6 +51,7 @@ where
         if let Some(expr) = ExprAssgin::into_parser()
             .map(Expr::Assign)
             .or(ExprLet::into_parser().map(Expr::Let))
+            .or(ExprInfer::into_parser().map(Expr::Infer))
             .or(ExprClosure::into_parser().map(Expr::Closure))
             .ok()
             .parse(input)?
@@ -171,6 +173,7 @@ where
             Expr::Path(expr) => expr.to_span(),
             Expr::Paren(expr) => expr.to_span(),
             Expr::Index(expr) => expr.expr.to_span() + expr.index.to_span(),
+            Expr::Infer(expr) => expr.0.to_span(),
         }
     }
 }
@@ -196,6 +199,7 @@ where
             Expr::Array(expr) => expr.priority(),
             Expr::Paren(expr) => expr.priority(),
             Expr::Index(expr) => expr.priority(),
+            Expr::Infer(expr) => expr.priority(),
         }
     }
 
@@ -219,6 +223,7 @@ where
             Expr::Array(expr) => expr.compose(priority, f),
             Expr::Paren(expr) => expr.compose(priority, f),
             Expr::Index(expr) => expr.compose(priority, f),
+            Expr::Infer(expr) => expr.compose(priority, f),
         }
     }
 }

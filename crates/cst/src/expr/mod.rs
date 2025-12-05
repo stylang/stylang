@@ -44,5 +44,8 @@ pub use paren::*;
 mod index;
 pub use index::*;
 
+mod infer;
+pub use infer::*;
+
 mod expr;
 pub use expr::*;

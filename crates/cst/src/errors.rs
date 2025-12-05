@@ -101,6 +101,8 @@ pub enum PunctKind {
     Not,
     #[error("punct `.`")]
     Dot,
+    #[error("punct `_`")]
+    Underscore,
 }
 
 impl PunctKind {
@@ -215,6 +217,8 @@ pub enum SyntaxKind {
     LetInitExpr,
     #[error("expr `call`")]
     ExprCall,
+    #[error("expr `infer`")]
+    ExprInfer,
     #[error("expr binary `left operand`")]
     ExprBinaryLeftOperand,
     #[error("expr binary `right operand`")]
