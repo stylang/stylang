@@ -25,11 +25,11 @@ where
     }
 
     #[inline]
-    fn compose<F>(self, _: usize, _: F) -> super::Expr<I>
+    fn compose<F>(self, _: usize, f: F) -> super::Expr<I>
     where
         F: FnOnce(super::Expr<I>) -> super::Expr<I>,
     {
-        unreachable!("`ExprArray` cannot be used as an operand on the left-hand side.")
+        f(Expr::Array(self))
     }
 }
 

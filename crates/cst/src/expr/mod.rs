@@ -41,5 +41,8 @@ pub use field::*;
 mod paren;
 pub use paren::*;
 
+mod index;
+pub use index::*;
+
 mod expr;
 pub use expr::*;
