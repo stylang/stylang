@@ -273,7 +273,10 @@ impl OverflowKind {
 
 /// Semantics error.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SemanticsKind {}
+pub enum SemanticsKind {
+    #[error("method call `turbofish`")]
+    TurboFish,
+}
 
 impl SemanticsKind {
     /// Map error to this kind.

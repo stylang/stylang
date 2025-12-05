@@ -1,12 +1,14 @@
 use parserc::{Parser, syntax::Syntax};
 
 use crate::{
-    errors::{CSTError, SyntaxKind},
+    errors::{CSTError, SemanticsKind, SyntaxKind},
     expr::{
         BinOp, CallArgs, ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprClosure,
-        ExprConst, ExprFiled, ExprLet, ExprLit, ExprPath, ExprUnary, Member, group::Composable,
+        ExprConst, ExprFiled, ExprLet, ExprLit, ExprMethodCall, ExprParen, ExprPath, ExprUnary,
+        Member, group::Composable,
     },
     input::CSTInput,
+    path::PathArguments,
     punct::Dot,
 };
 
@@ -19,10 +21,12 @@ where
 {
     Field(ExprFiled<I>),
     Call(ExprCall<I>),
+    MethodCall(ExprMethodCall<I>),
     Binary(ExprBinary<I>),
 
     ///////////////////
     /// lhs
+    Paren(ExprParen<I>),
     Const(ExprConst<I>),
     Unary(ExprUnary<I>),
     Block(ExprBlock<I>),
@@ -86,7 +90,36 @@ where
                 continue;
             }
 
+            let turbofish = PathArguments::into_parser().ok().parse(input)?;
+
             if let Some(args) = CallArgs::into_parser().ok().parse(input)? {
+                match lhs {
+                    Expr::Field(ExprFiled { base, dot, member }) => {
+                        if let Member::Named(ident) = member {
+                            lhs = Expr::MethodCall(ExprMethodCall {
+                                receiver: base,
+                                dot,
+                                ident,
+                                turbofish,
+                                args,
+                            });
+
+                            continue;
+                        }
+
+                        // semantic check.
+                        if let Some(turbofish) = turbofish {
+                            return Err(CSTError::Semantics(
+                                SemanticsKind::TurboFish,
+                                turbofish.to_span(),
+                            ));
+                        }
+
+                        lhs = Expr::Field(ExprFiled { base, dot, member });
+                    }
+                    _ => {}
+                }
+
                 lhs = lhs.compose(1, |expr| {
                     Expr::Call(ExprCall {
                         func: Box::new(expr),
@@ -95,6 +128,14 @@ where
                 });
 
                 continue;
+            }
+
+            // semantic check.
+            if let Some(turbofish) = turbofish {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::TurboFish,
+                    turbofish.to_span(),
+                ));
             }
 
             break;
@@ -111,12 +152,14 @@ where
             Expr::Binary(expr) => expr.left.to_span() + expr.right.to_span(),
             Expr::Unary(expr) => expr.to_span(),
             Expr::Call(expr) => expr.func.to_span() + expr.args.to_span(),
+            Expr::MethodCall(expr) => expr.receiver.to_span() + expr.args.to_span(),
             Expr::Array(expr) => expr.to_span(),
             Expr::Block(expr) => expr.to_span(),
             Expr::Assign(expr) => expr.to_span(),
             Expr::Lit(expr) => expr.to_span(),
             Expr::Let(expr) => expr.to_span(),
             Expr::Path(expr) => expr.to_span(),
+            Expr::Paren(expr) => expr.to_span(),
         }
     }
 }
@@ -129,6 +172,7 @@ where
         match self {
             Expr::Field(expr) => expr.priority(),
             Expr::Call(expr) => expr.priority(),
+            Expr::MethodCall(expr) => expr.priority(),
             Expr::Binary(expr) => expr.priority(),
             Expr::Const(expr) => expr.priority(),
             Expr::Unary(expr) => expr.priority(),
@@ -139,6 +183,7 @@ where
             Expr::Assign(expr) => expr.priority(),
             Expr::Let(expr) => expr.priority(),
             Expr::Array(expr) => expr.priority(),
+            Expr::Paren(expr) => expr.priority(),
         }
     }
 
@@ -149,6 +194,7 @@ where
         match self {
             Expr::Field(expr) => expr.compose(priority, f),
             Expr::Call(expr) => expr.compose(priority, f),
+            Expr::MethodCall(expr) => expr.compose(priority, f),
             Expr::Binary(expr) => expr.compose(priority, f),
             Expr::Const(expr) => expr.compose(priority, f),
             Expr::Unary(expr) => expr.compose(priority, f),
@@ -159,6 +205,7 @@ where
             Expr::Assign(expr) => expr.compose(priority, f),
             Expr::Let(expr) => expr.compose(priority, f),
             Expr::Array(expr) => expr.compose(priority, f),
+            Expr::Paren(expr) => expr.compose(priority, f),
         }
     }
 }
@@ -170,6 +217,7 @@ where
 {
     ExprConst::into_parser()
         .map(Expr::Const)
+        .or(ExprParen::into_parser().map(Expr::Paren))
         .or(ExprUnary::into_parser().map(Expr::Unary))
         .or(ExprBlock::into_parser().map(Expr::Block))
         .or(ExprLit::into_parser().map(Expr::Lit))
@@ -184,6 +232,7 @@ where
 {
     ExprArray::into_parser()
         .map(Expr::Array)
+        .or(ExprParen::into_parser().map(Expr::Paren))
         .or(ExprArray::into_parser().map(Expr::Array))
         .or(ExprConst::into_parser().map(Expr::Const))
         .or(ExprUnary::into_parser().map(Expr::Unary))

@@ -1,5 +1,7 @@
 //! A stylang expression.
 
+mod group;
+
 mod lit;
 pub use lit::*;
 
@@ -36,7 +38,8 @@ pub use closure::*;
 mod field;
 pub use field::*;
 
-mod group;
+mod paren;
+pub use paren::*;
 
 mod expr;
 pub use expr::*;

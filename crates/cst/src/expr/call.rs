@@ -3,7 +3,9 @@ use parserc::syntax::{Delimiter, Punctuated};
 use crate::{
     expr::{Expr, group::Composable},
     input::CSTInput,
-    punct::{Comma, ParenEnd, ParenStart},
+    misc::Ident,
+    path::PathArguments,
+    punct::{Comma, Dot, ParenEnd, ParenStart},
 };
 
 pub type CallArgs<I> = Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<Expr<I>, Comma<I>>>;
@@ -36,6 +38,43 @@ where
         F: FnOnce(super::Expr<I>) -> super::Expr<I>,
     {
         f(Expr::Call(self))
+    }
+}
+
+/// A function call expression: invoke(a, b).
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ExprMethodCall<I>
+where
+    I: CSTInput,
+{
+    /// function body.
+    pub receiver: Box<Expr<I>>,
+    /// punct `.`
+    pub dot: Dot<I>,
+    /// method name.
+    pub ident: Ident<I>,
+    /// syntax `::<...>`
+    pub turbofish: Option<PathArguments<I>>,
+    /// call arguments.
+    pub args: CallArgs<I>,
+}
+
+impl<I> Composable<I> for ExprMethodCall<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn priority(&self) -> usize {
+        1
+    }
+
+    #[inline]
+    fn compose<F>(self, _priority: usize, f: F) -> super::Expr<I>
+    where
+        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
+    {
+        f(Expr::MethodCall(self))
     }
 }
 
