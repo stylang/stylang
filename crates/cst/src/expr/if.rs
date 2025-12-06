@@ -34,7 +34,7 @@ where
     /// leading keyword `else`
     pub keyword: Else<I>,
     /// `if {}` or `{}`
-    pub branch: Or<Box<ExprIf<I>>, Box<Block<I>>>,
+    pub branch: Or<Box<ExprIf<I>>, Block<I>>,
 }
 
 impl<I> Composable<I> for ExprIf<I>
@@ -196,7 +196,7 @@ mod tests {
                                     TokenStream::from((32, "else")),
                                     Some(S(TokenStream::from((36, " "))))
                                 ),
-                                branch: Or::Second(Box::new(Block(Delimiter {
+                                branch: Or::Second(Block(Delimiter {
                                     start: BraceStart(
                                         None,
                                         TokenStream::from((37, "{")),
@@ -223,7 +223,7 @@ mod tests {
                                         }),
                                         None
                                     )]
-                                })))
+                                }))
                             })
                         }))
                     })
