@@ -59,13 +59,14 @@ mod tests {
     use parserc::syntax::{Delimiter, InputSyntaxExt, Punctuated};
 
     use crate::{
-        expr::{Expr, ExprMethodCall, ExprPath},
+        expr::{Expr, ExprInfer, ExprMethodCall, ExprPath},
         generics::GenericArgument,
         input::TokenStream,
         misc::Ident,
         path::{Path, PathArguments, PathSegment},
-        punct::{AngleBracketEnd, AngleBracketStart, Dot, ParenEnd, ParenStart, PathSep},
-        ty::Type,
+        punct::{
+            AngleBracketEnd, AngleBracketStart, Dot, ParenEnd, ParenStart, PathSep, Underscore,
+        },
     };
 
     #[test]
@@ -95,16 +96,9 @@ mod tests {
                         end: AngleBracketEnd(None, TokenStream::from((7, ">")), None),
                         body: Punctuated {
                             pairs: vec![],
-                            tail: Some(Box::new(GenericArgument::Type(Type::Path(Path {
-                                leading_pathsep: None,
-                                segments: Punctuated {
-                                    pairs: vec![],
-                                    tail: Some(Box::new(PathSegment {
-                                        ident: Ident(TokenStream::from((6, "_"))),
-                                        arguments: None
-                                    }))
-                                }
-                            }))))
+                            tail: Some(Box::new(GenericArgument::Const(Expr::Infer(ExprInfer(
+                                Underscore(None, TokenStream::from((6, "_")), None)
+                            )))))
                         }
                     }
                 }),

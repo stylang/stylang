@@ -3,7 +3,7 @@
 use parserc::syntax::{Delimiter, Or, Punctuated, Syntax};
 
 use crate::{
-    expr::ExprLit,
+    expr::{Expr, ExprLit},
     input::CSTInput,
     keyword::{Const, Where},
     misc::Ident,
@@ -44,6 +44,7 @@ where
         colon: Colon<I>,
         bounds: Punctuated<TraitBound<I>, Plus<I>>,
     },
+    Const(Expr<I>),
     /// A type argument.
     Type(Type<I>),
 }

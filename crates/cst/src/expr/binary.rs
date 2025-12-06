@@ -155,7 +155,7 @@ where
 {
     #[inline]
     fn priority(&self) -> usize {
-        2
+        self.op.priority()
     }
 
     #[inline]
@@ -176,16 +176,16 @@ where
 mod tests {
     use parserc::{
         ControlFlow, Span,
-        syntax::{InputSyntaxExt, Punctuated},
+        syntax::{Delimiter, InputSyntaxExt, Punctuated},
     };
 
     use crate::{
         errors::{CSTError, SyntaxKind},
-        expr::{BinOp, Expr, ExprBinary, ExprPath},
+        expr::{BinOp, Digits, Expr, ExprBinary, ExprCall, ExprLit, ExprPath, LitNumber},
         input::TokenStream,
         misc::{Ident, S},
         path::{Path, PathSegment},
-        punct::Plus,
+        punct::{ParenEnd, ParenStart, Plus},
     };
 
     use super::*;
@@ -277,6 +277,76 @@ mod tests {
                 ControlFlow::Fatal,
                 Span::Range(5..5)
             ))
+        );
+    }
+
+    #[test]
+    fn test_assign() {
+        assert_eq!(
+            TokenStream::from("a += b() * 10").parse::<Expr<_>>(),
+            Ok(Expr::Binary(ExprBinary {
+                left: Box::new(Expr::Path(ExprPath {
+                    qself: None,
+                    path: Path {
+                        leading_pathsep: None,
+                        segments: Punctuated {
+                            pairs: vec![],
+                            tail: Some(Box::new(PathSegment {
+                                ident: Ident(TokenStream::from((0, "a"))),
+                                arguments: None
+                            }))
+                        }
+                    }
+                })),
+                op: BinOp::AddAssign(PlusEq(
+                    Some(S(TokenStream::from((1, " ")))),
+                    TokenStream::from((2, "+=")),
+                    Some(S(TokenStream::from((4, " "))))
+                )),
+                right: Box::new(Expr::Binary(ExprBinary {
+                    left: Box::new(Expr::Call(ExprCall {
+                        func: Box::new(Expr::Path(ExprPath {
+                            qself: None,
+                            path: Path {
+                                leading_pathsep: None,
+                                segments: Punctuated {
+                                    pairs: vec![],
+                                    tail: Some(Box::new(PathSegment {
+                                        ident: Ident(TokenStream::from((5, "b"))),
+                                        arguments: None
+                                    }))
+                                }
+                            }
+                        })),
+                        args: Delimiter {
+                            start: ParenStart(None, TokenStream::from((6, "(")), None),
+                            end: ParenEnd(
+                                None,
+                                TokenStream::from((7, ")")),
+                                Some(S(TokenStream::from((8, " "))))
+                            ),
+                            body: Punctuated {
+                                pairs: vec![],
+                                tail: None
+                            }
+                        }
+                    })),
+                    op: BinOp::Mul(Star(
+                        None,
+                        TokenStream::from((9, "*")),
+                        Some(S(TokenStream::from((10, " "))))
+                    )),
+                    right: Box::new(Expr::Lit(ExprLit::Number(LitNumber {
+                        sign: None,
+                        trunc: Some(Digits {
+                            input: TokenStream::from((11, "10")),
+                            value: 10
+                        }),
+                        fract: None,
+                        exp: None
+                    })))
+                }))
+            }))
         );
     }
 }
