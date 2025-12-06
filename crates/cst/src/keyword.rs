@@ -63,3 +63,6 @@ define_keyword!(As, "as");
 define_keyword!(Let, "let");
 define_keyword!(If, "if");
 define_keyword!(Else, "else");
+define_keyword!(Continue, "continue");
+define_keyword!(For, "for");
+define_keyword!(In, "in");

@@ -4,8 +4,9 @@ use crate::{
     errors::{CSTError, SemanticsKind, SyntaxKind},
     expr::{
         BinOp, CallArgs, ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprClosure,
-        ExprConst, ExprFiled, ExprIf, ExprIndex, ExprInfer, ExprLet, ExprLit, ExprMethodCall,
-        ExprPath, ExprReference, ExprTuple, ExprUnary, Index, Member, group::Composable,
+        ExprConst, ExprContinue, ExprFiled, ExprForLoop, ExprIf, ExprIndex, ExprInfer, ExprLet,
+        ExprLit, ExprMethodCall, ExprPath, ExprReference, ExprTuple, ExprUnary, Index, Member,
+        group::Composable,
     },
     input::CSTInput,
     path::PathArguments,
@@ -19,6 +20,8 @@ pub enum Expr<I>
 where
     I: CSTInput,
 {
+    For(ExprForLoop<I>),
+    Continue(ExprContinue<I>),
     Reference(ExprReference<I>),
     Infer(ExprInfer<I>),
     Field(ExprFiled<I>),
@@ -55,6 +58,8 @@ where
             .or(ExprLet::into_parser().map(Expr::Let))
             .or(ExprInfer::into_parser().map(Expr::Infer))
             .or(ExprClosure::into_parser().map(Expr::Closure))
+            .or(ExprContinue::into_parser().map(Expr::Continue))
+            .or(ExprForLoop::into_parser().map(Expr::For))
             .ok()
             .parse(input)?
         {
@@ -178,6 +183,8 @@ where
             Expr::Reference(expr) => expr.to_span(),
             Expr::Tuple(expr) => expr.to_span(),
             Expr::If(expr) => expr.to_span(),
+            Expr::Continue(expr) => expr.to_span(),
+            Expr::For(expr) => expr.to_span(),
         }
     }
 }
@@ -206,6 +213,8 @@ where
             Expr::Reference(expr) => expr.priority(),
             Expr::Tuple(expr) => expr.priority(),
             Expr::If(expr) => expr.priority(),
+            Expr::Continue(expr) => expr.priority(),
+            Expr::For(expr) => expr.priority(),
         }
     }
 
@@ -232,6 +241,8 @@ where
             Expr::Reference(expr) => expr.compose(priority, f),
             Expr::Tuple(expr) => expr.compose(priority, f),
             Expr::If(expr) => expr.compose(priority, f),
+            Expr::Continue(expr) => expr.compose(priority, f),
+            Expr::For(expr) => expr.compose(priority, f),
         }
     }
 }

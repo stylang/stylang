@@ -5,6 +5,7 @@ use crate::{
     expr::{Expr, group::Composable},
     input::CSTInput,
     misc::Label,
+    punct::Colon,
 };
 
 /// A blocked scope: `{ ... }`.
@@ -15,7 +16,7 @@ where
     I: CSTInput,
 {
     /// optional block label.
-    pub label: Option<Label<I>>,
+    pub label: Option<(Label<I>, Colon<I>)>,
     /// A braced block containing Rust statements.
     pub block: Block<I>,
 }
@@ -103,9 +104,11 @@ mod tests {
         assert_eq!(
             TokenStream::from("'test: {}").parse::<Expr<_>>(),
             Ok(Expr::Block(ExprBlock {
-                label: Some(Label(
-                    TokenStream::from((0, "'")),
-                    Ident(TokenStream::from((1, "test"))),
+                label: Some((
+                    Label(
+                        TokenStream::from((0, "'")),
+                        Ident(TokenStream::from((1, "test"))),
+                    ),
                     Colon(
                         None,
                         TokenStream::from((5, ":")),

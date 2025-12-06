@@ -152,6 +152,12 @@ pub enum KeywordKind {
     If,
     #[error("keyword `else`")]
     Else,
+    #[error("keyword `continue`")]
+    Continue,
+    #[error("keyword `for`")]
+    For,
+    #[error("keyword `in`")]
+    In,
 }
 
 impl KeywordKind {

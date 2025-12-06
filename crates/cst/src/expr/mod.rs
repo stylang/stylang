@@ -53,5 +53,11 @@ pub use refer::*;
 mod r#if;
 pub use r#if::*;
 
+mod r#continue;
+pub use r#continue::*;
+
+mod r#for;
+pub use r#for::*;
+
 mod expr;
 pub use expr::*;
