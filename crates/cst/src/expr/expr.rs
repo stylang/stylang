@@ -5,7 +5,7 @@ use crate::{
     expr::{
         BinOp, CallArgs, ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprClosure,
         ExprConst, ExprFiled, ExprIndex, ExprInfer, ExprLet, ExprLit, ExprMethodCall, ExprParen,
-        ExprPath, ExprUnary, Index, Member, group::Composable,
+        ExprPath, ExprReference, ExprUnary, Index, Member, group::Composable,
     },
     input::CSTInput,
     path::PathArguments,
@@ -19,6 +19,7 @@ pub enum Expr<I>
 where
     I: CSTInput,
 {
+    Reference(ExprReference<I>),
     Infer(ExprInfer<I>),
     Field(ExprFiled<I>),
     Call(ExprCall<I>),
@@ -174,6 +175,7 @@ where
             Expr::Paren(expr) => expr.to_span(),
             Expr::Index(expr) => expr.expr.to_span() + expr.index.to_span(),
             Expr::Infer(expr) => expr.0.to_span(),
+            Expr::Reference(expr) => expr.to_span(),
         }
     }
 }
@@ -200,6 +202,7 @@ where
             Expr::Paren(expr) => expr.priority(),
             Expr::Index(expr) => expr.priority(),
             Expr::Infer(expr) => expr.priority(),
+            Expr::Reference(expr) => expr.priority(),
         }
     }
 
@@ -224,17 +227,19 @@ where
             Expr::Paren(expr) => expr.compose(priority, f),
             Expr::Index(expr) => expr.compose(priority, f),
             Expr::Infer(expr) => expr.compose(priority, f),
+            Expr::Reference(expr) => expr.compose(priority, f),
         }
     }
 }
 
 #[inline]
-fn parse_lhs<I>(input: &mut I) -> Result<Expr<I>, CSTError>
+pub(super) fn parse_lhs<I>(input: &mut I) -> Result<Expr<I>, CSTError>
 where
     I: CSTInput,
 {
     ExprConst::into_parser()
         .map(Expr::Const)
+        .or(ExprReference::into_parser().map(Expr::Reference))
         .or(ExprArray::into_parser().map(Expr::Array))
         .or(ExprParen::into_parser().map(Expr::Paren))
         .or(ExprUnary::into_parser().map(Expr::Unary))
@@ -251,6 +256,7 @@ where
 {
     ExprArray::into_parser()
         .map(Expr::Array)
+        .or(ExprReference::into_parser().map(Expr::Reference))
         .or(ExprParen::into_parser().map(Expr::Paren))
         .or(ExprArray::into_parser().map(Expr::Array))
         .or(ExprConst::into_parser().map(Expr::Const))

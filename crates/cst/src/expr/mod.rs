@@ -47,5 +47,8 @@ pub use index::*;
 mod infer;
 pub use infer::*;
 
+mod refer;
+pub use refer::*;
+
 mod expr;
 pub use expr::*;
