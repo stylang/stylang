@@ -4,8 +4,8 @@ use crate::{
     errors::{CSTError, SemanticsKind, SyntaxKind},
     expr::{
         BinOp, CallArgs, ExprArray, ExprAssgin, ExprBinary, ExprBlock, ExprCall, ExprClosure,
-        ExprConst, ExprFiled, ExprIndex, ExprInfer, ExprLet, ExprLit, ExprMethodCall, ExprParen,
-        ExprPath, ExprReference, ExprUnary, Index, Member, group::Composable,
+        ExprConst, ExprFiled, ExprIf, ExprIndex, ExprInfer, ExprLet, ExprLit, ExprMethodCall,
+        ExprPath, ExprReference, ExprTuple, ExprUnary, Index, Member, group::Composable,
     },
     input::CSTInput,
     path::PathArguments,
@@ -26,10 +26,11 @@ where
     Index(ExprIndex<I>),
     MethodCall(ExprMethodCall<I>),
     Binary(ExprBinary<I>),
+    If(ExprIf<I>),
 
     ///////////////////
     /// lhs
-    Paren(ExprParen<I>),
+    Tuple(ExprTuple<I>),
     Const(ExprConst<I>),
     Unary(ExprUnary<I>),
     Block(ExprBlock<I>),
@@ -60,7 +61,7 @@ where
             return Ok(expr);
         }
 
-        let mut lhs = parse_lhs(input)?;
+        let mut lhs = parse_lhs(input).map_err(SyntaxKind::Expr.map_unhandle())?;
 
         loop {
             if let Some(index) = Index::into_parser().ok().parse(input)? {
@@ -172,10 +173,11 @@ where
             Expr::Lit(expr) => expr.to_span(),
             Expr::Let(expr) => expr.to_span(),
             Expr::Path(expr) => expr.to_span(),
-            Expr::Paren(expr) => expr.to_span(),
             Expr::Index(expr) => expr.expr.to_span() + expr.index.to_span(),
             Expr::Infer(expr) => expr.0.to_span(),
             Expr::Reference(expr) => expr.to_span(),
+            Expr::Tuple(expr) => expr.to_span(),
+            Expr::If(expr) => expr.to_span(),
         }
     }
 }
@@ -199,10 +201,11 @@ where
             Expr::Assign(expr) => expr.priority(),
             Expr::Let(expr) => expr.priority(),
             Expr::Array(expr) => expr.priority(),
-            Expr::Paren(expr) => expr.priority(),
             Expr::Index(expr) => expr.priority(),
             Expr::Infer(expr) => expr.priority(),
             Expr::Reference(expr) => expr.priority(),
+            Expr::Tuple(expr) => expr.priority(),
+            Expr::If(expr) => expr.priority(),
         }
     }
 
@@ -224,10 +227,11 @@ where
             Expr::Assign(expr) => expr.compose(priority, f),
             Expr::Let(expr) => expr.compose(priority, f),
             Expr::Array(expr) => expr.compose(priority, f),
-            Expr::Paren(expr) => expr.compose(priority, f),
             Expr::Index(expr) => expr.compose(priority, f),
             Expr::Infer(expr) => expr.compose(priority, f),
             Expr::Reference(expr) => expr.compose(priority, f),
+            Expr::Tuple(expr) => expr.compose(priority, f),
+            Expr::If(expr) => expr.compose(priority, f),
         }
     }
 }
@@ -240,8 +244,9 @@ where
     ExprConst::into_parser()
         .map(Expr::Const)
         .or(ExprReference::into_parser().map(Expr::Reference))
+        .or(ExprIf::into_parser().map(Expr::If))
         .or(ExprArray::into_parser().map(Expr::Array))
-        .or(ExprParen::into_parser().map(Expr::Paren))
+        .or(ExprTuple::into_parser().map(Expr::Tuple))
         .or(ExprUnary::into_parser().map(Expr::Unary))
         .or(ExprBlock::into_parser().map(Expr::Block))
         .or(ExprLit::into_parser().map(Expr::Lit))
@@ -257,7 +262,8 @@ where
     ExprArray::into_parser()
         .map(Expr::Array)
         .or(ExprReference::into_parser().map(Expr::Reference))
-        .or(ExprParen::into_parser().map(Expr::Paren))
+        .or(ExprIf::into_parser().map(Expr::If))
+        .or(ExprTuple::into_parser().map(Expr::Tuple))
         .or(ExprArray::into_parser().map(Expr::Array))
         .or(ExprConst::into_parser().map(Expr::Const))
         .or(ExprUnary::into_parser().map(Expr::Unary))

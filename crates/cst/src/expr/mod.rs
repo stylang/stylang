@@ -50,5 +50,8 @@ pub use infer::*;
 mod refer;
 pub use refer::*;
 
+mod r#if;
+pub use r#if::*;
+
 mod expr;
 pub use expr::*;

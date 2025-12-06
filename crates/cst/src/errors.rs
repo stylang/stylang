@@ -148,6 +148,8 @@ pub enum KeywordKind {
     As,
     #[error("keyword `let`")]
     Let,
+    #[error("keyword `if`")]
+    If,
     #[error("keyword `else`")]
     Else,
 }
@@ -215,6 +217,8 @@ pub enum SyntaxKind {
     AssignRightOperand,
     #[error("expr `let init`")]
     LetInitExpr,
+    #[error("`expr`")]
+    Expr,
     #[error("expr `call`")]
     ExprCall,
     #[error("expr `infer`")]
