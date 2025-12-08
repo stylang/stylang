@@ -164,6 +164,12 @@ pub enum KeywordKind {
     In,
     #[error("keyword `loop`")]
     Loop,
+    #[error("keyword `while`")]
+    While,
+    #[error("keyword `break`")]
+    Break,
+    #[error("keyword `return`")]
+    Return,
 }
 
 impl KeywordKind {
@@ -187,6 +193,8 @@ impl KeywordKind {
 /// Error for syntax tree.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum SyntaxKind {
+    #[error("`pattern`")]
+    Pat,
     #[error("`line comment`")]
     LineComment,
     #[error("`outer line document`")]
@@ -247,16 +255,33 @@ pub enum SyntaxKind {
     ExprField,
     #[error("expr `field dot`")]
     ExprFieldDot,
+    #[error("expr range limits `..` or `..=`")]
+    RangeLimits,
+    #[error("while `expr`")]
+    WhileExpr,
+    #[error("while `block`")]
+    WhileBlock,
+    #[error("for `expr`")]
+    ForExpr,
+    #[error("repeat `len`")]
+    RepeatLen,
 }
 
 impl SyntaxKind {
     /// Map unhandle error
     pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| match err {
+            CSTError::Kind(kind) => CSTError::Syntax(self, kind.control_flow(), kind.to_span()),
+            err => err,
+        }
+    }
+
+    pub fn map_non_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| {
-            if let CSTError::Kind(kind) = &err {
-                CSTError::Syntax(self, kind.control_flow(), kind.to_span())
-            } else {
+            if err.is_fatal() {
                 err
+            } else {
+                CSTError::Syntax(self, ControlFlow::Fatal, err.to_span())
             }
         }
     }
@@ -267,7 +292,7 @@ impl SyntaxKind {
     }
 
     /// Map error to `SyntaxKind`
-    pub fn map_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
+    pub fn map_into_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Syntax(self, ControlFlow::Fatal, err.to_span())
     }
 }
@@ -296,6 +321,16 @@ impl OverflowKind {
 pub enum SemanticsKind {
     #[error("method call `turbofish`")]
     TurboFish,
+    #[error("range limits punct `..` or `..=`")]
+    RangeLimits,
+    #[error("range `semantic`")]
+    Range,
+    #[error("`index` call")]
+    Index,
+    #[error("`array`")]
+    Array,
+    #[error("`repeat`")]
+    Repeat,
 }
 
 impl SemanticsKind {

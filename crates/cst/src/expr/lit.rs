@@ -1,10 +1,10 @@
 use parserc::{
-    ControlFlow, Parser, Span, next, syntax::Syntax, take_while, take_while_range,
+    ControlFlow, Parser, Span, keyword, next, syntax::Syntax, take_while, take_while_range,
     take_while_range_from,
 };
 
 use crate::{
-    errors::{CSTError, SyntaxKind},
+    errors::{CSTError, PunctKind, SyntaxKind},
     input::CSTInput,
 };
 
@@ -200,10 +200,27 @@ where
 /// character `.`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[parserc(char = b'.')]
-pub struct DecimalPoint<I>(pub I)
+pub struct DecimalPoint<I>(#[parserc(parser = parse_decimal_point)] pub I)
 where
     I: CSTInput;
+
+#[inline]
+fn parse_decimal_point<I>(input: &mut I) -> Result<I, CSTError>
+where
+    I: CSTInput,
+{
+    let None::<I> = keyword("..").ok().parse(input)? else {
+        return Err(CSTError::Punct(
+            PunctKind::Dot,
+            ControlFlow::Recovable,
+            input.to_span_at(1),
+        ));
+    };
+
+    parserc::next(b'.')
+        .parse(input)
+        .map_err(PunctKind::Dot.map())
+}
 
 /// keyword `E` or `e`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]

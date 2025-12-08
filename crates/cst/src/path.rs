@@ -1,6 +1,6 @@
 use parserc::{
-    ControlFlow,
-    syntax::{Delimiter, Punctuated, Syntax},
+    ControlFlow, ParseError,
+    syntax::{InputSyntaxExt, Punctuated, Syntax},
 };
 
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
 };
 
 /// Angle bracketed arguments of a path segment.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PathArguments<I>
 where
@@ -20,12 +20,43 @@ where
 {
     /// optional leading `::`
     pub leading_pathsep: Option<PathSep<I>>,
-    /// angle bracketd arguments.
-    pub args: Delimiter<
-        AngleBracketStart<I>,
-        AngleBracketEnd<I>,
-        Punctuated<GenericArgument<I>, Comma<I>>,
-    >,
+    /// delimiter start `<`
+    pub delimiter_start: AngleBracketStart<I>,
+    /// path arguments.
+    pub args: Punctuated<GenericArgument<I>, Comma<I>>,
+    /// delimiter end `>`
+    pub delimiter_end: AngleBracketEnd<I>,
+}
+
+impl<I> Syntax<I> for PathArguments<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let leading_pathsep: Option<PathSep<_>> = input.parse()?;
+        let delimiter_start: AngleBracketStart<_> = input.parse()?;
+        let args = input.parse()?;
+        let delimiter_end: AngleBracketEnd<_> = input.parse().map_err(|err| {
+            if leading_pathsep.is_some() {
+                err.into_fatal()
+            } else {
+                err
+            }
+        })?;
+
+        Ok(Self {
+            leading_pathsep,
+            delimiter_start,
+            args,
+            delimiter_end,
+        })
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.leading_pathsep.to_span() + self.delimiter_end.to_span()
+    }
 }
 
 /// A segment of a path together with any path arguments on that segment.

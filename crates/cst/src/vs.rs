@@ -12,7 +12,7 @@ use crate::{
 /// The predicate of `Visibility` expr.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[parserc(map_err = SyntaxKind::VisibilityPredicate.map_fatal())]
+#[parserc(map_err = SyntaxKind::VisibilityPredicate.map_into_fatal())]
 pub enum VisibilityPredicate<I>
 where
     I: CSTInput,

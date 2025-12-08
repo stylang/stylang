@@ -1,9 +1,13 @@
 //! type parameters of stylang.
 
-use parserc::syntax::{Delimiter, Or, Punctuated, Syntax};
+use parserc::{
+    Parser,
+    syntax::{Delimiter, Or, Punctuated, Syntax},
+};
 
 use crate::{
-    expr::{Expr, ExprLit},
+    errors::CSTError,
+    expr::{Expr, ExprChain, ExprInfer, ExprLit, ExprUnary},
     input::CSTInput,
     keyword::{Const, Where},
     misc::Ident,
@@ -44,9 +48,21 @@ where
         colon: Colon<I>,
         bounds: Punctuated<TraitBound<I>, Plus<I>>,
     },
-    Const(Expr<I>),
+    Const(#[parserc(parser = parse_const_expr)] Expr<I>),
     /// A type argument.
     Type(Type<I>),
+}
+
+#[inline]
+fn parse_const_expr<I>(input: &mut I) -> Result<Expr<I>, CSTError>
+where
+    I: CSTInput,
+{
+    ExprChain::into_parser()
+        .map(ExprChain::into)
+        .or(ExprInfer::into_parser().map(Expr::Infer))
+        .or(ExprUnary::into_parser().map(Expr::Unary))
+        .parse(input)
 }
 
 /// A generic type parameter, or const generic: `T: Into<String>, 'a: 'b, const LEN: usize`.
@@ -264,7 +280,7 @@ mod test {
 
     #[test]
     fn test_where_clause_path() {
-        let expect = r##"{"keyword":[{"offset":0,"value":"where","_marker":null},{"offset":5,"value":" ","_marker":null}],"predicates":{"pairs":[],"tail":{"ident":{"offset":6,"value":"T","_marker":null},"colon":[null,{"offset":7,"value":":","_marker":null},{"offset":8,"value":" ","_marker":null}],"bounds":{"pairs":[],"tail":{"modifier":null,"path":{"leading_pathsep":null,"segments":{"pairs":[[{"ident":{"offset":9,"value":"std","_marker":null},"arguments":null},[null,{"offset":12,"value":"::","_marker":null},null]],[{"ident":{"offset":14,"value":"iter","_marker":null},"arguments":null},[null,{"offset":18,"value":"::","_marker":null},null]]],"tail":{"ident":{"offset":20,"value":"Iterator","_marker":null},"arguments":{"leading_pathsep":null,"args":{"start":[null,{"offset":28,"value":"<","_marker":null},null],"end":[null,{"offset":40,"value":">","_marker":null},null],"body":{"pairs":[],"tail":{"Associated":{"ident":{"offset":29,"value":"Item","_marker":null},"eq":[{"offset":33,"value":" ","_marker":null},{"offset":34,"value":"=","_marker":null},{"offset":35,"value":" ","_marker":null}],"ty":{"First":{"Path":{"leading_pathsep":null,"segments":{"pairs":[],"tail":{"ident":{"offset":36,"value":"char","_marker":null},"arguments":null}}}}}}}}}}}}}}}}}}"##;
+        let expect = r##"{"keyword":[{"offset":0,"value":"where","_marker":null},{"offset":5,"value":" ","_marker":null}],"predicates":{"pairs":[],"tail":{"ident":{"offset":6,"value":"T","_marker":null},"colon":[null,{"offset":7,"value":":","_marker":null},{"offset":8,"value":" ","_marker":null}],"bounds":{"pairs":[],"tail":{"modifier":null,"path":{"leading_pathsep":null,"segments":{"pairs":[[{"ident":{"offset":9,"value":"std","_marker":null},"arguments":null},[null,{"offset":12,"value":"::","_marker":null},null]],[{"ident":{"offset":14,"value":"iter","_marker":null},"arguments":null},[null,{"offset":18,"value":"::","_marker":null},null]]],"tail":{"ident":{"offset":20,"value":"Iterator","_marker":null},"arguments":{"leading_pathsep":null,"delimiter_start":[null,{"offset":28,"value":"<","_marker":null},null],"args":{"pairs":[],"tail":{"Associated":{"ident":{"offset":29,"value":"Item","_marker":null},"eq":[{"offset":33,"value":" ","_marker":null},{"offset":34,"value":"=","_marker":null},{"offset":35,"value":" ","_marker":null}],"ty":{"First":{"Path":{"leading_pathsep":null,"segments":{"pairs":[],"tail":{"ident":{"offset":36,"value":"char","_marker":null},"arguments":null}}}}}}}},"delimiter_end":[null,{"offset":40,"value":">","_marker":null},null]}}}}}}}}}"##;
 
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(expect).unwrap(),

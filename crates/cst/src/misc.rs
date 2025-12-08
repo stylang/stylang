@@ -354,7 +354,7 @@ where
 /// A lifetime labeling a for, while, or loop.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Label<I>(#[parserc(keyword = "'")] pub I, pub Ident<I>)
+pub struct Label<I>(#[parserc(keyword = "'", crucial)] pub I, pub Ident<I>)
 where
     I: CSTInput;
 

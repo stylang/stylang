@@ -67,3 +67,6 @@ define_keyword!(Continue, "continue");
 define_keyword!(For, "for");
 define_keyword!(In, "in");
 define_keyword!(Loop, "loop");
+define_keyword!(While, "while");
+define_keyword!(Break, "break");
+define_keyword!(Return, "return");

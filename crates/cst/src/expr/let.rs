@@ -10,6 +10,7 @@ where
     I: CSTInput,
 {
     /// leading keyword `let`
+    #[parserc(crucial)]
     pub keyword: Let<I>,
     /// left Operand pattern.
     pub pat: Box<Pat<I>>,

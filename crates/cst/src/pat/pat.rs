@@ -1,10 +1,11 @@
 use parserc::syntax::Syntax;
 
-use crate::{input::CSTInput, misc::Ident, pat::PatType};
+use crate::{errors::SyntaxKind, input::CSTInput, misc::Ident, pat::PatType};
 
 /// A pattern in a local binding, function signature, match expression, or various other places.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(map_err = SyntaxKind::Pat.map_unhandle())]
 pub enum Pat<I>
 where
     I: CSTInput,
