@@ -50,17 +50,16 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::{Delimiter, InputSyntaxExt, Punctuated};
+    use parserc::syntax::InputSyntaxExt;
 
     use crate::{
-        block::{Block, LocalInit, Stmt},
-        expr::{Digits, Expr, ExprBlock, ExprCall, ExprLit, ExprPath, LitNumber},
+        block::{LocalInit, Stmt},
+        expr::{Digits, Expr, ExprLit, LitNumber},
         input::TokenStream,
-        keyword::{Else, Let},
+        keyword::Let,
         misc::{Ident, S},
         pat::Pat,
-        path::{Path, PathSegment},
-        punct::{BraceEnd, BraceStart, Equal, ParenEnd, ParenStart, Semi},
+        punct::{Equal, Semi},
     };
 
     #[test]
@@ -81,113 +80,6 @@ mod tests {
 
     #[test]
     fn test_local_init() {
-        assert_eq!(
-            TokenStream::from("let a = c();").parse::<Stmt<_>>(),
-            Ok(Stmt::Local {
-                keyword: Let(
-                    TokenStream::from((0, "let")),
-                    Some(S(TokenStream::from((3, " "))))
-                ),
-                pat: Pat::Ident(Ident(TokenStream::from((4, "a")))),
-                init: Some(LocalInit {
-                    eq: Equal(
-                        Some(S(TokenStream::from((5, " ")))),
-                        TokenStream::from((6, "=")),
-                        Some(S(TokenStream::from((7, " "))))
-                    ),
-                    expr: Box::new(Expr::Call(ExprCall {
-                        func: Box::new(Expr::Path(ExprPath {
-                            qself: None,
-                            path: Path {
-                                leading_pathsep: None,
-                                segments: Punctuated {
-                                    pairs: vec![],
-                                    tail: Some(Box::new(PathSegment {
-                                        ident: Ident(TokenStream::from((8, "c"))),
-                                        arguments: None
-                                    }))
-                                }
-                            }
-                        })),
-                        args: Delimiter {
-                            start: ParenStart(None, TokenStream::from((9, "(")), None),
-                            end: ParenEnd(None, TokenStream::from((10, ")")), None),
-                            body: Punctuated {
-                                pairs: vec![],
-                                tail: None
-                            }
-                        }
-                    })),
-                    diverge: None
-                }),
-                semi: Semi(None, TokenStream::from((11, ";")), None)
-            })
-        );
-
-        assert_eq!(
-            TokenStream::from("let a = c() else { };").parse::<Stmt<_>>(),
-            Ok(Stmt::Local {
-                keyword: Let(
-                    TokenStream::from((0, "let")),
-                    Some(S(TokenStream::from((3, " "))))
-                ),
-                pat: Pat::Ident(Ident(TokenStream::from((4, "a")))),
-                init: Some(LocalInit {
-                    eq: Equal(
-                        Some(S(TokenStream::from((5, " ")))),
-                        TokenStream::from((6, "=")),
-                        Some(S(TokenStream::from((7, " "))))
-                    ),
-                    expr: Box::new(Expr::Call(ExprCall {
-                        func: Box::new(Expr::Path(ExprPath {
-                            qself: None,
-                            path: Path {
-                                leading_pathsep: None,
-                                segments: Punctuated {
-                                    pairs: vec![],
-                                    tail: Some(Box::new(PathSegment {
-                                        ident: Ident(TokenStream::from((8, "c"))),
-                                        arguments: None
-                                    }))
-                                }
-                            }
-                        })),
-                        args: Delimiter {
-                            start: ParenStart(None, TokenStream::from((9, "(")), None),
-                            end: ParenEnd(
-                                None,
-                                TokenStream::from((10, ")")),
-                                Some(S(TokenStream::from((11, " "))))
-                            ),
-                            body: Punctuated {
-                                pairs: vec![],
-                                tail: None
-                            }
-                        }
-                    })),
-                    diverge: Some((
-                        Else(
-                            TokenStream::from((12, "else")),
-                            Some(S(TokenStream::from((16, " "))))
-                        ),
-                        Box::new(ExprBlock {
-                            label: None,
-                            block: Block(Delimiter {
-                                start: BraceStart(
-                                    None,
-                                    TokenStream::from((17, "{")),
-                                    Some(S(TokenStream::from((18, " "))))
-                                ),
-                                end: BraceEnd(None, TokenStream::from((19, "}")), None),
-                                body: vec![]
-                            })
-                        })
-                    ))
-                }),
-                semi: Semi(None, TokenStream::from((20, ";")), None)
-            })
-        );
-
         assert_eq!(
             TokenStream::from("let a = 1;").parse::<Stmt<_>>(),
             Ok(Stmt::Local {

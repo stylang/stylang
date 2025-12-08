@@ -66,3 +66,4 @@ define_keyword!(Else, "else");
 define_keyword!(Continue, "continue");
 define_keyword!(For, "for");
 define_keyword!(In, "in");
+define_keyword!(Loop, "loop");

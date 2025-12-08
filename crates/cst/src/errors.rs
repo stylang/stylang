@@ -101,6 +101,10 @@ pub enum PunctKind {
     Not,
     #[error("punct `.`")]
     Dot,
+    #[error("punct `..`")]
+    DotDot,
+    #[error("punct `..=`")]
+    DotDotEq,
     #[error("punct `_`")]
     Underscore,
 }
@@ -158,6 +162,8 @@ pub enum KeywordKind {
     For,
     #[error("keyword `in`")]
     In,
+    #[error("keyword `loop`")]
+    Loop,
 }
 
 impl KeywordKind {

@@ -1,7 +1,6 @@
 use parserc::syntax::{Delimiter, Syntax};
 
 use crate::{
-    expr::{Expr, group::Composable},
     input::CSTInput,
     keyword::As,
     path::Path,
@@ -33,22 +32,4 @@ where
     pub qself: Option<QSelf<I>>,
     /// A path.
     pub path: Path<I>,
-}
-
-impl<I> Composable<I> for ExprPath<I>
-where
-    I: CSTInput,
-{
-    #[inline]
-    fn priority(&self) -> usize {
-        1
-    }
-
-    #[inline]
-    fn compose<F>(self, _priority: usize, f: F) -> super::Expr<I>
-    where
-        F: FnOnce(super::Expr<I>) -> super::Expr<I>,
-    {
-        f(Expr::Path(self))
-    }
 }

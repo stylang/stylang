@@ -88,4 +88,6 @@ define_punct!(Caret, "^");
 define_punct!(CaretEq, "^=");
 define_punct!(Not, "!");
 define_punct!(Dot, ".");
+define_punct!(DotDot, "..");
+define_punct!(DotDotEq, "..=");
 define_punct!(Underscore, "_");
