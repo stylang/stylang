@@ -15,7 +15,7 @@ where
 }
 
 /// Access of a named struct field (`obj.k`) or unnamed tuple struct field (`obj.0`).
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Field<I>
 where

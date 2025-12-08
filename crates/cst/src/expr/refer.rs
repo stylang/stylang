@@ -1,6 +1,11 @@
 use parserc::syntax::Syntax;
 
-use crate::{expr::Expr, input::CSTInput, keyword::Mut, punct::And};
+use crate::{
+    expr::{Expr, ExprChain},
+    input::CSTInput,
+    keyword::Mut,
+    punct::And,
+};
 
 // A referencing operation: &a or &mut a.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
@@ -14,5 +19,6 @@ where
     /// optional keyword `mut`
     pub mutability: Option<Mut<I>>,
     /// target expr.
+    #[parserc(parser = ExprChain::into_parser().map(ExprChain::into).boxed())]
     pub expr: Box<Expr<I>>,
 }

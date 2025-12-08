@@ -1,4 +1,4 @@
-use parserc::syntax::{Delimiter, Punctuated};
+use parserc::syntax::{Delimiter, Punctuated, Syntax};
 
 use crate::{
     expr::Expr,
@@ -8,17 +8,15 @@ use crate::{
     punct::{Comma, Dot, ParenEnd, ParenStart},
 };
 
-pub type CallArgs<I> = Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<Expr<I>, Comma<I>>>;
-
 /// A function call expression: invoke(a, b).
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Call<I>(pub Delimiter<ParenStart<I>, ParenEnd<I>, Punctuated<Expr<I>, Comma<I>>>)
 where
     I: CSTInput;
 
 /// A function call expression: invoke(a, b).
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MethodCall<I>
 where
@@ -31,5 +29,5 @@ where
     /// syntax `::<...>`
     pub turbofish: Option<PathArguments<I>>,
     /// call arguments.
-    pub args: CallArgs<I>,
+    pub args: Call<I>,
 }
