@@ -21,6 +21,8 @@ pub enum PunctKind {
     At,
     #[error("punct `->`")]
     ArrowRight,
+    #[error("punct `=>`")]
+    FatArrowRight,
     #[error("punct `:`")]
     Colon,
     #[error("punct `,`")]
@@ -170,6 +172,8 @@ pub enum KeywordKind {
     Break,
     #[error("keyword `return`")]
     Return,
+    #[error("keyword `match`")]
+    Match,
 }
 
 impl KeywordKind {

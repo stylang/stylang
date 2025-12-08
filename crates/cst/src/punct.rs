@@ -48,6 +48,7 @@ define_punct!(ParenStart, "(");
 define_punct!(ParenEnd, ")");
 define_punct!(At, "@");
 define_punct!(ArrowRight, "->");
+define_punct!(FatArrowRight, "=>");
 define_punct!(Colon, ":");
 define_punct!(Comma, ",");
 define_punct!(Semi, ";");

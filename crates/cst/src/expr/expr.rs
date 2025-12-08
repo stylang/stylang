@@ -4,7 +4,7 @@ use crate::{
     errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
     expr::{
         Call, ExprArray, ExprBinary, ExprBlock, ExprBracket, ExprBreak, ExprConst, ExprContinue,
-        ExprForLoop, ExprIf, ExprInfer, ExprLet, ExprLit, ExprLoop, ExprPath, ExprRange,
+        ExprForLoop, ExprIf, ExprInfer, ExprLet, ExprLit, ExprLoop, ExprMatch, ExprPath, ExprRange,
         ExprReference, ExprRepeat, ExprReturn, ExprTuple, ExprUnary, ExprWhile, Field, Index,
         MethodCall, parse_bracket, parse_range,
     },
@@ -63,11 +63,11 @@ where
 {
     ExprLit::into_parser()
         .map(Expr::Lit)
-        .or(ExprPath::into_parser().map(Expr::Path))
         .or(ExprBlock::into_parser().map(Expr::Block))
         .or(ExprIf::into_parser().map(Expr::If))
         .or(ExprConst::into_parser().map(Expr::Const))
         .or(ExprTuple::into_parser().map(Expr::Tuple))
+        .or(ExprMatch::into_parser().map(Expr::Match))
         .or(|input: &mut I| match parse_bracket(input)? {
             ExprBracket::Index(index) => Err(CSTError::Semantics(
                 SemanticsKind::Index,
@@ -76,6 +76,7 @@ where
             ExprBracket::Repeat(expr_repeat) => Ok(Expr::Repeat(expr_repeat)),
             ExprBracket::Array(expr_array) => Ok(Expr::Array(expr_array)),
         })
+        .or(ExprPath::into_parser().map(Expr::Path))
         .boxed()
         .parse(input)
         .map_err(|err| {
@@ -139,6 +140,7 @@ where
     While(ExprWhile<I>),
     Break(ExprBreak<I>),
     Return(ExprReturn<I>),
+    Match(ExprMatch<I>),
 }
 
 impl<I> Syntax<I> for Expr<I>
@@ -191,6 +193,7 @@ where
             Expr::While(expr) => expr.to_span(),
             Expr::Break(expr) => expr.to_span(),
             Expr::Return(expr) => expr.to_span(),
+            Expr::Match(expr) => expr.to_span(),
             Expr::Repeat(expr) => expr.delimiter_start.to_span() + expr.delimiter_end.to_span(),
         }
     }

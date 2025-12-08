@@ -54,5 +54,8 @@ pub use binary::*;
 mod range;
 pub use range::*;
 
+mod r#match;
+pub use r#match::*;
+
 mod expr;
 pub use expr::*;

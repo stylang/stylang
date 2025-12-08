@@ -70,3 +70,4 @@ define_keyword!(Loop, "loop");
 define_keyword!(While, "while");
 define_keyword!(Break, "break");
 define_keyword!(Return, "return");
+define_keyword!(Match, "match");
