@@ -5,8 +5,8 @@ use crate::{
     expr::{
         Call, ExprArray, ExprBinary, ExprBlock, ExprBracket, ExprBreak, ExprClosure, ExprConst,
         ExprContinue, ExprForLoop, ExprIf, ExprInfer, ExprLet, ExprLit, ExprLoop, ExprMatch,
-        ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn, ExprTuple, ExprUnary,
-        ExprWhile, Field, Index, MethodCall, parse_bracket, parse_range,
+        ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn, ExprStruct, ExprTuple,
+        ExprUnary, ExprWhile, Field, Index, MethodCall, parse_bracket, parse_range,
     },
     input::CSTInput,
 };
@@ -63,7 +63,6 @@ where
 {
     ExprLit::into_parser()
         .map(Expr::Lit)
-        .or(ExprBlock::into_parser().map(Expr::Block))
         .or(ExprIf::into_parser().map(Expr::If))
         .or(ExprConst::into_parser().map(Expr::Const))
         .or(ExprTuple::into_parser().map(Expr::Tuple))
@@ -76,6 +75,8 @@ where
             ExprBracket::Repeat(expr_repeat) => Ok(Expr::Repeat(expr_repeat)),
             ExprBracket::Array(expr_array) => Ok(Expr::Array(expr_array)),
         })
+        .or(ExprStruct::into_parser().map(Expr::Struct))
+        .or(ExprBlock::into_parser().map(Expr::Block))
         .or(ExprPath::into_parser().map(Expr::Path))
         .boxed()
         .parse(input)
@@ -126,6 +127,7 @@ where
     If(ExprIf<I>),
     Const(ExprConst<I>),
     Tuple(ExprTuple<I>),
+    Struct(ExprStruct<I>),
 
     Ref(ExprReference<I>),
     Unary(ExprUnary<I>),
@@ -197,6 +199,7 @@ where
             Expr::Return(expr) => expr.to_span(),
             Expr::Match(expr) => expr.to_span(),
             Expr::Closure(expr) => expr.to_span(),
+            Expr::Struct(expr) => expr.to_span(),
             Expr::Repeat(expr) => expr.delimiter_start.to_span() + expr.delimiter_end.to_span(),
         }
     }

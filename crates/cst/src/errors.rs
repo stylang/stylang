@@ -271,6 +271,12 @@ pub enum SyntaxKind {
     RepeatLen,
     #[error("closure `body`")]
     ClosureBody,
+    #[error("rest `body`")]
+    RestBody,
+    #[error("rest prefix `,`")]
+    RestPrefixComma,
+    #[error("struct `expr`")]
+    Struct,
 }
 
 impl SyntaxKind {

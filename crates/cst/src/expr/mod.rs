@@ -57,5 +57,8 @@ pub use range::*;
 mod r#match;
 pub use r#match::*;
 
+mod r#struct;
+pub use r#struct::*;
+
 mod expr;
 pub use expr::*;
