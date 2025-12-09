@@ -59,12 +59,12 @@ where
     /// optional label
     pub label: Option<(Label<I>, Colon<I>)>,
     /// leading keyword `loop`
+    #[parserc(crucial)]
     pub keyword: While<I>,
     /// target iterator.
     #[parserc(parser = parse_while_expr)]
     pub expr: Box<Expr<I>>,
     /// for block.
-    #[parserc(map_err = SyntaxKind::WhileBlock.map_non_fatal())]
     pub body: Block<I>,
 }
 
@@ -84,12 +84,13 @@ where
 #[cfg(test)]
 mod tests {
     use parserc::{
-        Span,
-        syntax::{Delimiter, SyntaxInput, Punctuated},
+        ControlFlow, Span,
+        syntax::{Delimiter, Punctuated, SyntaxInput},
     };
 
     use crate::{
         block::Stmt,
+        errors::PunctKind,
         expr::{BinOp, Digits, Expr, ExprBinary, ExprLit, ExprPath, LitNumber},
         input::TokenStream,
         keyword::Let,
@@ -378,8 +379,8 @@ mod tests {
     fn detect_while_expr_error() {
         assert_eq!(
             TokenStream::from("while {}").parse::<Expr<_>>(),
-            Err(CSTError::Syntax(
-                SyntaxKind::WhileBlock,
+            Err(CSTError::Punct(
+                PunctKind::BraceStart,
                 parserc::ControlFlow::Fatal,
                 Span::Range(8..8)
             ))
@@ -391,6 +392,27 @@ mod tests {
                 SyntaxKind::Pat,
                 parserc::ControlFlow::Fatal,
                 Span::Range(10..11)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("while a {").parse::<Expr<_>>(),
+            Err(CSTError::Punct(
+                PunctKind::BraceEnd,
+                parserc::ControlFlow::Fatal,
+                Span::Range(9..9)
+            ))
+        );
+    }
+
+    #[test]
+    fn unclosed_conditioness_loop() {
+        assert_eq!(
+            TokenStream::from("loop { ").parse::<Expr<_>>(),
+            Err(CSTError::Punct(
+                PunctKind::BraceEnd,
+                ControlFlow::Fatal,
+                Span::Range(7..7)
             ))
         );
     }

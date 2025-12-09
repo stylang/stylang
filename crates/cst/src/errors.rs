@@ -261,10 +261,12 @@ pub enum SyntaxKind {
     ExprFieldDot,
     #[error("expr range limits `..` or `..=`")]
     RangeLimits,
-    #[error("while `expr`")]
+    #[error("while condition `expr`")]
     WhileExpr,
-    #[error("while `block`")]
-    WhileBlock,
+    #[error("while `body`")]
+    WhileBody,
+    #[error("while body end token `}}`")]
+    WhileBodyEnd,
     #[error("for `expr`")]
     ForExpr,
     #[error("repeat `len`")]
@@ -299,15 +301,6 @@ impl SyntaxKind {
             } else {
                 CSTError::Syntax(self, ControlFlow::Fatal, err.to_span())
             }
-        }
-    }
-
-    pub fn map_delimiter_error(self) -> impl FnOnce(CSTError) -> CSTError {
-        |err: CSTError| match err {
-            CSTError::Kind(parserc::Kind::Delimiter(_, span)) => {
-                CSTError::Syntax(self, ControlFlow::Fatal, span)
-            }
-            err => err,
         }
     }
 
