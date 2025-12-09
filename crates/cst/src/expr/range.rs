@@ -35,7 +35,7 @@ where
 }
 
 #[inline]
-pub(super) fn parse_range<I>(input: &mut I) -> Result<Expr<I>, CSTError>
+pub(crate) fn parse_range<I>(input: &mut I) -> Result<Expr<I>, CSTError>
 where
     I: CSTInput,
 {
