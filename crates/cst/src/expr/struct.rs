@@ -181,6 +181,15 @@ mod tests {
                 Span::Range(9..9)
             ))
         );
+
+        assert_eq!(
+            TokenStream::from("{ A {a: 1,..use}").parse::<Expr<_>>(),
+            Err(CSTError::Punct(
+                PunctKind::BraceEnd,
+                ControlFlow::Fatal,
+                Span::Range(16..16)
+            ))
+        );
     }
 
     #[test]
