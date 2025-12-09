@@ -3,10 +3,10 @@ use parserc::{Parser, syntax::Syntax};
 use crate::{
     errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
     expr::{
-        Call, ExprArray, ExprBinary, ExprBlock, ExprBracket, ExprBreak, ExprConst, ExprContinue,
-        ExprForLoop, ExprIf, ExprInfer, ExprLet, ExprLit, ExprLoop, ExprMatch, ExprPath, ExprRange,
-        ExprReference, ExprRepeat, ExprReturn, ExprTuple, ExprUnary, ExprWhile, Field, Index,
-        MethodCall, parse_bracket, parse_range,
+        Call, ExprArray, ExprBinary, ExprBlock, ExprBracket, ExprBreak, ExprClosure, ExprConst,
+        ExprContinue, ExprForLoop, ExprIf, ExprInfer, ExprLet, ExprLit, ExprLoop, ExprMatch,
+        ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn, ExprTuple, ExprUnary,
+        ExprWhile, Field, Index, MethodCall, parse_bracket, parse_range,
     },
     input::CSTInput,
 };
@@ -141,6 +141,7 @@ where
     Break(ExprBreak<I>),
     Return(ExprReturn<I>),
     Match(ExprMatch<I>),
+    Closure(ExprClosure<I>),
 }
 
 impl<I> Syntax<I> for Expr<I>
@@ -158,6 +159,7 @@ where
             .or(ExprWhile::into_parser().map(Expr::While))
             .or(ExprBreak::into_parser().map(Expr::Break))
             .or(ExprReturn::into_parser().map(Expr::Return))
+            .or(ExprClosure::into_parser().map(Expr::Closure))
             .ok()
             .parse(input)?
         {
@@ -194,6 +196,7 @@ where
             Expr::Break(expr) => expr.to_span(),
             Expr::Return(expr) => expr.to_span(),
             Expr::Match(expr) => expr.to_span(),
+            Expr::Closure(expr) => expr.to_span(),
             Expr::Repeat(expr) => expr.delimiter_start.to_span() + expr.delimiter_end.to_span(),
         }
     }

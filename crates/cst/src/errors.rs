@@ -269,6 +269,8 @@ pub enum SyntaxKind {
     ForExpr,
     #[error("repeat `len`")]
     RepeatLen,
+    #[error("closure `body`")]
+    ClosureBody,
 }
 
 impl SyntaxKind {
