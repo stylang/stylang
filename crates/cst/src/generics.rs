@@ -58,10 +58,10 @@ fn parse_const_expr<I>(input: &mut I) -> Result<Expr<I>, CSTError>
 where
     I: CSTInput,
 {
-    ExprChain::into_parser()
-        .map(ExprChain::into)
-        .or(ExprInfer::into_parser().map(Expr::Infer))
+    ExprInfer::into_parser()
+        .map(Expr::Infer)
         .or(ExprUnary::into_parser().map(Expr::Unary))
+        .or(ExprChain::into_parser().map(ExprChain::into))
         .parse(input)
 }
 
@@ -123,7 +123,7 @@ where
 #[cfg(test)]
 mod test {
 
-    use parserc::syntax::{SyntaxInput, Or, Punctuated};
+    use parserc::syntax::{Or, Punctuated, SyntaxInput};
 
     use crate::{
         expr::{Digits, LitNumber},

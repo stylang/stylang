@@ -42,21 +42,22 @@ where
 mod tests {
     use parserc::{
         ControlFlow, Span,
-        syntax::{Delimiter, SyntaxInput, Punctuated},
+        syntax::{Delimiter, Punctuated, SyntaxInput},
     };
 
     use crate::{
         errors::{CSTError, SyntaxKind},
         expr::{
-            Call, ChainOp, Digits, Expr, ExprLit, ExprPath, ExprReference, LitNumber, LitStr,
-            MethodCall,
+            BinOp, Call, ChainOp, Digits, Expr, ExprBinary, ExprLit, ExprPath, ExprRange,
+            ExprReference, LitNumber, LitStr, MethodCall, RangeLimits,
         },
         generics::GenericArgument,
         input::TokenStream,
-        misc::Ident,
+        misc::{Ident, S},
         path::{Path, PathArguments, PathSegment},
         punct::{
-            And, AngleBracketEnd, AngleBracketStart, Comma, Dot, ParenEnd, ParenStart, PathSep,
+            And, AngleBracketEnd, AngleBracketStart, Comma, Dot, DotDot, OrOr, ParenEnd,
+            ParenStart, PathSep,
         },
     };
 
@@ -176,6 +177,58 @@ mod tests {
                         })
                     }
                 ))
+            }))
+        );
+    }
+
+    #[test]
+    fn test_unary_priority() {
+        assert_eq!(
+            TokenStream::from("&a || b ..").parse::<Expr<_>>(),
+            Ok(Expr::Range(ExprRange {
+                start: Some(Box::new(Expr::Binary(ExprBinary {
+                    left: Box::new(Expr::Ref(ExprReference {
+                        leading_token: And(None, TokenStream::from((0, "&")), None),
+                        mutability: None,
+                        expr: Box::new(Expr::Path(ExprPath {
+                            qself: None,
+                            path: Path {
+                                leading_pathsep: None,
+                                segments: Punctuated {
+                                    pairs: vec![],
+                                    tail: Some(Box::new(PathSegment {
+                                        ident: Ident(TokenStream::from((1, "a"))),
+                                        arguments: None
+                                    }))
+                                }
+                            }
+                        }))
+                    })),
+                    op: BinOp::Or(OrOr(
+                        Some(S(TokenStream::from((2, " ")))),
+                        TokenStream::from((3, "||")),
+                        Some(S(TokenStream::from((5, " "))))
+                    )),
+                    right: Box::new(Expr::Path(ExprPath {
+                        qself: None,
+                        path: Path {
+                            leading_pathsep: None,
+                            segments: Punctuated {
+                                pairs: vec![],
+                                tail: Some(Box::new(PathSegment {
+                                    ident: Ident(TokenStream::from((6, "b"))),
+                                    arguments: None
+                                }))
+                            }
+                        }
+                    }))
+                }))),
+                limits: RangeLimits::HalfOpen(DotDot(
+                    Some(S(TokenStream::from((7, " ")))),
+                    TokenStream::from((8, "..")),
+                    None
+                )),
+                end: None
             }))
         );
     }
