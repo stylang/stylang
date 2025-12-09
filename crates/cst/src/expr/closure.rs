@@ -29,7 +29,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::{Delimiter, InputSyntaxExt, Punctuated};
+    use parserc::syntax::{Delimiter, Punctuated, SyntaxInput};
 
     use crate::{
         block::{Block, LocalInit, Stmt},

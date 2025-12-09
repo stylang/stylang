@@ -16,7 +16,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::InputSyntaxExt;
+    use parserc::syntax::SyntaxInput;
 
     use crate::{
         input::TokenStream,

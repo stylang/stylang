@@ -211,7 +211,7 @@ mod tests {
         misc::{Ident, S},
         path::{Path, PathSegment},
     };
-    use parserc::syntax::{InputSyntaxExt, Punctuated};
+    use parserc::syntax::{Punctuated, SyntaxInput};
 
     #[test]
     fn test_binop() {

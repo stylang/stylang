@@ -85,7 +85,7 @@ where
 mod tests {
     use parserc::{
         Span,
-        syntax::{Delimiter, InputSyntaxExt, Punctuated},
+        syntax::{Delimiter, SyntaxInput, Punctuated},
     };
 
     use crate::{

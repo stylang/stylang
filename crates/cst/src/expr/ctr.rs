@@ -55,7 +55,7 @@ where
 mod tests {
     use parserc::{
         ControlFlow, Span,
-        syntax::{InputSyntaxExt, Punctuated},
+        syntax::{SyntaxInput, Punctuated},
     };
 
     use crate::{

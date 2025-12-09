@@ -1,6 +1,6 @@
 use parserc::{
     ControlFlow, ParseError,
-    syntax::{InputSyntaxExt, Punctuated, Syntax},
+    syntax::{SyntaxInput, Punctuated, Syntax},
 };
 
 use crate::{

@@ -1,6 +1,6 @@
 use parserc::{
     ParseError, Parser, Span,
-    syntax::{InputSyntaxExt, Punctuated, Syntax},
+    syntax::{Punctuated, Syntax, SyntaxInput},
 };
 
 use crate::{
@@ -120,7 +120,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::{Delimiter, InputSyntaxExt};
+    use parserc::syntax::{Delimiter, SyntaxInput};
 
     use crate::{
         expr::{Call, Digits, Expr, ExprLit, ExprPath, LitNumber},

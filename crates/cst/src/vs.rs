@@ -39,7 +39,7 @@ where
 mod tests {
     use parserc::{
         ControlFlow, Span,
-        syntax::{Delimiter, InputSyntaxExt, Or},
+        syntax::{Delimiter, SyntaxInput, Or},
     };
 
     use crate::{

@@ -360,7 +360,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::{Span, syntax::InputSyntaxExt};
+    use parserc::{Span, syntax::SyntaxInput};
 
     use crate::input::TokenStream;
 

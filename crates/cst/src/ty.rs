@@ -100,7 +100,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::{Delimiter, InputSyntaxExt};
+    use parserc::syntax::{Delimiter, SyntaxInput};
 
     use crate::{input::TokenStream, misc::S};
 

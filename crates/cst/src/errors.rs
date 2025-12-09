@@ -277,6 +277,10 @@ pub enum SyntaxKind {
     RestPrefixComma,
     #[error("struct `expr`")]
     Struct,
+    #[error("struct body end `}}`")]
+    StructBodyEnd,
+    #[error("block `}}`")]
+    BlockEnd,
 }
 
 impl SyntaxKind {
@@ -295,6 +299,15 @@ impl SyntaxKind {
             } else {
                 CSTError::Syntax(self, ControlFlow::Fatal, err.to_span())
             }
+        }
+    }
+
+    pub fn map_delimiter_error(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| match err {
+            CSTError::Kind(parserc::Kind::Delimiter(_, span)) => {
+                CSTError::Syntax(self, ControlFlow::Fatal, span)
+            }
+            err => err,
         }
     }
 

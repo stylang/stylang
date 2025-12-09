@@ -123,7 +123,7 @@ where
 #[cfg(test)]
 mod test {
 
-    use parserc::syntax::{InputSyntaxExt, Or, Punctuated};
+    use parserc::syntax::{SyntaxInput, Or, Punctuated};
 
     use crate::{
         expr::{Digits, LitNumber},

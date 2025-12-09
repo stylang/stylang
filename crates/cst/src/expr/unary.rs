@@ -42,7 +42,7 @@ where
 mod tests {
     use parserc::{
         ControlFlow, Span,
-        syntax::{Delimiter, InputSyntaxExt, Punctuated},
+        syntax::{Delimiter, SyntaxInput, Punctuated},
     };
 
     use crate::{

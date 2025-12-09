@@ -22,7 +22,7 @@ macro_rules! define_punct {
             #[inline]
             fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
                 use parserc::Parser;
-                use parserc::syntax::InputSyntaxExt;
+                use parserc::syntax::SyntaxInput;
                 Ok(Self(
                     input.parse()?,
                     parserc::keyword($value)
