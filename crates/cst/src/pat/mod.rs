@@ -6,5 +6,7 @@ pub use ty::*;
 mod refer;
 pub use refer::*;
 
+mod ident;
+
 mod pat;
 pub use pat::*;

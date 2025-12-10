@@ -6,7 +6,31 @@ use crate::{
     input::CSTInput,
     misc::Ident,
     pat::{PatReference, PatType},
+    punct::DotDot,
 };
+
+#[inline]
+fn parse_expr<I>(input: &mut I) -> Result<Pat<I>, CSTError>
+where
+    I: CSTInput,
+{
+    match parse_range(input).map_err(|err| match err {
+        CSTError::Syntax(SyntaxKind::Expr, control_flow, span) => {
+            CSTError::Syntax(SyntaxKind::Pat, control_flow, span)
+        }
+        err => err,
+    })? {
+        Expr::Range(range) => Ok(Pat::Range(range)),
+        Expr::Lit(lit) => Ok(Pat::Lit(lit)),
+        Expr::Const(expr) => Ok(Pat::Const(expr)),
+        Expr::Path(expr) => Ok(Pat::Path(expr)),
+        expr => Err(CSTError::Syntax(
+            SyntaxKind::Pat,
+            ControlFlow::Recovable,
+            expr.to_span(),
+        )),
+    }
+}
 
 /// A pattern in a local binding, function signature, match expression, or various other places.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
@@ -23,6 +47,7 @@ where
     Ident(Ident<I>),
     Wild(ExprInfer<I>),
     Path(ExprPath<I>),
+    Rest(DotDot<I>),
 }
 
 impl<I> Syntax<I> for Pat<I>
@@ -42,22 +67,19 @@ where
             return Ok(pat);
         }
 
-        match parse_range(input).map_err(|err| match err {
-            CSTError::Syntax(SyntaxKind::Expr, control_flow, span) => {
-                CSTError::Syntax(SyntaxKind::Pat, control_flow, span)
-            }
-            err => err,
-        })? {
-            Expr::Range(range) => Ok(Pat::Range(range)),
-            Expr::Lit(lit) => Ok(Pat::Lit(lit)),
-            Expr::Const(expr) => Ok(Pat::Const(expr)),
-            Expr::Path(expr) => Ok(Pat::Path(expr)),
-            expr => Err(CSTError::Syntax(
-                SyntaxKind::Pat,
-                ControlFlow::Recovable,
-                expr.to_span(),
-            )),
+        if let Some(pat) = parse_expr
+            .or(DotDot::into_parser().map(Pat::Rest))
+            .ok()
+            .parse(input)?
+        {
+            return Ok(pat);
         }
+
+        Err(CSTError::Syntax(
+            SyntaxKind::Pat,
+            ControlFlow::Recovable,
+            input.to_span_at(1),
+        ))
     }
 
     #[inline]
@@ -71,6 +93,7 @@ where
             Pat::Const(pat) => pat.to_span(),
             Pat::Wild(pat) => pat.to_span(),
             Pat::Path(pat) => pat.to_span(),
+            Pat::Rest(pat) => pat.to_span(),
         }
     }
 }
