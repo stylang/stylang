@@ -46,6 +46,7 @@ mod tests {
         expr::{Expr, ExprBlock, ExprPath},
         input::TokenStream,
         misc::{Ident, S},
+        pat::PatIdent,
         path::{Path, PathSegment},
     };
 
@@ -82,7 +83,12 @@ mod tests {
                     end: BraceEnd(None, TokenStream::from((33, "}")), None),
                     body: vec![
                         Arm {
-                            pat: Pat::Ident(Ident(TokenStream::from((10, "Some")))),
+                            pat: Pat::Ident(PatIdent {
+                                by_ref: None,
+                                mutability: None,
+                                ident: Ident(TokenStream::from((10, "Some"))),
+                                supat: None
+                            }),
                             guard: None,
                             arrow: FatArrowRight(
                                 Some(S(TokenStream::from((14, " ")))),
@@ -104,7 +110,12 @@ mod tests {
                             ))
                         },
                         Arm {
-                            pat: Pat::Ident(Ident(TokenStream::from((22, "None")))),
+                            pat: Pat::Ident(PatIdent {
+                                by_ref: None,
+                                mutability: None,
+                                ident: Ident(TokenStream::from((22, "None"))),
+                                supat: None,
+                            }),
                             guard: None,
                             arrow: FatArrowRight(
                                 Some(S(TokenStream::from((26, " ")))),

@@ -71,3 +71,4 @@ define_keyword!(While, "while");
 define_keyword!(Break, "break");
 define_keyword!(Return, "return");
 define_keyword!(Match, "match");
+define_keyword!(Ref, "ref");

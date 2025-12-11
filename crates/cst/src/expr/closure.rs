@@ -37,7 +37,7 @@ mod tests {
         input::TokenStream,
         keyword::{Const, Let},
         misc::{Ident, S},
-        pat::Pat,
+        pat::{Pat, PatIdent},
         path::{Path, PathSegment},
         punct::{BraceEnd, BraceStart, Comma, Equal, Or, Plus, Semi},
     };
@@ -64,7 +64,12 @@ mod tests {
                                 TokenStream::from((8, "let")),
                                 Some(S(TokenStream::from((11, " "))))
                             ),
-                            pat: Pat::Ident(Ident(TokenStream::from((12, "a")))),
+                            pat: Pat::Ident(PatIdent {
+                                by_ref: None,
+                                mutability: None,
+                                ident: Ident(TokenStream::from((12, "a"))),
+                                supat: None
+                            }),
                             init: Some(LocalInit {
                                 eq: Equal(
                                     Some(S(TokenStream::from((13, " ")))),
@@ -85,12 +90,20 @@ mod tests {
                                         ),
                                         body: Punctuated {
                                             pairs: vec![(
-                                                Pat::Ident(Ident(TokenStream::from((23, "a")))),
+                                                Pat::Ident(PatIdent {
+                                                    by_ref: None,
+                                                    mutability: None,
+                                                    ident: Ident(TokenStream::from((23, "a"))),
+                                                    supat: None
+                                                }),
                                                 Comma(None, TokenStream::from((24, ",")), None)
                                             )],
-                                            tail: Some(Box::new(Pat::Ident(Ident(
-                                                TokenStream::from((25, "b"))
-                                            ))))
+                                            tail: Some(Box::new(Pat::Ident(PatIdent {
+                                                by_ref: None,
+                                                mutability: None,
+                                                ident: Ident(TokenStream::from((25, "b"))),
+                                                supat: None
+                                            })))
                                         }
                                     },
                                     output: None,

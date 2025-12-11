@@ -174,6 +174,8 @@ pub enum KeywordKind {
     Return,
     #[error("keyword `match`")]
     Match,
+    #[error("keyword `ref`")]
+    Ref,
 }
 
 impl KeywordKind {

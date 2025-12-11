@@ -95,6 +95,7 @@ mod tests {
         input::TokenStream,
         keyword::Let,
         misc::Ident,
+        pat::PatIdent,
         path::{Path, PathSegment},
         punct::{BraceEnd, BraceStart, Equal, Lt, PlusEq, Semi},
     };
@@ -167,7 +168,12 @@ mod tests {
                     Some(S(TokenStream::from((3, " "))))
                 ),
                 pat: (
-                    Box::new(Pat::Ident(Ident(TokenStream::from((4, "a"))))),
+                    Box::new(Pat::Ident(PatIdent {
+                        by_ref: None,
+                        mutability: None,
+                        ident: Ident(TokenStream::from((4, "a"))),
+                        supat: None
+                    })),
                     Some(S(TokenStream::from((5, " "))))
                 ),
                 in_token: In(
@@ -338,7 +344,12 @@ mod tests {
                         TokenStream::from((6, "let")),
                         Some(S(TokenStream::from((9, " "))))
                     ),
-                    pat: Box::new(Pat::Ident(Ident(TokenStream::from((10, "b"))))),
+                    pat: Box::new(Pat::Ident(PatIdent {
+                        by_ref: None,
+                        mutability: None,
+                        ident: Ident(TokenStream::from((10, "b"))),
+                        supat: None
+                    })),
                     eq: Equal(
                         Some(S(TokenStream::from((11, " ")))),
                         TokenStream::from((12, "=")),

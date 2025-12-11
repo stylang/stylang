@@ -7,6 +7,7 @@ mod refer;
 pub use refer::*;
 
 mod ident;
+pub use ident::*;
 
 mod pat;
 pub use pat::*;

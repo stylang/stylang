@@ -58,7 +58,7 @@ mod tests {
         input::TokenStream,
         keyword::Let,
         misc::{Ident, S},
-        pat::Pat,
+        pat::{Pat, PatIdent},
         punct::{Equal, Semi},
     };
 
@@ -71,7 +71,12 @@ mod tests {
                     TokenStream::from((0, "let")),
                     Some(S(TokenStream::from((3, " "))))
                 ),
-                pat: Pat::Ident(Ident(TokenStream::from((4, "a")))),
+                pat: Pat::Ident(PatIdent {
+                    by_ref: None,
+                    mutability: None,
+                    ident: Ident(TokenStream::from((4, "a"))),
+                    supat: None
+                }),
                 init: None,
                 semi: Semi(None, TokenStream::from((5, ";")), None)
             })
@@ -87,7 +92,12 @@ mod tests {
                     TokenStream::from((0, "let")),
                     Some(S(TokenStream::from((3, " "))))
                 ),
-                pat: Pat::Ident(Ident(TokenStream::from((4, "a")))),
+                pat: Pat::Ident(PatIdent {
+                    by_ref: None,
+                    mutability: None,
+                    ident: Ident(TokenStream::from((4, "a"))),
+                    supat: None
+                }),
                 init: Some(LocalInit {
                     eq: Equal(
                         Some(S(TokenStream::from((5, " ")))),

@@ -4,8 +4,7 @@ use crate::{
     errors::{CSTError, SyntaxKind},
     expr::{Expr, ExprConst, ExprInfer, ExprLit, ExprPath, ExprRange, parse_range},
     input::CSTInput,
-    misc::Ident,
-    pat::{PatReference, PatType},
+    pat::{PatReference, PatType, ident::PatIdent},
     punct::DotDot,
 };
 
@@ -44,7 +43,7 @@ where
     Const(ExprConst<I>),
     Ref(PatReference<I>),
     Type(PatType<I>),
-    Ident(Ident<I>),
+    Ident(PatIdent<I>),
     Wild(ExprInfer<I>),
     Path(ExprPath<I>),
     Rest(DotDot<I>),
@@ -58,7 +57,7 @@ where
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
         if let Some(pat) = PatType::into_parser()
             .map(Pat::Type)
-            .or(Ident::into_parser().map(Pat::Ident))
+            .or(PatIdent::into_parser().map(Pat::Ident))
             .or(PatReference::into_parser().map(Pat::Ref))
             .or(ExprInfer::into_parser().map(Pat::Wild))
             .ok()
@@ -105,7 +104,7 @@ mod tests {
     use crate::{
         input::TokenStream,
         misc::{Ident, S},
-        pat::{Pat, PatType},
+        pat::{Pat, PatType, ident::PatIdent},
         punct::Colon,
         ty::Type,
     };
@@ -115,7 +114,12 @@ mod tests {
         assert_eq!(
             TokenStream::from("a: u8").parse(),
             Ok(Pat::Type(PatType {
-                pat: Box::new(Pat::Ident(Ident(TokenStream::from("a")))),
+                pat: Box::new(Pat::Ident(PatIdent {
+                    by_ref: None,
+                    mutability: None,
+                    ident: Ident(TokenStream::from("a")),
+                    supat: None
+                })),
                 colon: Colon(
                     None,
                     TokenStream::from((1, ":")),

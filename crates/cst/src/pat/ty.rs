@@ -1,6 +1,13 @@
 use parserc::{Parser, syntax::Syntax};
 
-use crate::{errors::CSTError, input::CSTInput, misc::Ident, pat::Pat, punct::Colon, ty::Type};
+use crate::{
+    errors::CSTError,
+    input::CSTInput,
+    misc::Ident,
+    pat::{Pat, ident::PatIdent},
+    punct::Colon,
+    ty::Type,
+};
 
 /// A type ascription pattern: foo: f64.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
@@ -21,7 +28,14 @@ where
     I: CSTInput,
 {
     Ident::into_parser()
-        .map(|ident| Pat::Ident(ident))
+        .map(|ident| {
+            Pat::Ident(PatIdent {
+                by_ref: None,
+                mutability: None,
+                ident,
+                supat: None,
+            })
+        })
         .boxed()
         .parse(input)
 }

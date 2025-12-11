@@ -15,7 +15,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::{Delimiter, SyntaxInput, Punctuated};
+    use parserc::syntax::{Delimiter, Punctuated, SyntaxInput};
 
     use crate::{
         expr::{
@@ -25,7 +25,7 @@ mod tests {
         input::TokenStream,
         keyword::Let,
         misc::{Ident, S},
-        pat::Pat,
+        pat::{Pat, PatIdent},
         path::{Path, PathArguments, PathSegment},
         punct::{
             AngleBracketEnd, AngleBracketStart, Comma, Dot, Equal, ParenEnd, ParenStart, PathSep,
@@ -131,7 +131,12 @@ mod tests {
                     TokenStream::from((0, "let")),
                     Some(S(TokenStream::from((3, " "))))
                 ),
-                pat: Box::new(Pat::Ident(Ident(TokenStream::from((4, "a"))))),
+                pat: Box::new(Pat::Ident(PatIdent {
+                    by_ref: None,
+                    mutability: None,
+                    ident: Ident(TokenStream::from((4, "a"))),
+                    supat: None
+                })),
                 eq: Equal(
                     Some(S(TokenStream::from((5, " ")))),
                     TokenStream::from((6, "=")),
