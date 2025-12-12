@@ -68,7 +68,7 @@ mod tests {
                                 by_ref: None,
                                 mutability: None,
                                 ident: Ident(TokenStream::from((12, "a"))),
-                                supat: None
+                                subpat: None
                             }),
                             init: Some(LocalInit {
                                 eq: Equal(
@@ -94,7 +94,7 @@ mod tests {
                                                     by_ref: None,
                                                     mutability: None,
                                                     ident: Ident(TokenStream::from((23, "a"))),
-                                                    supat: None
+                                                    subpat: None
                                                 }),
                                                 Comma(None, TokenStream::from((24, ",")), None)
                                             )],
@@ -102,7 +102,7 @@ mod tests {
                                                 by_ref: None,
                                                 mutability: None,
                                                 ident: Ident(TokenStream::from((25, "b"))),
-                                                supat: None
+                                                subpat: None
                                             })))
                                         }
                                     },

@@ -87,7 +87,7 @@ mod tests {
                                 by_ref: None,
                                 mutability: None,
                                 ident: Ident(TokenStream::from((10, "Some"))),
-                                supat: None
+                                subpat: None
                             }),
                             guard: None,
                             arrow: FatArrowRight(
@@ -114,7 +114,7 @@ mod tests {
                                 by_ref: None,
                                 mutability: None,
                                 ident: Ident(TokenStream::from((22, "None"))),
-                                supat: None,
+                                subpat: None,
                             }),
                             guard: None,
                             arrow: FatArrowRight(

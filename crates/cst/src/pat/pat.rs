@@ -1,10 +1,10 @@
 use parserc::{ControlFlow, Parser, syntax::Syntax};
 
 use crate::{
-    errors::{CSTError, SyntaxKind},
+    errors::{CSTError, SemanticsKind, SyntaxKind},
     expr::{Expr, ExprConst, ExprInfer, ExprLit, ExprPath, ExprRange, parse_range},
     input::CSTInput,
-    pat::{PatReference, PatType, ident::PatIdent},
+    pat::{PatReference, PatSlice, PatStruct, PatTuple, PatTupleStruct, PatType, ident::PatIdent},
     punct::DotDot,
 };
 
@@ -47,6 +47,10 @@ where
     Wild(ExprInfer<I>),
     Path(ExprPath<I>),
     Rest(DotDot<I>),
+    Slice(PatSlice<I>),
+    Tuple(PatTuple<I>),
+    TupleStruct(PatTupleStruct<I>),
+    Struct(PatStruct<I>),
 }
 
 impl<I> Syntax<I> for Pat<I>
@@ -57,28 +61,32 @@ where
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
         if let Some(pat) = PatType::into_parser()
             .map(Pat::Type)
-            .or(PatIdent::into_parser().map(Pat::Ident))
             .or(PatReference::into_parser().map(Pat::Ref))
             .or(ExprInfer::into_parser().map(Pat::Wild))
+            .or(PatSlice::into_parser().map(Pat::Slice))
+            .or(PatTuple::into_parser().map(Pat::Tuple))
+            .or(PatStruct::into_parser().map(Pat::Struct))
+            .or(PatTupleStruct::into_parser().map(Pat::TupleStruct))
+            .or(PatIdent::into_parser().map(Pat::Ident))
             .ok()
             .parse(input)?
         {
             return Ok(pat);
         }
+        let mut cloned = input.clone();
 
-        if let Some(pat) = parse_expr
-            .or(DotDot::into_parser().map(Pat::Rest))
-            .ok()
-            .parse(input)?
-        {
-            return Ok(pat);
+        match parse_expr(input) {
+            Ok(pat) => Ok(pat),
+            Err(CSTError::Semantics(SemanticsKind::RangeLimits, _)) => DotDot::into_parser()
+                .map(Self::Rest)
+                .parse(&mut cloned)
+                .map_err(SyntaxKind::Pat.map_unhandle())
+                .inspect(|_| *input = cloned)
+                .inspect_err(|err| {
+                    println!("{}", err);
+                }),
+            Err(err) => Err(err),
         }
-
-        Err(CSTError::Syntax(
-            SyntaxKind::Pat,
-            ControlFlow::Recovable,
-            input.to_span_at(1),
-        ))
     }
 
     #[inline]
@@ -93,6 +101,10 @@ where
             Pat::Wild(pat) => pat.to_span(),
             Pat::Path(pat) => pat.to_span(),
             Pat::Rest(pat) => pat.to_span(),
+            Pat::Slice(pat) => pat.to_span(),
+            Pat::Tuple(pat) => pat.to_span(),
+            Pat::TupleStruct(pat) => pat.to_span(),
+            Pat::Struct(pat) => pat.to_span(),
         }
     }
 }
@@ -118,7 +130,7 @@ mod tests {
                     by_ref: None,
                     mutability: None,
                     ident: Ident(TokenStream::from("a")),
-                    supat: None
+                    subpat: None
                 })),
                 colon: Colon(
                     None,

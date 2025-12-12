@@ -75,7 +75,7 @@ mod tests {
                     by_ref: None,
                     mutability: None,
                     ident: Ident(TokenStream::from((4, "a"))),
-                    supat: None
+                    subpat: None
                 }),
                 init: None,
                 semi: Semi(None, TokenStream::from((5, ";")), None)
@@ -96,7 +96,7 @@ mod tests {
                     by_ref: None,
                     mutability: None,
                     ident: Ident(TokenStream::from((4, "a"))),
-                    supat: None
+                    subpat: None
                 }),
                 init: Some(LocalInit {
                     eq: Equal(

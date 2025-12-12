@@ -33,7 +33,7 @@ where
                 by_ref: None,
                 mutability: None,
                 ident,
-                supat: None,
+                subpat: None,
             })
         })
         .boxed()

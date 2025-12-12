@@ -172,7 +172,7 @@ mod tests {
                         by_ref: None,
                         mutability: None,
                         ident: Ident(TokenStream::from((4, "a"))),
-                        supat: None
+                        subpat: None
                     })),
                     Some(S(TokenStream::from((5, " "))))
                 ),
@@ -348,7 +348,7 @@ mod tests {
                         by_ref: None,
                         mutability: None,
                         ident: Ident(TokenStream::from((10, "b"))),
-                        supat: None
+                        subpat: None
                     })),
                     eq: Equal(
                         Some(S(TokenStream::from((11, " ")))),
