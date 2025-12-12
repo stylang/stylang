@@ -9,6 +9,6 @@ pub trait Unit<const static NAME: string, T> {
 }
 
 /// The built-in attribute `unit` is used to derive [`Unit`] for struct/enum.
-@compile_builtin
-@attribute(Variant | Struct)
+#[compile_builtin]
+#[attribute(Variant | Struct)]
 pub struct Unit(pub string);
