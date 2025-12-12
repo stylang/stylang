@@ -5,7 +5,7 @@ use crate::{
     expr::{Expr, ExprConst, ExprInfer, ExprLit, ExprPath, ExprRange, parse_range},
     input::CSTInput,
     pat::{PatReference, PatSlice, PatStruct, PatTuple, PatTupleStruct, PatType, ident::PatIdent},
-    punct::DotDot,
+    punct::{DotDot, Or},
 };
 
 #[inline]
@@ -51,6 +51,7 @@ where
     Tuple(PatTuple<I>),
     TupleStruct(PatTupleStruct<I>),
     Struct(PatStruct<I>),
+    Or(Box<Pat<I>>, Or<I>, Box<Pat<I>>),
 }
 
 impl<I> Syntax<I> for Pat<I>
@@ -105,6 +106,7 @@ where
             Pat::Tuple(pat) => pat.to_span(),
             Pat::TupleStruct(pat) => pat.to_span(),
             Pat::Struct(pat) => pat.to_span(),
+            Pat::Or(left, _, right) => left.to_span() + right.to_span(),
         }
     }
 }
