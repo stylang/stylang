@@ -1,5 +1,5 @@
 [package]
-description = "Concrete Syntax Tree for `stylang` based on `parserc` infrastructure"
+description = "Concrete Syntax Tree for `stylang` based on `parserc` infrastructure, It also serves as a Rust source code-compatible front-end parser."
 documentation = "https://docs.rs/stylang-cst"
 edition = "2024"
 license = "MIT"
@@ -17,5 +17,6 @@ serde = { version = "1.0.228", optional = true }
 serde_json = "1.0.145"
 
 [features]
-default = ["serde"]
+default = ["serde","rust"]
 serde = ["dep:serde","parserc/serde"]
+rust = []

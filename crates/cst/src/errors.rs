@@ -26,7 +26,122 @@ impl PunctKind {
 
 /// Error for parsing keyword.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum KeywordKind {}
+pub enum KeywordKind {
+    #[error("keyword `as`")]
+    As,
+    #[error("keyword `async`")]
+    Async,
+    #[error("keyword `await`")]
+    Await,
+    #[error("keyword `break`")]
+    Break,
+    #[error("keyword `const`")]
+    Const,
+    #[error("keyword `continue`")]
+    Continue,
+    #[error("keyword `crate`")]
+    Crate,
+    #[error("keyword `dyn`")]
+    Dyn,
+    #[error("keyword `else`")]
+    Else,
+    #[error("keyword `enum`")]
+    Enum,
+    #[error("keyword `extern`")]
+    Extern,
+    #[error("keyword `false`")]
+    False,
+    #[error("keyword `fn`")]
+    Fn,
+    #[error("keyword `for`")]
+    For,
+    #[error("keyword `if`")]
+    If,
+    #[error("keyword `impl`")]
+    Impl,
+    #[error("keyword `in`")]
+    In,
+    #[error("keyword `let`")]
+    Let,
+    #[error("keyword `loop`")]
+    Loop,
+    #[error("keyword `match`")]
+    Match,
+    #[error("keyword `mod`")]
+    Mod,
+    #[error("keyword `move`")]
+    Move,
+    #[error("keyword `mut`")]
+    Mut,
+    #[error("keyword `pub`")]
+    Pub,
+    #[error("keyword `ref`")]
+    Ref,
+    #[error("keyword `return`")]
+    Return,
+    #[error("keyword `self`")]
+    SelfLower,
+    #[error("keyword `Self`")]
+    SelfUpper,
+    #[error("keyword `static`")]
+    Static,
+    #[error("keyword `struct`")]
+    Struct,
+    #[error("keyword `super`")]
+    Super,
+    #[error("keyword `trait`")]
+    Trait,
+    #[error("keyword `true`")]
+    True,
+    #[error("keyword `type`")]
+    Type,
+    #[error("keyword `unsafe`")]
+    Unsafe,
+    #[error("keyword `use`")]
+    Use,
+    #[error("keyword `where`")]
+    Where,
+    #[error("keyword `where`")]
+    While,
+    #[error("reserved keyword `abstract`")]
+    Abstract,
+    #[error("reserved keyword `become`")]
+    Become,
+    #[error("reserved keyword `box`")]
+    Box,
+    #[error("reserved keyword `do`")]
+    Do,
+    #[error("reserved keyword `final`")]
+    Final,
+    #[error("reserved keyword `gen`")]
+    Gen,
+    #[error("reserved keyword `macro`")]
+    Macro,
+    #[error("reserved keyword `override`")]
+    Override,
+    #[error("reserved keyword `priv`")]
+    Priv,
+    #[error("reserved keyword `try`")]
+    Try,
+    #[error("reserved keyword `typeof`")]
+    TypeOf,
+    #[error("reserved keyword `unsized`")]
+    Unsized,
+    #[error("reserved keyword `virtual`")]
+    Virtual,
+    #[error("reserved keyword `yield`")]
+    Yied,
+    #[error("weak keyword `'static`")]
+    StaticLifetime,
+    #[error("weak keyword `macro_rules`")]
+    MacroRules,
+    #[error("weak keyword `raw`")]
+    Raw,
+    #[error("weak keyword `safe`")]
+    Safe,
+    #[error("weak keyword `union`")]
+    Union,
+}
 
 impl KeywordKind {
     /// Map error to `TokenKind`

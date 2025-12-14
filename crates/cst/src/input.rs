@@ -8,7 +8,7 @@ use crate::errors::CSTError;
 
 /// The `Input` trait for `CST` parsing.
 pub trait CSTInput:
-    Input<Item = u8, Error = CSTError>
+    Input<Item = char, Error = CSTError>
     + AsBytes
     + AsStr
     + StartWith<&'static str>
@@ -22,6 +22,6 @@ pub trait CSTInput:
 }
 
 /// A implementation of `CSTInput`.
-pub type TokenStream<'a> = parserc::bytes::TokenStream<'a, CSTError>;
+pub type TokenStream<'a> = parserc::chars::TokenStream<'a, CSTError>;
 
 impl<'a> CSTInput for TokenStream<'a> {}
