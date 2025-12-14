@@ -2,33 +2,62 @@ use parserc::{ControlFlow, Parser, syntax::Syntax};
 
 use crate::{
     errors::{CSTError, SemanticsKind, SyntaxKind},
-    expr::{Expr, ExprConst, ExprInfer, ExprLit, ExprPath, ExprRange, parse_range},
+    expr::{ExprConst, ExprInfer, ExprLit, ExprPath, RangeLimits},
     input::CSTInput,
     pat::{PatReference, PatSlice, PatStruct, PatTuple, PatTupleStruct, PatType, ident::PatIdent},
     punct::{DotDot, Or},
 };
 
 #[inline]
-fn parse_expr<I>(input: &mut I) -> Result<Pat<I>, CSTError>
+fn parse_range_operand<I>(input: &mut I) -> Result<Pat<I>, CSTError>
 where
     I: CSTInput,
 {
-    match parse_range(input).map_err(|err| match err {
-        CSTError::Syntax(SyntaxKind::Expr, control_flow, span) => {
-            CSTError::Syntax(SyntaxKind::Pat, control_flow, span)
-        }
-        err => err,
-    })? {
-        Expr::Range(range) => Ok(Pat::Range(range)),
-        Expr::Lit(lit) => Ok(Pat::Lit(lit)),
-        Expr::Const(expr) => Ok(Pat::Const(expr)),
-        Expr::Path(expr) => Ok(Pat::Path(expr)),
-        expr => Err(CSTError::Syntax(
+    ExprLit::into_parser()
+        .map(Pat::Lit)
+        .or(ExprPath::into_parser().map(Pat::Path))
+        .parse(input)
+        .map_err(SyntaxKind::Pat.map_unhandle())
+}
+
+#[inline]
+fn parse_range<I>(input: &mut I) -> Result<Pat<I>, CSTError>
+where
+    I: CSTInput,
+{
+    let start = parse_range_operand.boxed().ok().parse(input)?;
+
+    let Some(limits) = RangeLimits::into_parser().ok().parse(input)? else {
+        return start.map(|expr| *expr).ok_or(CSTError::Syntax(
             SyntaxKind::Pat,
             ControlFlow::Recovable,
-            expr.to_span(),
-        )),
-    }
+            input.to_span_at(1),
+        ));
+    };
+
+    let end = parse_range_operand.boxed().ok().parse(input)?;
+
+    let limits = match limits {
+        RangeLimits::Closed(dot_dot_eq) => {
+            if start.is_none() || end.is_none() {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::Range,
+                    dot_dot_eq.to_span(),
+                ));
+            }
+
+            RangeLimits::Closed(dot_dot_eq)
+        }
+        RangeLimits::HalfOpen(dot_dot) => {
+            if start.is_none() && end.is_none() {
+                return Ok(Pat::Rest(dot_dot));
+            }
+
+            RangeLimits::HalfOpen(dot_dot)
+        }
+    };
+
+    Ok(Pat::Range { start, limits, end })
 }
 
 /// A pattern in a local binding, function signature, match expression, or various other places.
@@ -38,7 +67,11 @@ pub enum Pat<I>
 where
     I: CSTInput,
 {
-    Range(ExprRange<I>),
+    Range {
+        start: Option<Box<Pat<I>>>,
+        limits: RangeLimits<I>,
+        end: Option<Box<Pat<I>>>,
+    },
     Lit(ExprLit<I>),
     Const(ExprConst<I>),
     Ref(PatReference<I>),
@@ -74,26 +107,13 @@ where
         {
             return Ok(pat);
         }
-        let mut cloned = input.clone();
 
-        match parse_expr(input) {
-            Ok(pat) => Ok(pat),
-            Err(CSTError::Semantics(SemanticsKind::RangeLimits, _)) => DotDot::into_parser()
-                .map(Self::Rest)
-                .parse(&mut cloned)
-                .map_err(SyntaxKind::Pat.map_unhandle())
-                .inspect(|_| *input = cloned)
-                .inspect_err(|err| {
-                    println!("{}", err);
-                }),
-            Err(err) => Err(err),
-        }
+        parse_range(input)
     }
 
     #[inline]
     fn to_span(&self) -> parserc::Span {
         match self {
-            Pat::Range(expr) => expr.start.to_span() + expr.limits.to_span() + expr.end.to_span(),
             Pat::Type(expr) => expr.to_span(),
             Pat::Ident(expr) => expr.to_span(),
             Pat::Ref(pat) => pat.to_span(),
@@ -107,6 +127,11 @@ where
             Pat::TupleStruct(pat) => pat.to_span(),
             Pat::Struct(pat) => pat.to_span(),
             Pat::Or(left, _, right) => left.to_span() + right.to_span(),
+            Pat::Range {
+                start: left,
+                limits,
+                end: right,
+            } => left.to_span() + limits.to_span() + right.to_span(),
         }
     }
 }
