@@ -8,3 +8,6 @@ pub use outer::*;
 
 mod r#fn;
 pub use r#fn::*;
+
+mod r#trait;
+pub use r#trait::*;

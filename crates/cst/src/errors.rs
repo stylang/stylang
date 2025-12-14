@@ -176,6 +176,8 @@ pub enum KeywordKind {
     Match,
     #[error("keyword `ref`")]
     Ref,
+    #[error("keyword `trait`")]
+    Trait,
 }
 
 impl KeywordKind {
@@ -353,6 +355,14 @@ pub enum SemanticsKind {
     Array,
     #[error("`repeat`")]
     Repeat,
+    #[error("generic `paramters`")]
+    Generics,
+    #[error("where `clause`")]
+    WhereClause,
+    #[error("statments `block`")]
+    Block,
+    #[error("punct `;`")]
+    Semi,
 }
 
 impl SemanticsKind {
