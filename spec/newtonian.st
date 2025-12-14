@@ -8,18 +8,18 @@ use std::unit::*;
 
 /// force value.
 pub enum Force {
-    #[unit("N")]
+    @unit("N")
     Newton(f32),
-    #[unit("kN")]
+    @unit("kN")
     KiloNewton(f32),
 }
 
 /// acceleration `ms_2`
-#[unit("ms_2")]
+@unit("ms_2")
 pub struct Accel(pub f32);
 
 /// Mass `kg` or `g`
-#[unit("kg")]
+@unit("kg")
 pub struct Mass(pub f32);
 
 fn main() {

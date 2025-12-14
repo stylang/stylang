@@ -47,7 +47,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parserc::syntax::{Delimiter, SyntaxInput, Punctuated};
+    use parserc::syntax::{Delimiter, Punctuated, SyntaxInput};
 
     use crate::{
         expr::ExprPath,

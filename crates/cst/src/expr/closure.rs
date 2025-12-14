@@ -4,7 +4,7 @@ use crate::{
     expr::Expr,
     input::CSTInput,
     keyword::Const,
-    pat::Pat,
+    pat::PatNoTopAlt,
     punct::{ArrowRight, Comma, Or},
     ty::Type,
 };
@@ -20,7 +20,7 @@ where
     pub constness: Option<Const<I>>,
     /// input arguments of closure.
     #[parserc(crucial)]
-    pub inputs: Delimiter<Or<I>, Or<I>, Punctuated<Pat<I>, Comma<I>>>,
+    pub inputs: Delimiter<Or<I>, Or<I>, Punctuated<PatNoTopAlt<I>, Comma<I>>>,
     /// Return type of a function signature.
     pub output: Option<(ArrowRight<I>, Box<Type<I>>)>,
     /// Closure body expr.
@@ -37,7 +37,7 @@ mod tests {
         input::TokenStream,
         keyword::{Const, Let},
         misc::{Ident, S},
-        pat::{Pat, PatIdent},
+        pat::{Pat, PatIdent, PatNoTopAlt},
         path::{Path, PathSegment},
         punct::{BraceEnd, BraceStart, Comma, Equal, Or, Plus, Semi},
     };
@@ -90,7 +90,7 @@ mod tests {
                                         ),
                                         body: Punctuated {
                                             pairs: vec![(
-                                                Pat::Ident(PatIdent {
+                                                PatNoTopAlt::Ident(PatIdent {
                                                     by_ref: None,
                                                     mutability: None,
                                                     ident: Ident(TokenStream::from((23, "a"))),
@@ -98,7 +98,7 @@ mod tests {
                                                 }),
                                                 Comma(None, TokenStream::from((24, ",")), None)
                                             )],
-                                            tail: Some(Box::new(Pat::Ident(PatIdent {
+                                            tail: Some(Box::new(PatNoTopAlt::Ident(PatIdent {
                                                 by_ref: None,
                                                 mutability: None,
                                                 ident: Ident(TokenStream::from((25, "b"))),

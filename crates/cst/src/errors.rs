@@ -285,6 +285,8 @@ pub enum SyntaxKind {
     StructBodyEnd,
     #[error("block `}}`")]
     BlockEnd,
+    #[error("pattern `or` right  operand")]
+    PatOrRightOperand,
 }
 
 impl SyntaxKind {
