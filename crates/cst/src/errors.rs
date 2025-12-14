@@ -163,7 +163,12 @@ impl KeywordKind {
 
 /// Error for syntax tree.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SyntaxKind {}
+pub enum SyntaxKind {
+    #[error("identifier or keyword")]
+    IdentOrKeyword,
+    #[error("raw identifier")]
+    RawIdent,
+}
 
 impl SyntaxKind {
     /// Map unhandle error
@@ -213,7 +218,10 @@ impl OverflowKind {
 
 /// Semantics error.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SemanticsKind {}
+pub enum SemanticsKind {
+    #[error("raw identifier")]
+    RawIdent,
+}
 
 impl SemanticsKind {
     /// Map error to this kind.
