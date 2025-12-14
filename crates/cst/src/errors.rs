@@ -4,112 +4,7 @@ use parserc::{ControlFlow, ParseError, Span};
 
 /// Error for parsing puncts.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum PunctKind {
-    #[error("punct `{{`")]
-    BraceStart,
-    #[error("punct `}}`")]
-    BraceEnd,
-    #[error("punct `[`")]
-    BracketStart,
-    #[error("punct `]`")]
-    BracketEnd,
-    #[error("punct `(`")]
-    ParenStart,
-    #[error("punct `)`")]
-    ParenEnd,
-    #[error("punct `@`")]
-    At,
-    #[error("punct `->`")]
-    ArrowRight,
-    #[error("punct `=>`")]
-    FatArrowRight,
-    #[error("punct `:`")]
-    Colon,
-    #[error("punct `,`")]
-    Comma,
-    #[error("punct `;`")]
-    Semi,
-    #[error("punct `::`")]
-    PathSep,
-    #[error("punct `|`")]
-    Or,
-    #[error("punct `<`")]
-    AngleBracketStart,
-    #[error("punct `>`")]
-    AngleBracketEnd,
-    #[error("punct `?`")]
-    Question,
-    #[error("punct `+`")]
-    Plus,
-    #[error("punct `-`")]
-    Minus,
-    #[error("punct `+=`")]
-    PlusEq,
-    #[error("punct `-=`")]
-    MinusEq,
-    #[error("punct `=`")]
-    Equal,
-    #[error("punct `&`")]
-    And,
-    #[error("punct `&&`")]
-    AndAnd,
-    #[error("punct `&=`")]
-    AndEq,
-    #[error("punct `||`")]
-    OrOr,
-    #[error("punct `|=`")]
-    OrEq,
-    #[error("punct `<`")]
-    Lt,
-    #[error("punct `<=`")]
-    LtEq,
-    #[error("punct `<<`")]
-    Shl,
-    #[error("punct `<<=`")]
-    ShlEq,
-    #[error("punct `>`")]
-    Gt,
-    #[error("punct `>=`")]
-    GtEq,
-    #[error("punct `>>`")]
-    Shr,
-    #[error("punct `>>=`")]
-    ShrEq,
-    #[error("punct `*`")]
-    Star,
-    #[error("punct `*=`")]
-    StarEq,
-    #[error("punct `**`")]
-    StarStar,
-    #[error("punct `**=`")]
-    StarStarEq,
-    #[error("punct `/`")]
-    Slash,
-    #[error("punct `/=`")]
-    SlashEq,
-    #[error("punct `%`")]
-    Rem,
-    #[error("punct `%=`")]
-    RemEq,
-    #[error("punct `==`")]
-    EqEq,
-    #[error("punct `!=`")]
-    NotEq,
-    #[error("punct `^`")]
-    Caret,
-    #[error("punct `^=`")]
-    CaretEq,
-    #[error("punct `!`")]
-    Not,
-    #[error("punct `.`")]
-    Dot,
-    #[error("punct `..`")]
-    DotDot,
-    #[error("punct `..=`")]
-    DotDotEq,
-    #[error("punct `_`")]
-    Underscore,
-}
+pub enum PunctKind {}
 
 impl PunctKind {
     /// Map error to `TokenKind`
@@ -131,54 +26,7 @@ impl PunctKind {
 
 /// Error for parsing keyword.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum KeywordKind {
-    #[error("keyword `struct`")]
-    Struct,
-    #[error("keyword `enum`")]
-    Enum,
-    #[error("keyword `fn`")]
-    Fn_,
-    #[error("keyword `mut`")]
-    Mut,
-    #[error("keyword `self`")]
-    SelfObject,
-    #[error("keyword `Self`")]
-    SelfClass,
-    #[error("keyword `const`")]
-    Const,
-    #[error("keyword `where`")]
-    Where,
-    #[error("keyword `extern`")]
-    Extern,
-    #[error("keyword `as`")]
-    As,
-    #[error("keyword `let`")]
-    Let,
-    #[error("keyword `if`")]
-    If,
-    #[error("keyword `else`")]
-    Else,
-    #[error("keyword `continue`")]
-    Continue,
-    #[error("keyword `for`")]
-    For,
-    #[error("keyword `in`")]
-    In,
-    #[error("keyword `loop`")]
-    Loop,
-    #[error("keyword `while`")]
-    While,
-    #[error("keyword `break`")]
-    Break,
-    #[error("keyword `return`")]
-    Return,
-    #[error("keyword `match`")]
-    Match,
-    #[error("keyword `ref`")]
-    Ref,
-    #[error("keyword `trait`")]
-    Trait,
-}
+pub enum KeywordKind {}
 
 impl KeywordKind {
     /// Map error to `TokenKind`
@@ -200,96 +48,7 @@ impl KeywordKind {
 
 /// Error for syntax tree.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SyntaxKind {
-    #[error("`pattern`")]
-    Pat,
-    #[error("`line comment`")]
-    LineComment,
-    #[error("`outer line document`")]
-    OuterLineDoc,
-    #[error("`inner line document`")]
-    InnerLineDoc,
-    #[error("`block comment`")]
-    BlockComment,
-    #[error("`outer block document`")]
-    OuterBlockDoc,
-    #[error("`inner block document`")]
-    InnerBlockDoc,
-    #[error("`ident`")]
-    Ident,
-    #[error("`xml ident`")]
-    XmlIdent,
-    #[error("`literal string`")]
-    LitStr,
-    #[error("`tailing quote token`")]
-    TailingQuote,
-    #[error("`literal digits`")]
-    LitDigits,
-    #[error("`literal number`")]
-    LitNumber,
-    #[error("`literal hex-number`")]
-    LitHexNumber,
-    #[error("`literal bool`")]
-    LitBool,
-    #[error("`A bare function type`")]
-    BareFn,
-    #[error("`item path`")]
-    Path,
-    #[error("`attribute argument`")]
-    AttrArgument,
-    #[error("pub `super/crate`")]
-    VisibilityPredicate,
-    #[error("expr `assign left operand`")]
-    AssignLeftOperand,
-    #[error("expr `assign right operand`")]
-    AssignRightOperand,
-    #[error("expr `let init`")]
-    LetInitExpr,
-    #[error("`expr`")]
-    Expr,
-    #[error("expr `call`")]
-    ExprCall,
-    #[error("expr `infer`")]
-    ExprInfer,
-    #[error("expr binary `left operand`")]
-    ExprBinaryLeftOperand,
-    #[error("expr binary `right operand`")]
-    ExprBinaryRightOperand,
-    #[error("expr binary `op`")]
-    ExprBinaryOp,
-    #[error("expr unary `right operand`")]
-    ExprUnaryRightOprand,
-    #[error("expr `field`")]
-    ExprField,
-    #[error("expr `field dot`")]
-    ExprFieldDot,
-    #[error("expr range limits `..` or `..=`")]
-    RangeLimits,
-    #[error("while condition `expr`")]
-    WhileExpr,
-    #[error("while `body`")]
-    WhileBody,
-    #[error("while body end token `}}`")]
-    WhileBodyEnd,
-    #[error("for `expr`")]
-    ForExpr,
-    #[error("repeat `len`")]
-    RepeatLen,
-    #[error("closure `body`")]
-    ClosureBody,
-    #[error("rest `body`")]
-    RestBody,
-    #[error("rest prefix `,`")]
-    RestPrefixComma,
-    #[error("struct `expr`")]
-    Struct,
-    #[error("struct body end `}}`")]
-    StructBodyEnd,
-    #[error("block `}}`")]
-    BlockEnd,
-    #[error("pattern `or` right  operand")]
-    PatOrRightOperand,
-}
+pub enum SyntaxKind {}
 
 impl SyntaxKind {
     /// Map unhandle error
@@ -323,10 +82,7 @@ impl SyntaxKind {
 
 /// Overflow kind
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum OverflowKind {
-    #[error("`rgb component`")]
-    RgbComponent,
-}
+pub enum OverflowKind {}
 
 impl OverflowKind {
     /// Map error to this kind.
@@ -342,28 +98,7 @@ impl OverflowKind {
 
 /// Semantics error.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum SemanticsKind {
-    #[error("method call `turbofish`")]
-    TurboFish,
-    #[error("range limits punct `..` or `..=`")]
-    RangeLimits,
-    #[error("range `semantic`")]
-    Range,
-    #[error("`index` call")]
-    Index,
-    #[error("`array`")]
-    Array,
-    #[error("`repeat`")]
-    Repeat,
-    #[error("generic `paramters`")]
-    Generics,
-    #[error("where `clause`")]
-    WhereClause,
-    #[error("statments `block`")]
-    Block,
-    #[error("punct `;`")]
-    Semi,
-}
+pub enum SemanticsKind {}
 
 impl SemanticsKind {
     /// Map error to this kind.
