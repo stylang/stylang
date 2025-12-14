@@ -3,7 +3,5 @@
 mod s;
 pub use s::*;
 
-mod ident;
-pub use ident::*;
-
+pub mod ident;
 pub mod keywords;

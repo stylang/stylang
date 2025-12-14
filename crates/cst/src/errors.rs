@@ -168,6 +168,10 @@ pub enum SyntaxKind {
     IdentOrKeyword,
     #[error("raw identifier")]
     RawIdent,
+    #[error("reserved raw identifier")]
+    ReservedRawIdent,
+    #[error("non keyword identifier")]
+    NonKeywordIdentifer,
 }
 
 impl SyntaxKind {
@@ -221,6 +225,8 @@ impl OverflowKind {
 pub enum SemanticsKind {
     #[error("raw identifier")]
     RawIdent,
+    #[error("non keyword identifier")]
+    NonKeywordIdent,
 }
 
 impl SemanticsKind {
