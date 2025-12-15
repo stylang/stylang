@@ -172,6 +172,18 @@ pub enum SyntaxKind {
     ReservedRawIdent,
     #[error("non keyword identifier")]
     NonKeywordIdentifer,
+    #[error("line comment")]
+    LineComment,
+    #[error("block comment")]
+    BlockComment,
+    #[error("outer line document")]
+    OuterLineDoc,
+    #[error("inner block document")]
+    InnerBlockDoc,
+    #[error("inner line document")]
+    InnerLineDoc,
+    #[error("outer block document")]
+    OuterBlockDoc,
 }
 
 impl SyntaxKind {
