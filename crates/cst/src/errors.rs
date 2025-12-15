@@ -4,7 +4,10 @@ use parserc::{ControlFlow, ParseError, Span};
 
 /// Error for parsing puncts.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum PunctKind {}
+pub enum PunctKind {
+    #[error("punct `::`")]
+    PathSep,
+}
 
 impl PunctKind {
     /// Map error to `TokenKind`
@@ -184,6 +187,10 @@ pub enum SyntaxKind {
     InnerLineDoc,
     #[error("outer block document")]
     OuterBlockDoc,
+    #[error("simple path segment")]
+    SimplePathSegment,
+    #[error("simple path")]
+    SimplePath,
 }
 
 impl SyntaxKind {

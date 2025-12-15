@@ -4,3 +4,4 @@
 pub mod errors;
 pub mod input;
 pub mod lexical;
+pub mod names;
