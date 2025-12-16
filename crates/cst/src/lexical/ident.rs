@@ -94,7 +94,7 @@ where
     }
 }
 
-/// [`IdentOrKeyword`] except a `strict`] or [`reserved`] keyword, see [`The Rust Reference`]
+/// [`IdentOrKeyword`] except a `strict` or `reserved` keyword, see [`The Rust Reference`]
 ///
 /// [`The Rust Reference`]: https://doc.rust-lang.org/reference/identifiers.html#railroad-NON_KEYWORD_IDENTIFIER
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]

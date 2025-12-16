@@ -1,4 +1,6 @@
-//! puncts of `stylang`
+//! punct tokens, more information see [`The Rust Reference`]
+//!
+//! [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#punctuation
 
 macro_rules! define_punct {
     ($ident: ident, $value: literal) => {

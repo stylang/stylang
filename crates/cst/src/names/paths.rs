@@ -9,12 +9,12 @@ use crate::{
     input::CSTInput,
     lexical::{
         ident::Ident,
-        keywords::{Crate, SelfLower, Super},
+        keywords::strict::{Crate, SelfLower, Super},
         punct::PathSep,
     },
 };
 
-/// Segment of `SimplePath`
+/// Segment of [`SimplePath`]
 ///
 /// More information see [`The Rust Reference`]
 ///
@@ -67,7 +67,7 @@ mod tests {
         input::TokenStream,
         lexical::{
             ident::{Ident, NonKeywordIdent},
-            keywords::Crate,
+            keywords::strict::Crate,
             punct::PathSep,
         },
         names::paths::{SimplePath, SimplePathSegment},

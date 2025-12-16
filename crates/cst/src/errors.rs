@@ -7,6 +7,10 @@ use parserc::{ControlFlow, ParseError, Span};
 pub enum PunctKind {
     #[error("punct `::`")]
     PathSep,
+    #[error("punct `'`")]
+    Quote,
+    #[error("punct `\"`")]
+    DoubleQuote,
 }
 
 impl PunctKind {
@@ -191,6 +195,12 @@ pub enum SyntaxKind {
     SimplePathSegment,
     #[error("simple path")]
     SimplePath,
+    #[error("ascii escape")]
+    ASCIIEscape,
+    #[error("ascii `\\x` escape out of range")]
+    ASCIIHexEscape,
+    #[error("ascii `\\x` escape too short")]
+    ASCIIHexEscapeTooShort,
 }
 
 impl SyntaxKind {
@@ -246,6 +256,12 @@ pub enum SemanticsKind {
     RawIdent,
     #[error("non keyword identifier")]
     NonKeywordIdent,
+    #[error("hexdigits part of unicode escape is out of range")]
+    UnicodeEscapeDigits,
+    #[error("char literal")]
+    CharLiteral,
+    #[error("empty char literal")]
+    EmptyCharLiteral,
 }
 
 impl SemanticsKind {

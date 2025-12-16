@@ -18,6 +18,5 @@ unicode-ident = "1.0.22"
 serde_json = "1.0.145"
 
 [features]
-default = ["serde","rust"]
+default = ["serde"]
 serde = ["dep:serde","parserc/serde"]
-rust = []
