@@ -144,10 +144,10 @@ where
     Ok(input.split_to(len))
 }
 
-/// Body of [`CharLiteral`]
+/// Content of [`CharLiteral`]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum Char<I>
+pub enum CharContent<I>
 where
     I: CSTInput,
 {
@@ -191,17 +191,17 @@ where
     /// delimiter start `'`
     #[parserc(keyword = "'", crucial, map_err = PunctKind::Quote.map())]
     pub delimiter_start: I,
-    /// literal char value.
-    pub body: Char<I>,
+    /// content of char literal token.
+    pub content: CharContent<I>,
     /// delimiter end `'`
     #[parserc(keyword = "'", map_err = PunctKind::Quote.map())]
     pub delimiter_end: I,
 }
 
-/// Body of [`CharLiteral`]
+/// item of content of [`StrLiteral`]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum CharOfStr<I>
+pub enum StrItem<I>
 where
     I: CSTInput,
 {
@@ -241,7 +241,7 @@ where
     #[parserc(keyword = "\"", crucial, map_err = PunctKind::DoubleQuote.map())]
     pub delimiter_start: I,
     /// escaped / unescaped character seqencuce.
-    pub chars: Vec<CharOfStr<I>>,
+    pub chars: Vec<StrItem<I>>,
     /// delimiter end `"`
     #[parserc(keyword = "\"", map_err = PunctKind::DoubleQuote.map())]
     pub delimiter_end: I,
@@ -263,9 +263,9 @@ mod tests {
                     TokenStream::from(format!("'{}'", $value).as_str()).parse(),
                     Ok(CharLiteral {
                         delimiter_start: TokenStream::from((0, "'")),
-                        body: Char::ASCIIEscape(ASCIIEscape::$ident(TokenStream::from((
-                            1, $value
-                        )))),
+                        content: CharContent::ASCIIEscape(ASCIIEscape::$ident(TokenStream::from(
+                            (1, $value)
+                        ))),
                         delimiter_end: TokenStream::from((3, "'")),
                     })
                 )
@@ -349,7 +349,7 @@ mod tests {
                         .parse::<CharLiteral<_>>(),
                     Ok(CharLiteral {
                         delimiter_start: TokenStream::from((0, "'")),
-                        body: Char::UnicodeEscape(UnicodeEscape {
+                        content: CharContent::UnicodeEscape(UnicodeEscape {
                             delimiter_start: TokenStream::from((1, "\\u{")),
                             digits: TokenStream::from((4, $value)),
                             delimiter_end: TokenStream::from((4 + $value.len(), "}")),
@@ -372,7 +372,7 @@ mod tests {
             TokenStream::from("'中'").parse::<CharLiteral<_>>(),
             Ok(CharLiteral {
                 delimiter_start: TokenStream::from((0, "'")),
-                body: Char::Char(TokenStream::from((1, "中"))),
+                content: CharContent::Char(TokenStream::from((1, "中"))),
                 delimiter_end: TokenStream::from((4, "'"))
             })
         );
@@ -421,7 +421,9 @@ mod tests {
             TokenStream::from("'\\''").parse::<CharLiteral<_>>(),
             Ok(CharLiteral {
                 delimiter_start: TokenStream::from("'"),
-                body: Char::QuoteEscape(QuoteEscape::Single(TokenStream::from((1, "\\'")))),
+                content: CharContent::QuoteEscape(QuoteEscape::Single(TokenStream::from((
+                    1, "\\'"
+                )))),
                 delimiter_end: TokenStream::from((3, "'"))
             })
         );
@@ -429,7 +431,9 @@ mod tests {
             TokenStream::from("'\\\"'").parse::<CharLiteral<_>>(),
             Ok(CharLiteral {
                 delimiter_start: TokenStream::from("'"),
-                body: Char::QuoteEscape(QuoteEscape::Double(TokenStream::from((1, "\\\"")))),
+                content: CharContent::QuoteEscape(QuoteEscape::Double(TokenStream::from((
+                    1, "\\\""
+                )))),
                 delimiter_end: TokenStream::from((3, "'"))
             })
         );
@@ -450,7 +454,7 @@ mod tests {
             TokenStream::from("\"\\\n\"").parse::<StrLiteral<_>>(),
             Ok(StrLiteral {
                 delimiter_start: TokenStream::from((0, "\"")),
-                chars: vec![CharOfStr::LineBreakEscape(TokenStream::from((1, "\\\n")))],
+                chars: vec![StrItem::LineBreakEscape(TokenStream::from((1, "\\\n")))],
                 delimiter_end: TokenStream::from((3, "\""))
             })
         );
@@ -460,9 +464,9 @@ mod tests {
             Ok(StrLiteral {
                 delimiter_start: TokenStream::from((0, "\"")),
                 chars: vec![
-                    CharOfStr::Chars(TokenStream::from((1, "你好"))),
-                    CharOfStr::LineBreakEscape(TokenStream::from((7, "\\\n"))),
-                    CharOfStr::Chars(TokenStream::from((9, "世界")))
+                    StrItem::Chars(TokenStream::from((1, "你好"))),
+                    StrItem::LineBreakEscape(TokenStream::from((7, "\\\n"))),
+                    StrItem::Chars(TokenStream::from((9, "世界")))
                 ],
                 delimiter_end: TokenStream::from((15, "\""))
             })
