@@ -201,6 +201,8 @@ pub enum SyntaxKind {
     ASCIIHexEscape,
     #[error("ascii `\\x` escape too short")]
     ASCIIHexEscapeTooShort,
+    #[error("char of literal string")]
+    CharOfStr,
 }
 
 impl SyntaxKind {
@@ -262,6 +264,12 @@ pub enum SemanticsKind {
     CharLiteral,
     #[error("empty char literal")]
     EmptyCharLiteral,
+    #[error("`'`")]
+    Quote,
+    #[error("`\"`")]
+    DoubleQuote,
+    #[error("char of literal string")]
+    CharOfStr,
 }
 
 impl SemanticsKind {

@@ -2,7 +2,7 @@
 //!
 //! [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#literals
 
-use parserc::{ControlFlow, Parser, keyword, syntax::Syntax};
+use parserc::{ControlFlow, Parser, keyword, syntax::Syntax, take_while_range_from};
 
 use crate::{
     errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
@@ -155,7 +155,9 @@ where
     UnicodeEscape(UnicodeEscape<I>),
     /// ascii escape: `\t`,`\n`,..
     ASCIIEscape(ASCIIEscape<I>),
-    /// char literal with the exception of `'`,`\`,`LF`,`CR`,`TAB`
+    /// quote escape.
+    QuoteEscape(QuoteEscape<I>),
+    /// unescaped character with the exception of `'`,`\`,`LF`,`CR`,`TAB`
     Char(#[parserc(parser = parse_literal_char)] I),
 }
 
@@ -173,7 +175,7 @@ where
             SemanticsKind::EmptyCharLiteral,
             input.to_span_at(1),
         )),
-        Some(_) => Ok(input.split_to(1)),
+        Some(c) => Ok(input.split_to(c.len_utf8())),
     }
 }
 
@@ -193,6 +195,55 @@ where
     pub body: Char<I>,
     /// delimiter end `'`
     #[parserc(keyword = "'", map_err = PunctKind::Quote.map())]
+    pub delimiter_end: I,
+}
+
+/// Body of [`CharLiteral`]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CharOfStr<I>
+where
+    I: CSTInput,
+{
+    /// unicode escape: `\u{..}`
+    UnicodeEscape(UnicodeEscape<I>),
+    /// ascii escape: `\t`,`\n`,..
+    ASCIIEscape(ASCIIEscape<I>),
+    /// quote escape.
+    QuoteEscape(QuoteEscape<I>),
+    /// string continue token `\CRLF` or `\LF`
+    LineBreakEscape(#[parserc(parser = keyword("\\\r\n").or(keyword("\\\n")))] I),
+    /// unescaped char sequence.
+    Chars(#[parserc(parser = parse_literal_char_of_str)] I),
+}
+
+#[inline]
+fn parse_literal_char_of_str<I>(input: &mut I) -> Result<I, CSTError>
+where
+    I: CSTInput,
+{
+    take_while_range_from(1, |c| c != '"' && c != '\\')
+        .parse(input)
+        .map_err(SyntaxKind::CharOfStr.map())
+}
+
+/// A string literal is a sequence of any Unicode characters enclosed within two `U+0022` (double-quote) characters,
+/// more information see [`The Rust Reference`]
+///
+/// [`The rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#character-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct StrLiteral<I>
+where
+    I: CSTInput,
+{
+    /// delimiter start `"`
+    #[parserc(keyword = "\"", crucial, map_err = PunctKind::DoubleQuote.map())]
+    pub delimiter_start: I,
+    /// escaped / unescaped character seqencuce.
+    pub chars: Vec<CharOfStr<I>>,
+    /// delimiter end `"`
+    #[parserc(keyword = "\"", map_err = PunctKind::DoubleQuote.map())]
     pub delimiter_end: I,
 }
 
@@ -262,10 +313,19 @@ mod tests {
             };
         }
 
-        make_invalid_char_literal!("'\\'");
+        // make_invalid_char_literal!("'\\'");
         make_invalid_char_literal!("'\n'");
         make_invalid_char_literal!("'\r'");
         make_invalid_char_literal!("'\t'");
+
+        assert_eq!(
+            TokenStream::from("'\\'").parse::<CharLiteral<_>>(),
+            Err(CSTError::Punct(
+                PunctKind::Quote,
+                ControlFlow::Fatal,
+                Span::Range(3..3)
+            ))
+        );
     }
 
     #[test]
@@ -307,6 +367,18 @@ mod tests {
     }
 
     #[test]
+    fn char_literal_utf8() {
+        assert_eq!(
+            TokenStream::from("'中'").parse::<CharLiteral<_>>(),
+            Ok(CharLiteral {
+                delimiter_start: TokenStream::from((0, "'")),
+                body: Char::Char(TokenStream::from((1, "中"))),
+                delimiter_end: TokenStream::from((4, "'"))
+            })
+        );
+    }
+
+    #[test]
     fn hex_escape_out_of_range() {
         assert_eq!(
             TokenStream::from("").parse::<CharLiteral<_>>(),
@@ -340,6 +412,60 @@ mod tests {
                 SemanticsKind::UnicodeEscapeDigits,
                 Span::Range(4..10)
             ))
+        );
+    }
+
+    #[test]
+    fn char_literal_quote_escape() {
+        assert_eq!(
+            TokenStream::from("'\\''").parse::<CharLiteral<_>>(),
+            Ok(CharLiteral {
+                delimiter_start: TokenStream::from("'"),
+                body: Char::QuoteEscape(QuoteEscape::Single(TokenStream::from((1, "\\'")))),
+                delimiter_end: TokenStream::from((3, "'"))
+            })
+        );
+        assert_eq!(
+            TokenStream::from("'\\\"'").parse::<CharLiteral<_>>(),
+            Ok(CharLiteral {
+                delimiter_start: TokenStream::from("'"),
+                body: Char::QuoteEscape(QuoteEscape::Double(TokenStream::from((1, "\\\"")))),
+                delimiter_end: TokenStream::from((3, "'"))
+            })
+        );
+    }
+
+    #[test]
+    fn test_string_literal() {
+        assert_eq!(
+            TokenStream::from(r##""""##).parse::<StrLiteral<_>>(),
+            Ok(StrLiteral {
+                delimiter_start: TokenStream::from((0, "\"")),
+                chars: vec![],
+                delimiter_end: TokenStream::from((1, "\""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("\"\\\n\"").parse::<StrLiteral<_>>(),
+            Ok(StrLiteral {
+                delimiter_start: TokenStream::from((0, "\"")),
+                chars: vec![CharOfStr::LineBreakEscape(TokenStream::from((1, "\\\n")))],
+                delimiter_end: TokenStream::from((3, "\""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("\"你好\\\n世界\"").parse::<StrLiteral<_>>(),
+            Ok(StrLiteral {
+                delimiter_start: TokenStream::from((0, "\"")),
+                chars: vec![
+                    CharOfStr::Chars(TokenStream::from((1, "你好"))),
+                    CharOfStr::LineBreakEscape(TokenStream::from((7, "\\\n"))),
+                    CharOfStr::Chars(TokenStream::from((9, "世界")))
+                ],
+                delimiter_end: TokenStream::from((15, "\""))
+            })
         );
     }
 }
