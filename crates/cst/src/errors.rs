@@ -29,6 +29,11 @@ impl PunctKind {
             }
         }
     }
+
+    /// Map error to `PunctKind` fatal error.
+    pub fn map_into_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| CSTError::Punct(self, ControlFlow::Fatal, err.to_span())
+    }
 }
 
 /// Error for parsing keyword.
@@ -203,6 +208,8 @@ pub enum SyntaxKind {
     ASCIIHexEscapeTooShort,
     #[error("char of literal string")]
     CharOfStr,
+    #[error("raw string delimiter end token `\"#{{0..256}}`")]
+    RawStringDelimiterEnd,
 }
 
 impl SyntaxKind {

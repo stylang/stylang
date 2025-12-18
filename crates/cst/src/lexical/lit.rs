@@ -2,7 +2,10 @@
 //!
 //! [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#literals
 
-use parserc::{ControlFlow, Parser, keyword, syntax::Syntax, take_while_range_from};
+use parserc::{
+    ControlFlow, Parser, keyword, next, syntax::Syntax, take_while_range, take_while_range_from,
+    take_while_range_to,
+};
 
 use crate::{
     errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
@@ -247,6 +250,98 @@ where
     pub delimiter_end: I,
 }
 
+/// Raw string literals do not process any escapes, more information see [`The Rust Reference`]
+///
+/// [`The rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#raw-string-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RawStrLiteral<I>
+where
+    I: CSTInput,
+{
+    /// leading character `r`.
+    pub leading_char: I,
+    /// followed by fewer than 256 of the character `#`
+    pub leading_pounds: I,
+    /// delimiter start character `"`
+    pub delimiter_start: I,
+    /// The raw string body can contain any sequence of Unicode characters other than `U+000D` (CR).
+    pub content: I,
+    /// delimiter end character `"`
+    pub delimiter_end: I,
+    /// that preceded the opening `U+0022` (double-quote) character.
+    pub tailing_pounds: I,
+}
+
+impl<I> Syntax<I> for RawStrLiteral<I>
+where
+    I: CSTInput,
+{
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let leading_char = next('r').parse(input)?;
+        let leading_pounds = take_while_range_to(256, |c| c == '#').parse(input)?;
+        let delimiter_start = next('"')
+            .parse(input)
+            .map_err(PunctKind::DoubleQuote.map_into_fatal())?;
+
+        let mut iter = input.iter_indices();
+
+        while let Some((index, c)) = iter.next() {
+            if c == '"' {
+                if leading_pounds.len() > 0 {
+                    let mut tailing = input.clone();
+
+                    let content = tailing.split_to(index);
+                    let delimiter_end = tailing.split_to(1);
+                    if let Some(tailing_pounds) =
+                        take_while_range(leading_pounds.len()..leading_pounds.len() + 1, |c| {
+                            c == '#'
+                        })
+                        .ok()
+                        .parse(&mut tailing)?
+                    {
+                        *input = tailing;
+
+                        return Ok(Self {
+                            leading_char,
+                            leading_pounds,
+                            delimiter_start,
+                            content,
+                            delimiter_end,
+                            tailing_pounds,
+                        });
+                    }
+
+                    continue;
+                }
+
+                let content = input.split_to(index);
+                let delimiter_end = input.split_to(1);
+                let tailing_pounds = input.split_to(0);
+
+                return Ok(Self {
+                    leading_char,
+                    leading_pounds,
+                    delimiter_start,
+                    content,
+                    delimiter_end,
+                    tailing_pounds,
+                });
+            }
+        }
+
+        Err(CSTError::Syntax(
+            SyntaxKind::RawStringDelimiterEnd,
+            ControlFlow::Fatal,
+            input.to_span(),
+        ))
+    }
+
+    fn to_span(&self) -> parserc::Span {
+        self.leading_char.to_span() + self.delimiter_end.to_span() + self.tailing_pounds.to_span()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use parserc::{Span, syntax::SyntaxInput};
@@ -469,6 +564,33 @@ mod tests {
                     StrItem::Chars(TokenStream::from((9, "世界")))
                 ],
                 delimiter_end: TokenStream::from((15, "\""))
+            })
+        );
+    }
+
+    #[test]
+    fn test_raw_string() {
+        assert_eq!(
+            TokenStream::from(include_str!("rstr0.txt")).parse::<RawStrLiteral<_>>(),
+            Ok(RawStrLiteral {
+                leading_char: TokenStream::from((0, "r")),
+                leading_pounds: TokenStream::from((1, "####")),
+                delimiter_start: TokenStream::from((5, "\"")),
+                content: TokenStream::from((6, "hello\"\"\" \\nworld")),
+                delimiter_end: TokenStream::from((22, "\"")),
+                tailing_pounds: TokenStream::from((23, "####"))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from(include_str!("rstr1.txt")).parse::<RawStrLiteral<_>>(),
+            Ok(RawStrLiteral {
+                leading_char: TokenStream::from((0, "r")),
+                leading_pounds: TokenStream::from((1, "")),
+                delimiter_start: TokenStream::from((1, "\"")),
+                content: TokenStream::from((2, "hello")),
+                delimiter_end: TokenStream::from((7, "\"")),
+                tailing_pounds: TokenStream::from((8, ""))
             })
         );
     }
