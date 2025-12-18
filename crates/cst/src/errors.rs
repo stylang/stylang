@@ -202,12 +202,10 @@ pub enum SyntaxKind {
     SimplePath,
     #[error("ascii escape")]
     ASCIIEscape,
-    #[error("ascii `\\x` escape out of range")]
-    ASCIIHexEscape,
-    #[error("ascii `\\x` escape too short")]
-    ASCIIHexEscapeTooShort,
     #[error("char of literal string")]
-    CharOfStr,
+    StrChar,
+    #[error("char of literal byte string")]
+    ByteStrChar,
     #[error("raw string delimiter end token `\"#{{0..256}}`")]
     RawStringDelimiterEnd,
 }
@@ -271,22 +269,31 @@ pub enum SemanticsKind {
     CharLiteral,
     #[error("empty char literal")]
     EmptyCharLiteral,
+    #[error("byte literal")]
+    ByteLiteral,
+    #[error("empty byte literal")]
+    EmptyByteLiteral,
     #[error("`'`")]
     Quote,
     #[error("`\"`")]
     DoubleQuote,
     #[error("char of literal string")]
-    CharOfStr,
+    StrChar,
+    #[error("raw string leading `#`s too long")]
+    RawStringLeadingPounds,
+    #[error("ascii `\\x` escape value is not hex-digit")]
+    ASCIIHexEscape,
+    #[error("ascii `\\x` escape value is out of range")]
+    ASCIIHexEscapeOutOfRange,
+    #[error("ascii `\\x` escape too short")]
+    ASCIIHexEscapeTooShort,
+    #[error("char of literal byte string")]
+    ByteStrChar,
 }
 
 impl SemanticsKind {
     /// Map error to this kind.
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
-        |err: CSTError| CSTError::Semantics(self, err.to_span())
-    }
-
-    /// Map error to `SyntaxKind`
-    pub fn map_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Semantics(self, err.to_span())
     }
 }

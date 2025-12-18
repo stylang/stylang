@@ -56,13 +56,19 @@ where
 
     for (index, c) in input.iter().enumerate() {
         if index == 0 {
+            if !c.is_ascii_hexdigit() {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::ASCIIHexEscape,
+                    input.to_span_at(3),
+                ));
+            }
+
             if matches!(c, '0'..='7') {
                 continue;
             }
 
-            return Err(CSTError::Syntax(
-                SyntaxKind::ASCIIHexEscape,
-                ControlFlow::Fatal,
+            return Err(CSTError::Semantics(
+                SemanticsKind::ASCIIHexEscapeOutOfRange,
                 input.to_span_at(3),
             ));
         }
@@ -73,21 +79,21 @@ where
                 break;
             }
 
-            return Err(CSTError::Syntax(
-                SyntaxKind::ASCIIHexEscape,
-                ControlFlow::Fatal,
+            return Err(CSTError::Semantics(
+                SemanticsKind::ASCIIHexEscape,
                 input.to_span_at(4),
             ));
         }
     }
 
     if too_short {
-        return Err(CSTError::Syntax(
-            SyntaxKind::ASCIIHexEscapeTooShort,
-            ControlFlow::Fatal,
+        return Err(CSTError::Semantics(
+            SemanticsKind::ASCIIHexEscapeTooShort,
             input.to_span_at(4),
         ));
     }
+
+    input.split_to(2);
 
     Ok(content.split_to(4))
 }
@@ -227,7 +233,7 @@ where
 {
     take_while_range_from(1, |c| c != '"' && c != '\\')
         .parse(input)
-        .map_err(SyntaxKind::CharOfStr.map())
+        .map_err(SyntaxKind::StrChar.map())
 }
 
 /// A string literal is a sequence of any Unicode characters enclosed within two `U+0022` (double-quote) characters,
@@ -279,7 +285,9 @@ where
 {
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
         let leading_char = next('r').parse(input)?;
-        let leading_pounds = take_while_range_to(256, |c| c == '#').parse(input)?;
+        let leading_pounds = take_while_range_to(256, |c| c == '#')
+            .parse(input)
+            .map_err(SemanticsKind::RawStringLeadingPounds.map())?;
         let delimiter_start = next('"')
             .parse(input)
             .map_err(PunctKind::DoubleQuote.map_into_fatal())?;
@@ -287,6 +295,225 @@ where
         let mut iter = input.iter_indices();
 
         while let Some((index, c)) = iter.next() {
+            if c == '\r' {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::StrChar,
+                    input.split_to(index).to_span_at(c.len_utf8()),
+                ));
+            }
+
+            if c == '"' {
+                if leading_pounds.len() > 0 {
+                    let mut tailing = input.clone();
+
+                    let content = tailing.split_to(index);
+                    let delimiter_end = tailing.split_to(1);
+                    if let Some(tailing_pounds) =
+                        take_while_range(leading_pounds.len()..leading_pounds.len() + 1, |c| {
+                            c == '#'
+                        })
+                        .ok()
+                        .parse(&mut tailing)?
+                    {
+                        *input = tailing;
+
+                        return Ok(Self {
+                            leading_char,
+                            leading_pounds,
+                            delimiter_start,
+                            content,
+                            delimiter_end,
+                            tailing_pounds,
+                        });
+                    }
+
+                    continue;
+                }
+
+                let content = input.split_to(index);
+                let delimiter_end = input.split_to(1);
+                let tailing_pounds = input.split_to(0);
+
+                return Ok(Self {
+                    leading_char,
+                    leading_pounds,
+                    delimiter_start,
+                    content,
+                    delimiter_end,
+                    tailing_pounds,
+                });
+            }
+        }
+
+        Err(CSTError::Syntax(
+            SyntaxKind::RawStringDelimiterEnd,
+            ControlFlow::Fatal,
+            input.to_span(),
+        ))
+    }
+
+    fn to_span(&self) -> parserc::Span {
+        self.leading_char.to_span() + self.delimiter_end.to_span() + self.tailing_pounds.to_span()
+    }
+}
+
+/// Content of [`ByteLiteral`]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum ByteContent<I>
+where
+    I: CSTInput,
+{
+    /// byte escape: `\t`,`\n`,..
+    ASCIIEscape(ASCIIEscape<I>),
+    /// quote escape.
+    QuoteEscape(QuoteEscape<I>),
+    /// unescaped character with the exception of `'`,`\`,`LF`,`CR`,`TAB`
+    Char(#[parserc(parser = parse_literal_byte)] I),
+}
+
+#[inline]
+fn parse_literal_byte<I>(input: &mut I) -> Result<I, CSTError>
+where
+    I: CSTInput,
+{
+    match input.iter().next() {
+        Some('\\' | '\n' | '\r' | '\t') => Err(CSTError::Semantics(
+            SemanticsKind::ByteLiteral,
+            input.to_span_at(1),
+        )),
+        Some('\'') | None => Err(CSTError::Semantics(
+            SemanticsKind::EmptyByteLiteral,
+            input.to_span_at(1),
+        )),
+        Some(c) if c.is_ascii() => Ok(input.split_to(c.len_utf8())),
+        Some(_) => Err(CSTError::Semantics(
+            SemanticsKind::ByteLiteral,
+            input.to_span_at(1),
+        )),
+    }
+}
+
+/// A byte literal is a single ASCII character (in the U+0000 to U+007F range) or a single escape,
+/// more information see [`The Rust Reference`]
+///
+/// [`The rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#byte-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ByteLiteral<I>
+where
+    I: CSTInput,
+{
+    #[parserc(keyword = "b", crucial)]
+    pub leading_char: I,
+    /// delimiter start `'`
+    #[parserc(keyword = "'", map_err = PunctKind::Quote.map())]
+    pub delimiter_start: I,
+    /// content of char literal token.
+    pub content: ByteContent<I>,
+    /// delimiter end `'`
+    #[parserc(keyword = "'", map_err = PunctKind::Quote.map())]
+    pub delimiter_end: I,
+}
+
+/// item of content of [`ByteStrLiteral`]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum ByteStrItem<I>
+where
+    I: CSTInput,
+{
+    /// ascii escape: `\t`,`\n`,..
+    ASCIIEscape(ASCIIEscape<I>),
+    /// quote escape.
+    QuoteEscape(QuoteEscape<I>),
+    /// string continue token `\CRLF` or `\LF`
+    LineBreakEscape(#[parserc(parser = keyword("\\\r\n").or(keyword("\\\n")))] I),
+    /// unescaped char sequence.
+    Chars(#[parserc(parser = parse_literal_char_of_byte_str)] I),
+}
+
+#[inline]
+fn parse_literal_char_of_byte_str<I>(input: &mut I) -> Result<I, CSTError>
+where
+    I: CSTInput,
+{
+    take_while_range_from(1, |c: char| {
+        c.is_ascii() && c != '"' && c != '\\' && c != '\r'
+    })
+    .parse(input)
+    .map_err(SyntaxKind::ByteStrChar.map())
+}
+
+/// A non-raw byte string literal is a sequence of ASCII characters and escapes,
+/// more information see [`The Rust Reference`]
+///
+/// [`The rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#railroad-BYTE_STRING_LITERAL
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ByteStrLiteral<I>
+where
+    I: CSTInput,
+{
+    /// leading character `b`,
+    #[parserc(keyword = "b", crucial)]
+    pub leading_char: I,
+    /// delimiter start `"`
+    #[parserc(keyword = "\"", crucial, map_err = PunctKind::DoubleQuote.map())]
+    pub delimiter_start: I,
+    /// escaped / unescaped character seqencuce.
+    pub chars: Vec<ByteStrItem<I>>,
+    /// delimiter end `"`
+    #[parserc(keyword = "\"", map_err = PunctKind::DoubleQuote.map())]
+    pub delimiter_end: I,
+}
+
+/// Raw byte string literals do not process any escapes. , more information see [`The Rust Reference`]
+///
+/// [`The rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#raw-byte-string-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RawByteStrLiteral<I>
+where
+    I: CSTInput,
+{
+    /// leading character `br`.
+    pub leading_char: I,
+    /// followed by fewer than 256 of the character `#`
+    pub leading_pounds: I,
+    /// delimiter start character `"`
+    pub delimiter_start: I,
+    /// The raw string body can contain any sequence of Unicode characters other than `U+000D` (CR).
+    pub content: I,
+    /// delimiter end character `"`
+    pub delimiter_end: I,
+    /// that preceded the opening `U+0022` (double-quote) character.
+    pub tailing_pounds: I,
+}
+
+impl<I> Syntax<I> for RawByteStrLiteral<I>
+where
+    I: CSTInput,
+{
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let leading_char = keyword("br").parse(input)?;
+        let leading_pounds = take_while_range_to(256, |c| c == '#')
+            .parse(input)
+            .map_err(SemanticsKind::RawStringLeadingPounds.map())?;
+        let delimiter_start = next('"')
+            .parse(input)
+            .map_err(PunctKind::DoubleQuote.map_into_fatal())?;
+
+        let mut iter = input.iter_indices();
+
+        while let Some((index, c)) = iter.next() {
+            if c == '\r' || !c.is_ascii() {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::ByteStrChar,
+                    input.split_to(index).to_span_at(c.len_utf8()),
+                ));
+            }
+
             if c == '"' {
                 if leading_pounds.len() > 0 {
                     let mut tailing = input.clone();
@@ -591,6 +818,95 @@ mod tests {
                 content: TokenStream::from((2, "hello")),
                 delimiter_end: TokenStream::from((7, "\"")),
                 tailing_pounds: TokenStream::from((8, ""))
+            })
+        );
+
+        let raw_string_out_of_range = format!("r{}\"\"{}", "#".repeat(256), "#".repeat(256));
+
+        assert_eq!(
+            TokenStream::from(raw_string_out_of_range.as_str()).parse::<RawStrLiteral<_>>(),
+            Err(CSTError::Semantics(
+                SemanticsKind::RawStringLeadingPounds,
+                Span::Range(1..257)
+            ))
+        );
+    }
+
+    #[test]
+    fn test_byte_literal() {
+        assert_eq!(
+            TokenStream::from("b'a'").parse::<ByteLiteral<_>>(),
+            Ok(ByteLiteral {
+                leading_char: TokenStream::from((0, "b")),
+                delimiter_start: TokenStream::from((1, "'")),
+                content: ByteContent::Char(TokenStream::from((2, "a"))),
+                delimiter_end: TokenStream::from((3, "'"))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("b'\\x0f'").parse::<ByteLiteral<_>>(),
+            Ok(ByteLiteral {
+                leading_char: TokenStream::from((0, "b")),
+                delimiter_start: TokenStream::from((1, "'")),
+                content: ByteContent::ASCIIEscape(ASCIIEscape::Hex(TokenStream::from((
+                    2, "\\x0f"
+                )))),
+                delimiter_end: TokenStream::from((6, "'"))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("b'\\xaf'").parse::<ByteLiteral<_>>(),
+            Err(CSTError::Semantics(
+                SemanticsKind::ASCIIHexEscapeOutOfRange,
+                Span::Range(4..7)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("b'你'").parse::<ByteLiteral<_>>(),
+            Err(CSTError::Semantics(
+                SemanticsKind::ByteLiteral,
+                Span::Range(2..3)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("b ").parse::<ByteLiteral<_>>(),
+            Err(CSTError::Punct(
+                PunctKind::Quote,
+                ControlFlow::Fatal,
+                Span::Range(1..2)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("b''").parse::<ByteLiteral<_>>(),
+            Err(CSTError::Semantics(
+                SemanticsKind::EmptyByteLiteral,
+                Span::Range(2..3)
+            ))
+        );
+    }
+
+    #[test]
+    fn test_byte_string_literal() {
+        assert_eq!(
+            TokenStream::from(
+                r##"b"a\
+                ""##
+            )
+            .parse::<ByteStrLiteral<_>>(),
+            Ok(ByteStrLiteral {
+                leading_char: TokenStream::from((0, "b")),
+                delimiter_start: TokenStream::from((1, "\"")),
+                chars: vec![
+                    ByteStrItem::Chars(TokenStream::from((2, "a"))),
+                    ByteStrItem::LineBreakEscape(TokenStream::from((3, "\\\n"))),
+                    ByteStrItem::Chars(TokenStream::from((5, "                ")))
+                ],
+                delimiter_end: TokenStream::from((21, "\""))
             })
         );
     }
