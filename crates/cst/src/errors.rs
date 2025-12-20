@@ -11,6 +11,110 @@ pub enum PunctKind {
     Quote,
     #[error("punct `\"`")]
     DoubleQuote,
+    #[error("punct '+'")]
+    Plus,
+    #[error("punct '-'")]
+    Minus,
+    #[error("punct '*'")]
+    Star,
+    #[error("punct '/'")]
+    Slash,
+    #[error("punct '%'")]
+    Percent,
+    #[error("punct '^'")]
+    Caret,
+    #[error("punct '!'")]
+    Not,
+    #[error("punct '&'")]
+    And,
+    #[error("punct '|'")]
+    Or,
+    #[error("punct '&&'")]
+    AndAnd,
+    #[error("punct '||'")]
+    OrOr,
+    #[error("punct '<<'")]
+    Shl,
+    #[error("punct '>>'")]
+    Shr,
+    #[error("punct '+='")]
+    PlusEq,
+    #[error("punct '-='")]
+    MinusEq,
+    #[error("punct '*='")]
+    StarEq,
+    #[error("punct '/='")]
+    SlashEq,
+    #[error("punct '%='")]
+    PercentEq,
+    #[error("punct '^='")]
+    CaretEq,
+    #[error("punct '&='")]
+    AndEq,
+    #[error("punct '|='")]
+    OrEq,
+    #[error("punct '<<='")]
+    ShlEq,
+    #[error("punct '>>='")]
+    ShrEq,
+    #[error("punct '='")]
+    Eq,
+    #[error("punct '=='")]
+    EqEq,
+    #[error("punct '!='")]
+    Ne,
+    #[error("punct '>'")]
+    Gt,
+    #[error("punct '<'")]
+    Lt,
+    #[error("punct '<='")]
+    Ge,
+    #[error("punct '>='")]
+    Le,
+    #[error("punct '@'")]
+    At,
+    #[error("punct '_'")]
+    Underscore,
+    #[error("punct '.'")]
+    Dot,
+    #[error("punct '..'")]
+    DotDot,
+    #[error("punct '...'")]
+    DotDotDot,
+    #[error("punct '..='")]
+    DotDotEq,
+    #[error("punct ','")]
+    Comma,
+    #[error("punct ';'")]
+    Semi,
+    #[error("punct ':'")]
+    Colon,
+    #[error("punct '->'")]
+    RArrow,
+    #[error("punct '=>'")]
+    FatArrow,
+    #[error("punct '<-'")]
+    LArrow,
+    #[error("punct '#'")]
+    Pound,
+    #[error("punct '$'")]
+    Dollar,
+    #[error("punct '?'")]
+    Question,
+    #[error("punct '~'")]
+    Tilde,
+    #[error("punct '{{'")]
+    BraceStart,
+    #[error("punct '}}'")]
+    BraceEnd,
+    #[error("punct '['")]
+    BracketStart,
+    #[error("punct ']'")]
+    BracketEnd,
+    #[error("punct '('")]
+    ParenStart,
+    #[error("punct ')'")]
+    ParenEnd,
 }
 
 impl PunctKind {
@@ -281,14 +385,14 @@ pub enum SemanticsKind {
     StrChar,
     #[error("raw string leading `#`s too long")]
     RawStringLeadingPounds,
-    #[error("ascii `\\x` escape value is not hex-digit")]
-    ASCIIHexEscape,
-    #[error("ascii `\\x` escape value is out of range")]
-    ASCIIHexEscapeOutOfRange,
-    #[error("ascii `\\x` escape too short")]
-    ASCIIHexEscapeTooShort,
     #[error("char of literal byte string")]
     ByteStrChar,
+    #[error("7bit char code")]
+    Char7BitEscapeOutOfRange,
+    #[error("7bit char code")]
+    Char7BitEscapeTooShort,
+    #[error("hex-digit")]
+    HexDigit,
 }
 
 impl SemanticsKind {

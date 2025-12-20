@@ -39,4 +39,59 @@ macro_rules! define_punct {
     };
 }
 
+define_punct!(Plus, "+");
+define_punct!(Minus, "-");
+define_punct!(Star, "*");
+define_punct!(Slash, "/");
+define_punct!(Percent, "%");
+define_punct!(Caret, "^");
+define_punct!(Not, "!");
+define_punct!(And, "&");
+define_punct!(Or, "|");
+define_punct!(AndAnd, "&&");
+define_punct!(OrOr, "||");
+define_punct!(Shl, "<<");
+define_punct!(Shr, ">>");
+define_punct!(PlusEq, "+=");
+define_punct!(MinusEq, "-=");
+define_punct!(StarEq, "*=");
+define_punct!(SlashEq, "/=");
+define_punct!(PercentEq, "%=");
+define_punct!(CaretEq, "^=");
+define_punct!(AndEq, "&=");
+define_punct!(OrEq, "|=");
+define_punct!(ShlEq, "<<=");
+define_punct!(ShrEq, ">>=");
+define_punct!(Eq, "=");
+define_punct!(EqEq, "==");
+define_punct!(Ne, "!=");
+define_punct!(Gt, ">");
+define_punct!(Lt, "<");
+define_punct!(Ge, ">=");
+define_punct!(Le, "<=");
+define_punct!(At, "@");
+define_punct!(Underscore, "_");
+define_punct!(Dot, ".");
+define_punct!(DotDot, "..");
+define_punct!(DotDotDot, "...");
+define_punct!(DotDotEq, "..=");
+define_punct!(Comma, ",");
+define_punct!(Semi, ";");
+define_punct!(Colon, ":");
 define_punct!(PathSep, "::");
+define_punct!(RArrow, "->");
+define_punct!(FatArrow, "=>");
+define_punct!(LArrow, "<-");
+define_punct!(Pound, "#");
+define_punct!(Dollar, "$");
+define_punct!(Question, "?");
+define_punct!(Tilde, "~");
+
+define_punct!(BraceStart, "{");
+define_punct!(BraceEnd, "}");
+
+define_punct!(BracketStart, "[");
+define_punct!(BracketEnd, "]");
+
+define_punct!(ParenStart, "(");
+define_punct!(ParenEnd, ")");
