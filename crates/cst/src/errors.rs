@@ -119,11 +119,13 @@ pub enum PunctKind {
 
 impl PunctKind {
     /// Map error to `TokenKind`
+    #[inline]
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Punct(self, err.control_flow(), err.to_span())
     }
 
     /// Map unhandle error
+    #[inline]
     pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| {
             if let CSTError::Kind(kind) = &err {
@@ -135,6 +137,7 @@ impl PunctKind {
     }
 
     /// Map error to `PunctKind` fatal error.
+    #[inline]
     pub fn map_into_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Punct(self, ControlFlow::Fatal, err.to_span())
     }
@@ -261,11 +264,13 @@ pub enum KeywordKind {
 
 impl KeywordKind {
     /// Map error to `TokenKind`
+    #[inline]
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Keyword(self, err.control_flow(), err.to_span())
     }
 
     /// Map unhandle error
+    #[inline]
     pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| {
             if let CSTError::Kind(kind) = &err {
@@ -312,10 +317,15 @@ pub enum SyntaxKind {
     ByteStrChar,
     #[error("raw string delimiter end token `\"#{{0..256}}`")]
     RawStringDelimiterEnd,
+    #[error("unicode escape")]
+    UnicodeEscape,
+    #[error("quote escape")]
+    QuoteEscape,
 }
 
 impl SyntaxKind {
     /// Map unhandle error
+    #[inline]
     pub fn map_unhandle(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| match err {
             CSTError::Kind(kind) => CSTError::Syntax(self, kind.control_flow(), kind.to_span()),
@@ -323,6 +333,7 @@ impl SyntaxKind {
         }
     }
 
+    #[inline]
     pub fn map_non_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| {
             if err.is_fatal() {
@@ -334,6 +345,7 @@ impl SyntaxKind {
     }
 
     /// Map error to this kind.
+    #[inline]
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Syntax(self, err.control_flow(), err.to_span())
     }
@@ -350,11 +362,13 @@ pub enum OverflowKind {}
 
 impl OverflowKind {
     /// Map error to this kind.
+    #[inline]
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Overflow(self, err.to_span())
     }
 
     /// Map error to `SyntaxKind`
+    #[inline]
     pub fn map_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Overflow(self, err.to_span())
     }
@@ -367,8 +381,6 @@ pub enum SemanticsKind {
     RawIdent,
     #[error("non keyword identifier")]
     NonKeywordIdent,
-    #[error("hexdigits part of unicode escape is out of range")]
-    UnicodeEscapeDigits,
     #[error("char literal")]
     CharLiteral,
     #[error("empty char literal")]
@@ -391,12 +403,17 @@ pub enum SemanticsKind {
     Char7BitEscapeOutOfRange,
     #[error("7bit char code")]
     Char7BitEscapeTooShort,
+    #[error("8bit char code")]
+    Byte8BitEscapeTooShort,
     #[error("hex-digit")]
     HexDigit,
+    #[error("unicode escape hex-digits length is out of range")]
+    UnicodeEscapeLength,
 }
 
 impl SemanticsKind {
     /// Map error to this kind.
+    #[inline]
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Semantics(self, err.to_span())
     }
