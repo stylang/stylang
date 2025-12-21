@@ -321,6 +321,12 @@ pub enum SyntaxKind {
     UnicodeEscape,
     #[error("quote escape")]
     QuoteEscape,
+    #[error("character literal content")]
+    Character,
+    #[error("byte literal content")]
+    Byte,
+    #[error("string listeral content")]
+    StrContent,
 }
 
 impl SyntaxKind {
@@ -381,10 +387,6 @@ pub enum SemanticsKind {
     RawIdent,
     #[error("non keyword identifier")]
     NonKeywordIdent,
-    #[error("char literal")]
-    CharLiteral,
-    #[error("empty char literal")]
-    EmptyCharLiteral,
     #[error("byte literal")]
     ByteLiteral,
     #[error("empty byte literal")]
@@ -409,6 +411,12 @@ pub enum SemanticsKind {
     HexDigit,
     #[error("unicode escape hex-digits length is out of range")]
     UnicodeEscapeLength,
+    #[error("character literal value")]
+    Character,
+    #[error("byte literal value")]
+    Byte,
+    #[error("string listeral content")]
+    StrContent,
 }
 
 impl SemanticsKind {
@@ -416,6 +424,17 @@ impl SemanticsKind {
     #[inline]
     pub fn map(self) -> impl FnOnce(CSTError) -> CSTError {
         |err: CSTError| CSTError::Semantics(self, err.to_span())
+    }
+
+    #[inline]
+    pub fn map_non_fatal(self) -> impl FnOnce(CSTError) -> CSTError {
+        |err: CSTError| {
+            if err.is_fatal() {
+                err
+            } else {
+                CSTError::Semantics(self, err.to_span())
+            }
+        }
     }
 }
 

@@ -4,3 +4,6 @@
 
 mod ecacpes;
 pub use ecacpes::*;
+
+mod str;
+pub use str::*;

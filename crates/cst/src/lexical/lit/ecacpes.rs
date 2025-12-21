@@ -172,12 +172,25 @@ where
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[parserc(map_err = SyntaxKind::QuoteEscape.map())]
-pub enum QuoteEscapes<I>
+pub enum QuoteEscape<I>
 where
     I: CSTInput,
 {
     Single(#[parserc(keyword = "\\'")] I),
     Double(#[parserc(keyword = "\\\"")] I),
+}
+
+/// String continue token, more information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#grammar-STRING_CONTINUE
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum NewLineEscape<I>
+where
+    I: CSTInput,
+{
+    LF(#[parserc(keyword = "\\\n")] I),
+    CRLF(#[parserc(keyword = "\\\\r\n")] I),
 }
 
 #[cfg(test)]
@@ -187,7 +200,7 @@ mod tests {
     use crate::{
         errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
         input::TokenStream,
-        lexical::lit::{ASCIIEscape, ByteEscape, QuoteEscapes, UnicodeEscape},
+        lexical::lit::{ASCIIEscape, ByteEscape, QuoteEscape, UnicodeEscape},
     };
 
     #[test]
@@ -380,16 +393,16 @@ mod tests {
     #[test]
     fn test_quote_escape() {
         assert_eq!(
-            TokenStream::from("\\'").parse::<QuoteEscapes<_>>(),
-            Ok(QuoteEscapes::Single(TokenStream::from("\\'")))
+            TokenStream::from("\\'").parse::<QuoteEscape<_>>(),
+            Ok(QuoteEscape::Single(TokenStream::from("\\'")))
         );
         assert_eq!(
-            TokenStream::from("\\\"").parse::<QuoteEscapes<_>>(),
-            Ok(QuoteEscapes::Double(TokenStream::from("\\\"")))
+            TokenStream::from("\\\"").parse::<QuoteEscape<_>>(),
+            Ok(QuoteEscape::Double(TokenStream::from("\\\"")))
         );
 
         assert_eq!(
-            TokenStream::from("'").parse::<QuoteEscapes<_>>(),
+            TokenStream::from("'").parse::<QuoteEscape<_>>(),
             Err(CSTError::Syntax(
                 SyntaxKind::QuoteEscape,
                 ControlFlow::Recovable,
