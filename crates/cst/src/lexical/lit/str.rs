@@ -77,9 +77,10 @@ where
     I: CSTInput,
 {
     if input.is_empty() {
-        return Err(CSTError::Semantics(
-            SemanticsKind::StrContent,
-            input.to_span(),
+        return Err(CSTError::Syntax(
+            SyntaxKind::StrContent,
+            ControlFlow::Recovable,
+            input.to_span_at(1),
         ));
     }
 
@@ -103,7 +104,7 @@ where
                     ));
                 }
 
-                return Ok(input.split_to(offset + 1));
+                return Ok(input.split_to(offset));
             }
             Some((_, _)) => {
                 continue;
@@ -193,9 +194,9 @@ mod tests {
     use parserc::{ControlFlow, Span, syntax::SyntaxInput};
 
     use crate::{
-        errors::{CSTError, SemanticsKind, SyntaxKind},
+        errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
         input::TokenStream,
-        lexical::lit::{ByteContent, CharContent, StrContent},
+        lexical::lit::{ASCIIEscape, ByteContent, CharContent, LitStr, QuoteEscape, StrContent},
     };
 
     #[test]
@@ -292,9 +293,48 @@ mod tests {
 
     #[test]
     fn test_cjk_str_content() {
-        println!(
-            "{:?}",
-            TokenStream::from("hello\\t你好\"").parse::<StrContent<_>>()
+        assert_eq!(
+            TokenStream::from("hello\\t你好\"").parse::<Vec<StrContent<_>>>(),
+            Ok(vec![
+                StrContent::CharWithException(TokenStream::from((0, "hello"))),
+                StrContent::ASCIIEscape(ASCIIEscape::Tab(TokenStream::from((5, "\\t")))),
+                StrContent::CharWithException(TokenStream::from((7, "你好")))
+            ])
         )
+    }
+
+    #[test]
+    fn test_lit_str() {
+        assert_eq!(
+            TokenStream::from(r#""hello\t你好\"""#).parse::<LitStr<_>>(),
+            Ok(LitStr {
+                delimiter_start: TokenStream::from((0, "\"")),
+                content: vec![
+                    StrContent::CharWithException(TokenStream::from((1, "hello"))),
+                    StrContent::ASCIIEscape(ASCIIEscape::Tab(TokenStream::from((6, "\\t")))),
+                    StrContent::CharWithException(TokenStream::from((8, "你好"))),
+                    StrContent::QuoteEscape(QuoteEscape::Double(TokenStream::from((14, "\\\""))))
+                ],
+                delimiter_end: TokenStream::from((16, "\""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from(r#""""#).parse::<LitStr<_>>(),
+            Ok(LitStr {
+                delimiter_start: TokenStream::from((0, "\"")),
+                content: vec![],
+                delimiter_end: TokenStream::from((1, "\""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("\"").parse::<LitStr<_>>(),
+            Err(CSTError::Punct(
+                PunctKind::DoubleQuote,
+                ControlFlow::Fatal,
+                Span::Range(1..1)
+            ))
+        );
     }
 }
