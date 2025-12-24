@@ -152,7 +152,7 @@ where
     #[parserc(parser = parse_unicode_hex_digits)]
     pub digits: I,
     /// tailing punct `}`
-    #[parserc(keyword = "}", map_err = PunctKind::BraceStart.map())]
+    #[parserc(keyword = "}", map_err = PunctKind::BraceEnd.map())]
     pub delimiter_end: I,
 }
 
@@ -374,16 +374,17 @@ mod tests {
 
         assert_eq!(
             TokenStream::from("\\u{ffffffff}").parse::<UnicodeEscape<_>>(),
-            Err(CSTError::Semantics(
-                SemanticsKind::UnicodeEscapeLength,
-                Span::Range(3..10)
+            Err(CSTError::Punct(
+                PunctKind::BraceEnd,
+                ControlFlow::Fatal,
+                Span::Range(9..10)
             ))
         );
 
         assert_eq!(
             TokenStream::from("\\u{a").parse::<UnicodeEscape<_>>(),
             Err(CSTError::Punct(
-                PunctKind::BraceStart,
+                PunctKind::BraceEnd,
                 ControlFlow::Fatal,
                 Span::Range(4..4)
             ))

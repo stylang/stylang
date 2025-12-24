@@ -1,9 +1,11 @@
-use parserc::{ControlFlow, Item, syntax::Syntax};
+use parserc::{
+    ControlFlow, Item, Parser, next, syntax::Syntax, take_while_range, take_while_range_to,
+};
 
 use crate::{
     errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
     input::CSTInput,
-    lexical::lit::{ASCIIEscape, NewLineEscape, QuoteEscape, UnicodeEscape},
+    lexical::lit::{ASCIIEscape, ByteEscape, NewLineEscape, QuoteEscape, UnicodeEscape},
 };
 
 /// A character literal is a single Unicode character enclosed within
@@ -46,6 +48,7 @@ where
 ///
 /// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#character-literals
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LitChar<I>
 where
     I: CSTInput,
@@ -60,6 +63,7 @@ where
 
 /// Content item of [`LitStr`]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StrContent<I>
 where
     I: CSTInput,
@@ -120,6 +124,7 @@ where
 ///
 /// [`The Rust Reference`]:https://doc.rust-lang.org/reference/tokens.html#string-literals
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LitStr<I>
 where
     I: CSTInput,
@@ -130,6 +135,95 @@ where
     pub content: Vec<StrContent<I>>,
     #[parserc(keyword = "\"", map_err = PunctKind::DoubleQuote.map())]
     pub delimiter_end: I,
+}
+
+/// Raw string literals do not process any escapes. They start with the character U+0072 (r),
+/// followed by fewer than 256 of the character U+0023 (#) and a U+0022 (double-quote) character.
+///
+/// see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]:https://doc.rust-lang.org/reference/tokens.html#string-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LitRawStr<I>
+where
+    I: CSTInput,
+{
+    /// leading char `r`
+    pub leading_char: I,
+    /// leading pounds fewer than 256,
+    pub leading_pounds: I,
+    /// delimiter `"`
+    pub delimiter_start: I,
+    /// sequence of unicode characters.
+    pub content: I,
+    /// delimiter `"`
+    pub delimiter_end: I,
+    /// tailing pounds fewer than 256,
+    pub tailing_pounds: I,
+}
+
+impl<I> Syntax<I> for LitRawStr<I>
+where
+    I: CSTInput,
+{
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let leading_char = next('r').parse(input)?;
+
+        let leading_pounds = take_while_range_to(256, |c| c == '#')
+            .parse(input)
+            .map_err(SemanticsKind::Pounds.map())?;
+
+        let delimiter_start = next('"')
+            .parse(input)
+            .map_err(PunctKind::DoubleQuote.map_into_fatal())?;
+
+        let mut iter = input.iter_indices();
+
+        while let Some((offset, c)) = iter.next() {
+            if c == '"' {
+                if !leading_pounds.is_empty() {
+                    if let Some(tailing_pounds) =
+                        take_while_range(leading_pounds.len()..leading_pounds.len() + 1, |c| {
+                            c == '#'
+                        })
+                        .ok()
+                        .parse(&mut input.clone().split_off(offset + 1))?
+                    {
+                        return Ok(Self {
+                            leading_char,
+                            leading_pounds,
+                            delimiter_start,
+                            content: input.split_to(offset),
+                            delimiter_end: input.split_to(1),
+                            tailing_pounds: input.split_to(tailing_pounds.len()),
+                        });
+                    }
+
+                    continue;
+                }
+
+                return Ok(Self {
+                    leading_char,
+                    leading_pounds,
+                    delimiter_start,
+                    content: input.split_to(offset),
+                    delimiter_end: input.split_to(1),
+                    tailing_pounds: input.split_to(0),
+                });
+            }
+        }
+
+        Err(CSTError::Punct(
+            PunctKind::DoubleQuote,
+            ControlFlow::Fatal,
+            input.to_span(),
+        ))
+    }
+
+    fn to_span(&self) -> parserc::Span {
+        self.leading_char.to_span() + self.delimiter_end.to_span() + self.tailing_pounds.to_span()
+    }
 }
 
 /// A byte literal is a single ASCII character enclosed within
@@ -143,26 +237,9 @@ where
     I: CSTInput,
 {
     QuoteEscape(QuoteEscape<I>),
-    ASCIIEscape(ASCIIEscape<I>),
+    ByteEscape(ByteEscape<I>),
     UnicodeEscape(UnicodeEscape<I>),
     ASCIIWithException(#[parserc(parser = parser_ascii_with_exception)] I),
-}
-
-/// A byte literal is a single ASCII character enclosed within
-/// two U+0027 (single-quote) characters, see [`The Rust Reference`]
-///
-/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#byte-literals
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
-pub struct LitByte<I>
-where
-    I: CSTInput,
-{
-    #[parserc(keyword = "r'", crucial)]
-    pub delimiter_start: I,
-    /// content of byte literal.
-    pub content: ByteContent<I>,
-    #[parserc(keyword = "'", map_err = PunctKind::Quote.map())]
-    pub delimiter_end: I,
 }
 
 #[inline]
@@ -189,6 +266,23 @@ where
     }
 }
 
+/// A byte literal is a single ASCII character enclosed within
+/// two U+0027 (single-quote) characters, see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#byte-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+pub struct LitByte<I>
+where
+    I: CSTInput,
+{
+    #[parserc(keyword = "b'", crucial, map_err = PunctKind::BQuote.map())]
+    pub delimiter_start: I,
+    /// content of byte literal.
+    pub content: ByteContent<I>,
+    #[parserc(keyword = "'", map_err = PunctKind::Quote.map())]
+    pub delimiter_end: I,
+}
+
 #[cfg(test)]
 mod tests {
     use parserc::{ControlFlow, Span, syntax::SyntaxInput};
@@ -196,7 +290,10 @@ mod tests {
     use crate::{
         errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
         input::TokenStream,
-        lexical::lit::{ASCIIEscape, ByteContent, CharContent, LitStr, QuoteEscape, StrContent},
+        lexical::lit::{
+            ASCIIEscape, ByteContent, ByteEscape, CharContent, LitByte, LitRawStr, LitStr,
+            QuoteEscape, StrContent,
+        },
     };
 
     #[test]
@@ -284,6 +381,18 @@ mod tests {
     }
 
     #[test]
+    fn test_byte_escape() {
+        assert_eq!(
+            TokenStream::from("b'\\x0a'").parse::<LitByte<_>>(),
+            Ok(LitByte {
+                delimiter_start: TokenStream::from((0, "b'")),
+                content: ByteContent::ByteEscape(ByteEscape::Char(TokenStream::from((2, "\\x0a")))),
+                delimiter_end: TokenStream::from((6, "'"))
+            })
+        );
+    }
+
+    #[test]
     fn test_byte_cjk_content() {
         assert_eq!(
             TokenStream::from("你").parse::<ByteContent<_>>(),
@@ -335,6 +444,33 @@ mod tests {
                 ControlFlow::Fatal,
                 Span::Range(1..1)
             ))
+        );
+    }
+
+    #[test]
+    fn test_raw_str() {
+        assert_eq!(
+            TokenStream::from(include_str!("rstr0.txt")).parse::<LitRawStr<_>>(),
+            Ok(LitRawStr {
+                leading_char: TokenStream::from((0, "r")),
+                leading_pounds: TokenStream::from((1, "####")),
+                delimiter_start: TokenStream::from((5, "\"")),
+                content: TokenStream::from((6, "hello\"\"\" \\nworld")),
+                delimiter_end: TokenStream::from((22, "\"")),
+                tailing_pounds: TokenStream::from((23, "####"))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from(include_str!("rstr1.txt")).parse::<LitRawStr<_>>(),
+            Ok(LitRawStr {
+                leading_char: TokenStream::from((0, "r")),
+                leading_pounds: TokenStream::from((1, "")),
+                delimiter_start: TokenStream::from((1, "\"")),
+                content: TokenStream::from((2, "hello")),
+                delimiter_end: TokenStream::from((7, "\"")),
+                tailing_pounds: TokenStream::from((8, ""))
+            })
         );
     }
 }

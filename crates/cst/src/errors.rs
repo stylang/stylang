@@ -9,6 +9,8 @@ pub enum PunctKind {
     PathSep,
     #[error("punct `'`")]
     Quote,
+    #[error("punct `b'`")]
+    BQuote,
     #[error("punct `\"`")]
     DoubleQuote,
     #[error("punct '+'")]
@@ -417,6 +419,8 @@ pub enum SemanticsKind {
     Byte,
     #[error("string listeral content")]
     StrContent,
+    #[error("raw string leading pounds out of range.")]
+    Pounds,
 }
 
 impl SemanticsKind {
