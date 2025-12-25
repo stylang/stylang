@@ -413,9 +413,218 @@ where
         while let Some((offset, c)) = iter.next() {
             if !c.is_ascii() {
                 return Err(CSTError::Semantics(
-                    SemanticsKind::ByteStrContent,
+                    SemanticsKind::RawByteStrContent,
                     input.split_off(offset).to_span_at(c.len_utf8()),
                 ));
+            }
+
+            if c == '"' {
+                if !leading_pounds.is_empty() {
+                    if let Some(tailing_pounds) =
+                        take_while_range(leading_pounds.len()..leading_pounds.len() + 1, |c| {
+                            c == '#'
+                        })
+                        .ok()
+                        .parse(&mut input.clone().split_off(offset + 1))?
+                    {
+                        return Ok(Self {
+                            leading_char,
+                            leading_pounds,
+                            delimiter_start,
+                            content: input.split_to(offset),
+                            delimiter_end: input.split_to(1),
+                            tailing_pounds: input.split_to(tailing_pounds.len()),
+                        });
+                    }
+
+                    continue;
+                }
+
+                return Ok(Self {
+                    leading_char,
+                    leading_pounds,
+                    delimiter_start,
+                    content: input.split_to(offset),
+                    delimiter_end: input.split_to(1),
+                    tailing_pounds: input.split_to(0),
+                });
+            }
+        }
+
+        Err(CSTError::Punct(
+            PunctKind::DoubleQuote,
+            ControlFlow::Fatal,
+            input.to_span(),
+        ))
+    }
+
+    fn to_span(&self) -> parserc::Span {
+        self.leading_char.to_span() + self.delimiter_end.to_span() + self.tailing_pounds.to_span()
+    }
+}
+
+/// Content item of [`LitCStr`]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CStrContent<I>
+where
+    I: CSTInput,
+{
+    ByteEscape(#[parserc(semantic = check_byte_escape_except)] ByteEscape<I>),
+    UnicodeEscape(#[parserc(semantic = check_unicode_escape_except)] UnicodeEscape<I>),
+    NewLineEscape(NewLineEscape<I>),
+    CharWithException(#[parserc(parser = parse_c_str_item_with_exception)] I),
+}
+
+fn check_byte_escape_except<I>(_: I, escape: ByteEscape<I>) -> Result<ByteEscape<I>, CSTError>
+where
+    I: CSTInput,
+{
+    match &escape {
+        ByteEscape::Null(input) => Err(CSTError::Semantics(
+            SemanticsKind::CStrContent,
+            input.to_span(),
+        )),
+        ByteEscape::Char(input) if input.as_str() == "\x00" => Err(CSTError::Semantics(
+            SemanticsKind::CStrContent,
+            input.to_span(),
+        )),
+        _ => Ok(escape),
+    }
+}
+
+fn check_unicode_escape_except<I>(
+    _: I,
+    escape: UnicodeEscape<I>,
+) -> Result<UnicodeEscape<I>, CSTError>
+where
+    I: CSTInput,
+{
+    match escape.digits.as_str() {
+        "0" | "00" | "000" | "0000" | "00000" | "000000" => Err(CSTError::Semantics(
+            SemanticsKind::CStrContent,
+            escape.digits.to_span(),
+        )),
+        _ => Ok(escape),
+    }
+}
+
+#[inline]
+fn parse_c_str_item_with_exception<I>(input: &mut I) -> Result<I, CSTError>
+where
+    I: CSTInput,
+{
+    if input.is_empty() {
+        return Err(CSTError::Syntax(
+            SyntaxKind::StrContent,
+            ControlFlow::Recovable,
+            input.to_span_at(1),
+        ));
+    }
+
+    let mut iter = input.iter_indices();
+
+    loop {
+        match iter.next() {
+            Some((offset, '\r' | '\0')) => {
+                input.split_to(offset);
+                return Err(CSTError::Semantics(
+                    SemanticsKind::StrContent,
+                    input.to_span_at(1),
+                ));
+            }
+            Some((offset, '"' | '\\')) => {
+                if offset == 0 {
+                    return Err(CSTError::Syntax(
+                        SyntaxKind::StrContent,
+                        ControlFlow::Recovable,
+                        input.to_span_at(1),
+                    ));
+                }
+
+                return Ok(input.split_to(offset));
+            }
+            Some((_, _)) => {
+                continue;
+            }
+            None => return Ok(input.split_to(input.len())),
+        }
+    }
+}
+
+/// A C string literal is a sequence of Unicode characters and escapes, preceded by the
+/// characters U+0063 (c) and U+0022 (double-quote), and followed by the character U+0022.
+///
+/// see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#c-string-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LitCStr<I>
+where
+    I: CSTInput,
+{
+    #[parserc(keyword = "c\"", crucial)]
+    pub delimiter_start: I,
+    /// sequence of content item of literal string.
+    pub content: Vec<CStrContent<I>>,
+    #[parserc(keyword = "\"", map_err = PunctKind::DoubleQuote.map())]
+    pub delimiter_end: I,
+}
+
+/// Raw C string literals do not process any escapes. They start with the character U+0063 (c),
+/// followed by U+0072 (r), followed by fewer than 256 of the character U+0023 (#), and a U+0022
+/// (double-quote) character.
+///
+/// see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#raw-byte-string-literals
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct LitRawCStr<I>
+where
+    I: CSTInput,
+{
+    /// leading char `cr`
+    pub leading_char: I,
+    /// leading pounds fewer than 256,
+    pub leading_pounds: I,
+    /// delimiter `"`
+    pub delimiter_start: I,
+    /// sequence of unicode characters.
+    pub content: I,
+    /// delimiter `"`
+    pub delimiter_end: I,
+    /// tailing pounds fewer than 256,
+    pub tailing_pounds: I,
+}
+
+impl<I> Syntax<I> for LitRawCStr<I>
+where
+    I: CSTInput,
+{
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        let leading_char = keyword("cr").parse(input)?;
+
+        let leading_pounds = take_while_range_to(256, |c| c == '#')
+            .parse(input)
+            .map_err(SemanticsKind::Pounds.map())?;
+
+        let delimiter_start = next('"')
+            .parse(input)
+            .map_err(PunctKind::DoubleQuote.map_into_fatal())?;
+
+        let mut iter = input.iter_indices();
+
+        while let Some((offset, c)) = iter.next() {
+            match c {
+                '\0' | '\r' => {
+                    return Err(CSTError::Semantics(
+                        SemanticsKind::RawCStrContent,
+                        input.split_off(offset).to_span_at(c.len_utf8()),
+                    ));
+                }
+                _ => {}
             }
 
             if c == '"' {
@@ -471,8 +680,9 @@ mod tests {
         errors::{CSTError, PunctKind, SemanticsKind, SyntaxKind},
         input::TokenStream,
         lexical::lit::{
-            ASCIIEscape, ByteContent, ByteEscape, ByteStrContent, CharContent, LitByte, LitByteStr,
-            LitChar, LitRawByteStr, LitRawStr, LitStr, QuoteEscape, StrContent,
+            ASCIIEscape, ByteContent, ByteEscape, ByteStrContent, CStrContent, CharContent,
+            LitByte, LitByteStr, LitCStr, LitChar, LitRawByteStr, LitRawCStr, LitRawStr, LitStr,
+            NewLineEscape, QuoteEscape, StrContent,
         },
     };
 
@@ -763,6 +973,77 @@ mod tests {
                 delimiter_end: TokenStream::from((8, "\"")),
                 tailing_pounds: TokenStream::from((9, ""))
             })
+        );
+    }
+
+    #[test]
+    fn test_c_str() {
+        assert_eq!(
+            TokenStream::from(r#"c"\0""#).parse::<LitCStr<_>>(),
+            Err(CSTError::Semantics(
+                SemanticsKind::CStrContent,
+                Span::Range(2..4)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from(
+                r#"c"你好\
+            ""#
+            )
+            .parse::<LitCStr<_>>(),
+            Ok(LitCStr {
+                delimiter_start: TokenStream::from((0, "c\"")),
+                content: vec![
+                    CStrContent::CharWithException(TokenStream::from((2, "你好"))),
+                    CStrContent::NewLineEscape(NewLineEscape::LF(TokenStream::from((8, "\\\n")))),
+                    CStrContent::CharWithException(TokenStream::from((10, "            ")))
+                ],
+                delimiter_end: TokenStream::from((22, "\""))
+            })
+        );
+    }
+
+    #[test]
+    fn test_raw_c_str() {
+        assert_eq!(
+            TokenStream::from(include_str!("crstr0.txt")).parse::<LitRawCStr<_>>(),
+            Ok(LitRawCStr {
+                leading_char: TokenStream::from((0, "cr")),
+                leading_pounds: TokenStream::from((2, "####")),
+                delimiter_start: TokenStream::from((6, "\"")),
+                content: TokenStream::from((7, "hello\"\"\" \\nworld")),
+                delimiter_end: TokenStream::from((23, "\"")),
+                tailing_pounds: TokenStream::from((24, "####"))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from(include_str!("crstr1.txt")).parse::<LitRawCStr<_>>(),
+            Ok(LitRawCStr {
+                leading_char: TokenStream::from((0, "cr")),
+                leading_pounds: TokenStream::from((2, "")),
+                delimiter_start: TokenStream::from((2, "\"")),
+                content: TokenStream::from((3, "hello")),
+                delimiter_end: TokenStream::from((8, "\"")),
+                tailing_pounds: TokenStream::from((9, ""))
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("cr\"\0\"").parse::<LitRawCStr<_>>(),
+            Err(CSTError::Semantics(
+                SemanticsKind::RawCStrContent,
+                Span::Range(3..4)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("cr\"\r\"").parse::<LitRawCStr<_>>(),
+            Err(CSTError::Semantics(
+                SemanticsKind::RawCStrContent,
+                Span::Range(3..4)
+            ))
         );
     }
 }

@@ -93,7 +93,7 @@ where
     BlackSlash(#[parserc(keyword = "\\\\")] I),
     /// Null
     Null(#[parserc(keyword = "\\0")] I),
-    /// 7-bit character code (exactly 2 digits, up to 0x7F)
+    /// 8-bit character code (exactly 2 digits, up to 0xFF)
     Char(#[parserc(parser = parse_8bit_char)] I),
 }
 

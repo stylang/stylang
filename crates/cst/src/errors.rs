@@ -423,6 +423,12 @@ pub enum SemanticsKind {
     StrContent,
     #[error("byte string listeral content")]
     ByteStrContent,
+    #[error("raw byte string listeral content")]
+    RawByteStrContent,
+    #[error("c string listeral content")]
+    CStrContent,
+    #[error("raw c string listeral content")]
+    RawCStrContent,
     #[error("raw string leading pounds out of range.")]
     Pounds,
 }
