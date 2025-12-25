@@ -871,7 +871,7 @@ mod tests {
     #[test]
     fn test_raw_str() {
         assert_eq!(
-            TokenStream::from(include_str!("rstr0.txt")).parse::<LitRawStr<_>>(),
+            TokenStream::from(include_str!("tests/rstr0.txt")).parse::<LitRawStr<_>>(),
             Ok(LitRawStr {
                 leading_char: TokenStream::from((0, "r")),
                 leading_pounds: TokenStream::from((1, "####")),
@@ -883,7 +883,7 @@ mod tests {
         );
 
         assert_eq!(
-            TokenStream::from(include_str!("rstr1.txt")).parse::<LitRawStr<_>>(),
+            TokenStream::from(include_str!("tests/rstr1.txt")).parse::<LitRawStr<_>>(),
             Ok(LitRawStr {
                 leading_char: TokenStream::from((0, "r")),
                 leading_pounds: TokenStream::from((1, "")),
@@ -952,7 +952,7 @@ mod tests {
     #[test]
     fn test_raw_byte_str() {
         assert_eq!(
-            TokenStream::from(include_str!("brstr0.txt")).parse::<LitRawByteStr<_>>(),
+            TokenStream::from(include_str!("tests/brstr0.txt")).parse::<LitRawByteStr<_>>(),
             Ok(LitRawByteStr {
                 leading_char: TokenStream::from((0, "br")),
                 leading_pounds: TokenStream::from((2, "####")),
@@ -964,7 +964,7 @@ mod tests {
         );
 
         assert_eq!(
-            TokenStream::from(include_str!("brstr1.txt")).parse::<LitRawByteStr<_>>(),
+            TokenStream::from(include_str!("tests/brstr1.txt")).parse::<LitRawByteStr<_>>(),
             Ok(LitRawByteStr {
                 leading_char: TokenStream::from((0, "br")),
                 leading_pounds: TokenStream::from((2, "")),
@@ -1007,7 +1007,7 @@ mod tests {
     #[test]
     fn test_raw_c_str() {
         assert_eq!(
-            TokenStream::from(include_str!("crstr0.txt")).parse::<LitRawCStr<_>>(),
+            TokenStream::from(include_str!("tests/crstr0.txt")).parse::<LitRawCStr<_>>(),
             Ok(LitRawCStr {
                 leading_char: TokenStream::from((0, "cr")),
                 leading_pounds: TokenStream::from((2, "####")),
@@ -1019,7 +1019,7 @@ mod tests {
         );
 
         assert_eq!(
-            TokenStream::from(include_str!("crstr1.txt")).parse::<LitRawCStr<_>>(),
+            TokenStream::from(include_str!("tests/crstr1.txt")).parse::<LitRawCStr<_>>(),
             Ok(LitRawCStr {
                 leading_char: TokenStream::from((0, "cr")),
                 leading_pounds: TokenStream::from((2, "")),
