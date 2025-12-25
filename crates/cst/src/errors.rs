@@ -329,6 +329,8 @@ pub enum SyntaxKind {
     Byte,
     #[error("string listeral content")]
     StrContent,
+    #[error("byte string listeral content")]
+    ByteStrContent,
 }
 
 impl SyntaxKind {
@@ -419,6 +421,8 @@ pub enum SemanticsKind {
     Byte,
     #[error("string listeral content")]
     StrContent,
+    #[error("byte string listeral content")]
+    ByteStrContent,
     #[error("raw string leading pounds out of range.")]
     Pounds,
 }
