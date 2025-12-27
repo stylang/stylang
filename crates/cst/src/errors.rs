@@ -331,6 +331,14 @@ pub enum SyntaxKind {
     StrContent,
     #[error("byte string listeral content")]
     ByteStrContent,
+    #[error("dec literal")]
+    Dec,
+    #[error("bin literal")]
+    Bin,
+    #[error("oct literal")]
+    Oct,
+    #[error("hex literal")]
+    Hex,
 }
 
 impl SyntaxKind {
@@ -431,6 +439,12 @@ pub enum SemanticsKind {
     RawCStrContent,
     #[error("raw string leading pounds out of range.")]
     Pounds,
+    #[error("bin literal")]
+    Bin,
+    #[error("oct literal")]
+    Oct,
+    #[error("hex literal")]
+    Hex,
 }
 
 impl SemanticsKind {

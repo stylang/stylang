@@ -7,3 +7,6 @@ pub use ecacpes::*;
 
 mod str;
 pub use str::*;
+
+mod num;
+pub use num::*;
