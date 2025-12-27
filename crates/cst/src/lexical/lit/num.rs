@@ -1,4 +1,5 @@
-use parserc::{Parser, keyword, next_if, syntax::Syntax, take_while};
+use parserc::{ControlFlow, Parser, ToSpan, keyword, next, next_if, syntax::Syntax, take_while};
+use unicode_ident::is_xid_start;
 
 use crate::{
     errors::{CSTError, SemanticsKind, SyntaxKind},
@@ -160,6 +161,108 @@ where
     }
 }
 
+/// A tuple index is used to refer to the fields of tuples,
+/// tuple structs, and tuple enum variants.
+///
+///  see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#railroad-TUPLE_INDEX
+pub type TupleIndex<I> = LitDec<I>;
+
+/// A floating-point literal
+///
+///  see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#railroad-FLOAT_LITERAL
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[parserc(semantic = check_lit_float)]
+pub struct LitFloat<I>
+where
+    I: CSTInput,
+{
+    /// integer part of float.
+    pub trunc: LitDec<I>,
+    /// period character `.`
+    #[parserc(parser = next('.').ok())]
+    pub period: Option<I>,
+    /// fract part of float.
+    pub fract: Option<LitDec<I>>,
+    /// optional exponent part.
+    pub exp: Option<Exp<I>>,
+}
+
+#[inline]
+fn check_lit_float<I>(input: I, lit: LitFloat<I>) -> Result<LitFloat<I>, CSTError>
+where
+    I: CSTInput,
+{
+    if lit.period.is_none() {
+        assert!(lit.fract.is_none());
+
+        if lit.exp.is_none() {
+            return Err(CSTError::Syntax(
+                SyntaxKind::Float,
+                ControlFlow::Recovable,
+                lit.to_span(),
+            ));
+        }
+    } else {
+        if lit.fract.is_none() {
+            let mut lookahead = input.clone().split_off(lit.trunc.0.len() + 1);
+
+            if let Some(_) = next_if(|c| c == '.' || c == '_' || is_xid_start(c))
+                .ok()
+                .parse(&mut lookahead)?
+            {
+                return Err(CSTError::Syntax(
+                    SyntaxKind::Float,
+                    ControlFlow::Recovable,
+                    lit.trunc.to_span() + lit.period.to_span(),
+                ));
+            }
+        }
+    }
+
+    Ok(lit)
+}
+
+/// an optional exponent of [`LitFloat`]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Exp<I>
+where
+    I: CSTInput,
+{
+    /// leading char `E` or `e`
+    #[parserc(parser = next_if(|c:char| c == 'E' || c == 'e'), crucial)]
+    pub leading_char: I,
+    /// sign character `+` or `-`
+    #[parserc(parser = next_if(|c:char| c == '+' || c == '-').ok())]
+    pub sign: Option<I>,
+    /// decimal literal part of exponent.
+    #[parserc(parser = parse_exp_body)]
+    pub dec: I,
+}
+
+fn parse_exp_body<I>(input: &mut I) -> Result<I, CSTError>
+where
+    I: CSTInput,
+{
+    let body = take_while(|c: char| c.is_ascii_hexdigit() || c == '_').parse(input)?;
+
+    if body
+        .as_str()
+        .chars()
+        .find(|c| c.is_ascii_hexdigit())
+        .is_none()
+    {
+        return Err(CSTError::Semantics(SemanticsKind::Exponent, body.to_span()));
+    }
+
+    Ok(body)
+}
+
 #[cfg(test)]
 mod tests {
     use parserc::{ControlFlow, Span, syntax::SyntaxInput};
@@ -167,7 +270,7 @@ mod tests {
     use crate::{
         errors::{CSTError, SemanticsKind, SyntaxKind},
         input::TokenStream,
-        lexical::lit::{LitBin, LitHex, LitOct, num::LitDec},
+        lexical::lit::{Exp, LitBin, LitFloat, LitHex, LitOct, num::LitDec},
     };
 
     #[test]
@@ -223,6 +326,73 @@ mod tests {
         assert_eq!(
             TokenStream::from("0x0aF12G").parse::<LitHex<_>>(),
             Ok(LitHex(TokenStream::from("0x0aF12")))
+        );
+    }
+
+    #[test]
+    fn test_float_literal() {
+        assert_eq!(
+            TokenStream::from("12E-__10").parse::<LitFloat<_>>(),
+            Ok(LitFloat {
+                trunc: LitDec(TokenStream::from((0, "12"))),
+                period: None,
+                fract: None,
+                exp: Some(Exp {
+                    leading_char: TokenStream::from((2, "E")),
+                    sign: Some(TokenStream::from((3, "-"))),
+                    dec: TokenStream::from((4, "__10"))
+                })
+            })
+        );
+
+        assert_eq!(
+            TokenStream::from("12.E10").parse::<LitFloat<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::Float,
+                ControlFlow::Recovable,
+                Span::Range(0..3)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("12._a").parse::<LitFloat<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::Float,
+                ControlFlow::Recovable,
+                Span::Range(0..3)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("12.").parse::<LitFloat<_>>(),
+            Ok(LitFloat {
+                trunc: LitDec(TokenStream::from((0, "12"))),
+                period: Some(TokenStream::from((2, "."))),
+                fract: None,
+                exp: None
+            })
+        );
+        assert_eq!(
+            TokenStream::from("12.01").parse::<LitFloat<_>>(),
+            Ok(LitFloat {
+                trunc: LitDec(TokenStream::from((0, "12"))),
+                period: Some(TokenStream::from((2, "."))),
+                fract: Some(LitDec(TokenStream::from((3, "01")))),
+                exp: None
+            })
+        );
+        assert_eq!(
+            TokenStream::from("12.01e+10").parse::<LitFloat<_>>(),
+            Ok(LitFloat {
+                trunc: LitDec(TokenStream::from((0, "12"))),
+                period: Some(TokenStream::from((2, "."))),
+                fract: Some(LitDec(TokenStream::from((3, "01")))),
+                exp: Some(Exp {
+                    leading_char: TokenStream::from((5, "e")),
+                    sign: Some(TokenStream::from((6, "+"))),
+                    dec: TokenStream::from((7, "10"))
+                })
+            })
         );
     }
 }

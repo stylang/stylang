@@ -339,6 +339,8 @@ pub enum SyntaxKind {
     Oct,
     #[error("hex literal")]
     Hex,
+    #[error("float literal")]
+    Float,
 }
 
 impl SyntaxKind {
@@ -445,6 +447,10 @@ pub enum SemanticsKind {
     Oct,
     #[error("hex literal")]
     Hex,
+    #[error("exponent decimal digit part")]
+    Exponent,
+    #[error("float literal")]
+    Float,
 }
 
 impl SemanticsKind {
