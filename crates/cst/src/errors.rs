@@ -451,6 +451,8 @@ pub enum SemanticsKind {
     Exponent,
     #[error("float literal")]
     Float,
+    #[error("reserved num")]
+    ReservedNum,
 }
 
 impl SemanticsKind {

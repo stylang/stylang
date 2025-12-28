@@ -71,6 +71,37 @@ where
             return Err(CSTError::Semantics(SemanticsKind::Bin, body.to_span()));
         }
 
+        let mut iter = input.iter();
+
+        if let Some(c) = iter.next() {
+            if matches!(c, '2'..='9') {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::ReservedNum,
+                    content.to_span_at(body.len() + 3),
+                ));
+            }
+
+            if c == 'e' || c == 'E' {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::ReservedNum,
+                    content.to_span_at(body.len() + 3),
+                ));
+            }
+
+            if c == '.' {
+                match iter.next() {
+                    Some('.') => {}
+                    Some(c) if is_xid_start(c) => {}
+                    _ => {
+                        return Err(CSTError::Semantics(
+                            SemanticsKind::ReservedNum,
+                            content.to_span_at(body.len() + 4),
+                        ));
+                    }
+                }
+            }
+        }
+
         Ok(Self(content.split_to(body.len() + 2)))
     }
 
@@ -112,6 +143,37 @@ where
             return Err(CSTError::Semantics(SemanticsKind::Oct, body.to_span()));
         }
 
+        let mut iter = input.iter();
+
+        if let Some(c) = iter.next() {
+            if matches!(c, '8'..='9') {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::ReservedNum,
+                    content.to_span_at(body.len() + 3),
+                ));
+            }
+
+            if c == 'e' || c == 'E' {
+                return Err(CSTError::Semantics(
+                    SemanticsKind::ReservedNum,
+                    content.to_span_at(body.len() + 3),
+                ));
+            }
+
+            if c == '.' {
+                match iter.next() {
+                    Some('.') => {}
+                    Some(c) if is_xid_start(c) => {}
+                    _ => {
+                        return Err(CSTError::Semantics(
+                            SemanticsKind::ReservedNum,
+                            content.to_span_at(body.len() + 4),
+                        ));
+                    }
+                }
+            }
+        }
+
         Ok(Self(content.split_to(body.len() + 2)))
     }
 
@@ -151,6 +213,23 @@ where
             .is_none()
         {
             return Err(CSTError::Semantics(SemanticsKind::Hex, body.to_span()));
+        }
+
+        let mut iter = input.iter();
+
+        if let Some(c) = iter.next() {
+            if c == '.' {
+                match iter.next() {
+                    Some('.') => {}
+                    Some(c) if is_xid_start(c) => {}
+                    _ => {
+                        return Err(CSTError::Semantics(
+                            SemanticsKind::ReservedNum,
+                            content.to_span_at(body.len() + 1),
+                        ));
+                    }
+                }
+            }
         }
 
         Ok(Self(content.split_to(body.len() + 2)))
@@ -299,7 +378,10 @@ mod tests {
 
         assert_eq!(
             TokenStream::from("0b102").parse::<LitBin<_>>(),
-            Ok(LitBin(TokenStream::from("0b10")))
+            Err(CSTError::Semantics(
+                SemanticsKind::ReservedNum,
+                Span::Range(0..5)
+            ))
         );
     }
 
@@ -312,7 +394,10 @@ mod tests {
 
         assert_eq!(
             TokenStream::from("0o0178").parse::<LitOct<_>>(),
-            Ok(LitOct(TokenStream::from("0o017")))
+            Err(CSTError::Semantics(
+                SemanticsKind::ReservedNum,
+                Span::Range(0..6)
+            ))
         );
     }
 
@@ -331,6 +416,7 @@ mod tests {
 
     #[test]
     fn test_float_literal() {
+        // this is a valid rust float literal token.
         assert_eq!(
             TokenStream::from("12E-__10").parse::<LitFloat<_>>(),
             Ok(LitFloat {
@@ -345,6 +431,7 @@ mod tests {
             })
         );
 
+        // this may be a field index expr.
         assert_eq!(
             TokenStream::from("12.E10").parse::<LitFloat<_>>(),
             Err(CSTError::Syntax(
@@ -354,6 +441,7 @@ mod tests {
             ))
         );
 
+        // this may be a field index expr.
         assert_eq!(
             TokenStream::from("12._a").parse::<LitFloat<_>>(),
             Err(CSTError::Syntax(
