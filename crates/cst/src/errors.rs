@@ -341,6 +341,16 @@ pub enum SyntaxKind {
     Hex,
     #[error("float literal")]
     Float,
+    #[error("raw lifetime token")]
+    RawLifeTime,
+    #[error("lifetime token")]
+    LifeTime,
+    #[error("lifetime or label token")]
+    LifeTimeOrLabel,
+    #[error("reserved lifetime token")]
+    ReservedLifeTime,
+    #[error("placeholder lifetime token")]
+    PlaceHolderLifeTime,
 }
 
 impl SyntaxKind {

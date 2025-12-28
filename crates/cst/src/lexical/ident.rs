@@ -27,21 +27,21 @@ where
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
         let mut content = input.clone();
 
-        let start = next_if(|c| c == '_' || is_xid_start(c))
+        let leading = next_if(|c| c == '_' || is_xid_start(c))
             .parse(input)
             .map_err(SyntaxKind::IdentOrKeyword.map())?;
 
-        let continues = take_while(|c| is_xid_continue(c)).parse(input)?;
+        let rest = take_while(|c| is_xid_continue(c)).parse(input)?;
 
-        if start.as_str() == "_" && continues.is_empty() {
+        if leading.as_str() == "_" && rest.is_empty() {
             return Err(CSTError::Syntax(
                 SyntaxKind::IdentOrKeyword,
                 ControlFlow::Recovable,
-                start.to_span(),
+                leading.to_span(),
             ));
         }
 
-        Ok(Self(content.split_to(1 + continues.len())))
+        Ok(Self(content.split_to(1 + rest.len())))
     }
 
     #[inline]
