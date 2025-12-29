@@ -56,9 +56,10 @@ where
 {
     #[inline]
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        parse_lifetime_token
-            .or(PlaceHolderLifeTime::into_parser().map(|raw| raw.0))
+        PlaceHolderLifeTime::into_parser()
+            .map(|raw| raw.0)
             .or(RawLifeTime::into_parser().map(|raw| raw.0))
+            .or(parse_lifetime_token)
             .map(Self)
             .parse(input)
     }
@@ -118,8 +119,9 @@ where
 {
     #[inline]
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        parse_lifetime_or_label_token
-            .or(RawLifeTime::into_parser().map(|raw| raw.0))
+        RawLifeTime::into_parser()
+            .map(|raw| raw.0)
+            .or(parse_lifetime_or_label_token)
             .map(Self)
             .parse(input)
     }
@@ -242,7 +244,7 @@ where
 {
     #[inline]
     fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
-        let content = keyword("'r_")
+        let content = keyword("'_")
             .parse(input)
             .map_err(SyntaxKind::PlaceHolderLifeTime.map())?;
 
@@ -270,5 +272,50 @@ where
     #[inline]
     fn to_span(&self) -> parserc::Span {
         self.0.to_span()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use parserc::{ControlFlow, Span, syntax::SyntaxInput};
+
+    use crate::{
+        errors::{CSTError, SyntaxKind},
+        input::TokenStream,
+        lexical::label::{LifeTime, LifeTimeOrLabel},
+    };
+
+    #[test]
+    fn test_lifetime_or_label() {
+        assert_eq!(
+            TokenStream::from("'_").parse::<LifeTimeOrLabel<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LifeTimeOrLabel,
+                ControlFlow::Recovable,
+                Span::Range(1..2)
+            ))
+        );
+
+        assert_eq!(
+            TokenStream::from("'r#if").parse::<LifeTimeOrLabel<_>>(),
+            Ok(LifeTimeOrLabel(TokenStream::from((0, "'r#if"))))
+        );
+    }
+
+    #[test]
+    fn test_liftime_token() {
+        assert_eq!(
+            TokenStream::from("'r#if").parse::<LifeTime<_>>(),
+            Ok(LifeTime(TokenStream::from((0, "'r#if"))))
+        );
+        assert_eq!(
+            TokenStream::from("'_").parse::<LifeTime<_>>(),
+            Ok(LifeTime(TokenStream::from((0, "'_"))))
+        );
+
+        assert_eq!(
+            TokenStream::from("'hello").parse::<LifeTime<_>>(),
+            Ok(LifeTime(TokenStream::from((0, "'hello"))))
+        );
     }
 }
