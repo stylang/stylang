@@ -240,6 +240,23 @@ where
     }
 }
 
+/// An integer literal
+///
+///  see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#railroad-INTEGER_LITERAL
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum LitInt<I>
+where
+    I: CSTInput,
+{
+    Dec(LitDec<I>),
+    Bin(LitBin<I>),
+    Oct(LitOct<I>),
+    Hex(LitHex<I>),
+}
+
 /// A tuple index is used to refer to the fields of tuples,
 /// tuple structs, and tuple enum variants.
 ///

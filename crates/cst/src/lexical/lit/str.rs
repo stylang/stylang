@@ -271,6 +271,7 @@ where
 ///
 /// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#byte-literals
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LitByte<I>
 where
     I: CSTInput,

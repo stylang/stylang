@@ -86,12 +86,9 @@ define_punct!(Pound, "#");
 define_punct!(Dollar, "$");
 define_punct!(Question, "?");
 define_punct!(Tilde, "~");
-
 define_punct!(BraceStart, "{");
 define_punct!(BraceEnd, "}");
-
 define_punct!(BracketStart, "[");
 define_punct!(BracketEnd, "]");
-
 define_punct!(ParenStart, "(");
 define_punct!(ParenEnd, ")");
