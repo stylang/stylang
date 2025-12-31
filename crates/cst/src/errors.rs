@@ -351,6 +351,18 @@ pub enum SyntaxKind {
     ReservedLifeTime,
     #[error("placeholder lifetime token")]
     PlaceHolderLifeTime,
+    #[error("token of macro invocation")]
+    TokenTreeToken,
+    #[error("token of macros by example")]
+    MacroMatchToken,
+    #[error("macros by example fragment type.")]
+    MacroFragSpec,
+    #[error("macros by example fragment ident.")]
+    MacroFragIdent,
+    #[error("macros repeat seperator")]
+    MacroRepSep,
+    #[error("macros repeat operator")]
+    MacroRepOp,
 }
 
 impl SyntaxKind {

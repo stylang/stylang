@@ -2,6 +2,10 @@
 //!
 //! [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#punctuation
 
+use parserc::syntax::Syntax;
+
+use crate::input::CSTInput;
+
 macro_rules! define_punct {
     ($ident: ident, $value: literal) => {
         #[doc = "define punct `"]
@@ -92,3 +96,78 @@ define_punct!(BracketStart, "[");
 define_punct!(BracketEnd, "]");
 define_punct!(ParenStart, "(");
 define_punct!(ParenEnd, ")");
+
+/// A punct token except delimiter
+///
+///  see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#grammar-PUNCTUATION
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Punct<I>
+where
+    I: CSTInput,
+{
+    AndAnd(AndAnd<I>),
+    OrOr(OrOr<I>),
+
+    PlusEq(PlusEq<I>),
+    MinusEq(MinusEq<I>),
+    StarEq(StarEq<I>),
+    SlashEq(SlashEq<I>),
+    PercentEq(PercentEq<I>),
+    CaretEq(CaretEq<I>),
+    AndEq(AndEq<I>),
+    OrEq(OrEq<I>),
+    ShlEq(ShlEq<I>),
+    ShrEq(ShrEq<I>),
+    Eq(Eq<I>),
+    EqEq(EqEq<I>),
+    Ne(Ne<I>),
+    Ge(Ge<I>),
+    Le(Le<I>),
+    FatArrow(FatArrow<I>),
+    RArrow(RArrow<I>),
+    LArrow(LArrow<I>),
+
+    Plus(Plus<I>),
+    Minus(Minus<I>),
+    Star(Star<I>),
+    Slash(Slash<I>),
+    Percent(Percent<I>),
+    Caret(Caret<I>),
+    Not(Not<I>),
+
+    And(And<I>),
+    Or(Or<I>),
+
+    Shl(Shl<I>),
+    Shr(Shr<I>),
+
+    Gt(Gt<I>),
+    Lt(Lt<I>),
+
+    At(At<I>),
+    Underscore(Underscore<I>),
+
+    DotDotEq(DotDotEq<I>),
+    DotDotDot(DotDotDot<I>),
+
+    DotDot(DotDot<I>),
+    Dot(Dot<I>),
+
+    Comma(Comma<I>),
+    Semi(Semi<I>),
+    Colon(Colon<I>),
+    PathSep(PathSep<I>),
+    Pound(Pound<I>),
+    Dollar(Dollar<I>),
+    Question(Question<I>),
+    Tilde(Tilde<I>),
+    BraceStart(BraceStart<I>),
+    BraceEnd(BraceEnd<I>),
+    BracketStart(BracketStart<I>),
+    BracketEnd(BracketEnd<I>),
+    ParenStart(ParenStart<I>),
+    ParenEnd(ParenEnd<I>),
+}
