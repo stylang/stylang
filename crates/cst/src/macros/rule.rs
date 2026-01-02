@@ -399,4 +399,13 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn test_macro_rules_with_comments() {
+        macro_rules! hello {
+            () => {};
+        }
+
+        hello!(/*hello*/);
+    }
 }
