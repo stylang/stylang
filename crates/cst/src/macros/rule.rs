@@ -292,8 +292,9 @@ mod tests {
         input::TokenStream,
         lexical::{
             S,
+            comments::{CommentOrDoc, LineComment},
             ident::NonKeywordIdent,
-            punct::{BraceEnd, BraceStart},
+            punct::{BraceEnd, BraceStart, BracketEnd, BracketStart, Pound},
         },
         macros::{invocation::TokenTree, rule::MacroRulesDefinition},
     };
@@ -402,10 +403,100 @@ mod tests {
 
     #[test]
     fn test_macro_rules_with_comments() {
-        macro_rules! hello {
-            () => {};
-        }
+        let code = r#"macro_rules! hello {
+            () => {
+                // helloworld
+                #[make]
+            };
+            }"#;
 
-        hello!(/*hello*/);
+        assert_eq!(
+            TokenStream::from(code).parse::<MacroRulesDefinition<_>>(),
+            Ok(MacroRulesDefinition {
+                keyword: TokenStream::from((0, "macro_rules")),
+                not: Not(
+                    None,
+                    TokenStream::from((11, "!")),
+                    Some(S(TokenStream::from((12, " "))))
+                ),
+                name: Ident::NonKeywordIdent(NonKeywordIdent(TokenStream::from((13, "hello")))),
+                body: MacroRulesDef::Brace(Delimiter {
+                    start: BraceStart(
+                        Some(S(TokenStream::from((18, " ")))),
+                        TokenStream::from((19, "{")),
+                        Some(S(TokenStream::from((20, "\n            "))))
+                    ),
+                    end: BraceEnd(None, TokenStream::from((122, "}")), None),
+                    body: Punctuated {
+                        pairs: vec![(
+                            MacroRule {
+                                matcher: MacroMatcher::Paren(Delimiter {
+                                    start: ParenStart(None, TokenStream::from((33, "(")), None),
+                                    end: ParenEnd(
+                                        None,
+                                        TokenStream::from((34, ")")),
+                                        Some(S(TokenStream::from((35, " "))))
+                                    ),
+                                    body: vec![]
+                                }),
+                                arrow: FatArrow(
+                                    None,
+                                    TokenStream::from((36, "=>")),
+                                    Some(S(TokenStream::from((38, " "))))
+                                ),
+                                trans: DelimTokenTree::Brace(Delimiter {
+                                    start: BraceStart(
+                                        None,
+                                        TokenStream::from((39, "{")),
+                                        Some(S(TokenStream::from((40, "\n                "))))
+                                    ),
+                                    end: BraceEnd(None, TokenStream::from((107, "}")), None),
+                                    body: vec![
+                                        TokenTree::Token(Token::CommentOrDoc(
+                                            CommentOrDoc::LineComment(LineComment(
+                                                TokenStream::from((57, "// helloworld"))
+                                            ))
+                                        )),
+                                        TokenTree::Token(Token::Punct(Punct::Pound(Pound(
+                                            Some(S(TokenStream::from((70, "\n                ")))),
+                                            TokenStream::from((87, "#")),
+                                            None
+                                        )))),
+                                        TokenTree::Delim(Box::new(DelimTokenTree::Bracket(
+                                            Delimiter {
+                                                start: BracketStart(
+                                                    None,
+                                                    TokenStream::from((88, "[")),
+                                                    None
+                                                ),
+                                                end: BracketEnd(
+                                                    None,
+                                                    TokenStream::from((93, "]")),
+                                                    Some(S(TokenStream::from((
+                                                        94,
+                                                        "\n            "
+                                                    ))))
+                                                ),
+                                                body: vec![TokenTree::Token(
+                                                    Token::IdentOrKeyWord(IdentOrKeyword(
+                                                        TokenStream::from((89, "make"))
+                                                    ))
+                                                )]
+                                            }
+                                        )))
+                                    ]
+                                })
+                            },
+                            Semi(
+                                None,
+                                TokenStream::from((108, ";")),
+                                Some(S(TokenStream::from((109, "\n            "))))
+                            )
+                        )],
+                        tail: None
+                    }
+                })
+            })
+        );
     }
 }
