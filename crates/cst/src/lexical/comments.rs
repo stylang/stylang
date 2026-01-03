@@ -29,7 +29,7 @@ where
         let header = take_while(|c| c == '/').parse(input)?;
 
         match header.len() {
-            1 | 3 => {
+            0 | 1 | 3 => {
                 return Err(CSTError::Syntax(
                     SyntaxKind::LineComment,
                     ControlFlow::Recovable,
@@ -361,6 +361,21 @@ where
     }
 }
 
+/// Block or comments token.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CommentOrDoc<I>
+where
+    I: CSTInput,
+{
+    LineComment(LineComment<I>),
+    InnerLineDoc(InnerLineDoc<I>),
+    OuterLineDoc(OuterLineDoc<I>),
+    BlockComment(BlockComment<I>),
+    InnerBlockDoc(InnerBlockDoc<I>),
+    OuterBlockDoc(OuterBlockDoc<I>),
+}
+
 #[cfg(test)]
 mod tests {
     use parserc::{ControlFlow, Span, syntax::SyntaxInput};
@@ -404,6 +419,15 @@ mod tests {
                 )),
             );
         }
+
+        assert_eq!(
+            TokenStream::from("").parse::<LineComment<_>>(),
+            Err(CSTError::Syntax(
+                SyntaxKind::LineComment,
+                ControlFlow::Recovable,
+                Span::Range(0..0)
+            )),
+        )
     }
 
     #[test]

@@ -17,6 +17,7 @@ mod token {
     use crate::{
         input::CSTInput,
         lexical::{
+            comments::CommentOrDoc,
             ident::{IdentOrKeyword, RawIdent},
             label::LifeTime,
             lit::{
@@ -38,6 +39,7 @@ mod token {
     where
         I: CSTInput,
     {
+        CommentOrDoc(CommentOrDoc<I>),
         IdentOrKeyWord(IdentOrKeyword<I>),
         RawIdent(RawIdent<I>),
         LitChar(LitChar<I>),

@@ -137,8 +137,9 @@ mod tests {
         input::TokenStream,
         lexical::{
             S,
+            comments::{BlockComment, CommentOrDoc},
             ident::{Ident, IdentOrKeyword, NonKeywordIdent},
-            lit::{LitDec, LitInt},
+            lit::{LitDec, LitInt, LitStr, StrContent},
         },
         names::paths::SimplePathSegment,
     };
@@ -214,6 +215,48 @@ mod tests {
                     },
                     Semi(None, TokenStream::from((12, ";")), None)
                 )
+            })
+        );
+    }
+
+    #[test]
+    fn test_invocation_with_comment() {
+        assert_eq!(
+            // hello
+            TokenStream::from(r#"println!(/* hello */"{}",1)"#).parse::<MacroInvocation<_>>(),
+            Ok(MacroInvocation {
+                simple_path: SimplePath {
+                    leading_sep: None,
+                    first: SimplePathSegment::Ident(Ident::NonKeywordIdent(NonKeywordIdent(
+                        TokenStream::from((0, "println"))
+                    ))),
+                    rest: vec![]
+                },
+                not: Not(None, TokenStream::from((7, "!")), None),
+                delim_token_tree: DelimTokenTree::Paren(Delimiter {
+                    start: ParenStart(None, TokenStream::from((8, "(")), None),
+                    end: ParenEnd(None, TokenStream::from((26, ")")), None),
+                    body: vec![
+                        TokenTree::Token(Token::CommentOrDoc(CommentOrDoc::BlockComment(
+                            BlockComment(TokenStream::from((9, "/* hello */")))
+                        ))),
+                        TokenTree::Token(Token::LitStr(LitStr {
+                            delimiter_start: TokenStream::from((20, "\"")),
+                            content: vec![StrContent::CharWithException(TokenStream::from((
+                                21, "{}"
+                            )))],
+                            delimiter_end: TokenStream::from((23, "\""))
+                        })),
+                        TokenTree::Token(Token::Punct(Punct::Comma(Comma(
+                            None,
+                            TokenStream::from((24, ",")),
+                            None
+                        )))),
+                        TokenTree::Token(Token::LitInt(LitInt::Dec(LitDec(TokenStream::from((
+                            25, "1"
+                        ))))))
+                    ]
+                })
             })
         );
     }
