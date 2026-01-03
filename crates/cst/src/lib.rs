@@ -3,6 +3,7 @@
 //! It also serves as a Rust source code-compatible front-end parser.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub mod cfg;
 pub mod errors;
 pub mod input;
 pub mod lexical;
