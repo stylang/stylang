@@ -50,6 +50,43 @@ where
     }
 }
 
+/// A identifier or keyword not beginning with `e` or `E`
+///
+/// see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/tokens.html#grammar-SUFFIX_NO_E
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct SuffixNoE<I>(pub I)
+where
+    I: CSTInput;
+
+impl<I> Syntax<I> for SuffixNoE<I>
+where
+    I: CSTInput,
+{
+    #[inline]
+    fn parse(input: &mut I) -> Result<Self, <I as parserc::Input>::Error> {
+        match input.iter().next() {
+            Some('e') | Some('E') => {
+                return Err(CSTError::Syntax(
+                    SyntaxKind::SuffixNoE,
+                    ControlFlow::Recovable,
+                    input.to_span_at(1),
+                ));
+            }
+            _ => {}
+        }
+
+        IdentOrKeyword::parse(input).map(|input| Self(input.0))
+    }
+
+    #[inline]
+    fn to_span(&self) -> parserc::Span {
+        self.0.to_span()
+    }
+}
+
 /// `r#`[`IdentOrKeyword`] except `crate`, `self`, `super`, `Self`, see [`The Rust Reference`]
 ///
 /// [`The Rust Reference`]: https://doc.rust-lang.org/reference/identifiers.html#railroad-RAW_IDENTIFIER

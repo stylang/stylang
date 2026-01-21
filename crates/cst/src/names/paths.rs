@@ -9,8 +9,8 @@ use crate::{
     input::CSTInput,
     lexical::{
         ident::Ident,
-        keywords::strict::{Crate, SelfLower, Super},
-        punct::PathSep,
+        keywords::strict::{Crate, SelfLower, SelfUpper, Super},
+        punct::{Dollar, PathSep},
     },
 };
 
@@ -56,6 +56,51 @@ where
     pub first: SimplePathSegment<I>,
     /// rest segments
     pub rest: Vec<(PathSep<I>, SimplePathSegment<I>)>,
+}
+
+/// Paths in expressions allow for paths with generic arguments to be specified.
+/// They are used in various places in expressions and patterns.
+///
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#paths-in-expressions
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PathInExpr<I>
+where
+    I: CSTInput,
+{
+    /// optional leading path seperate `::`
+    pub leading_sep: Option<PathSep<I>>,
+    /// first segment
+    pub first: SimplePathSegment<I>,
+    /// rest segments
+    pub rest: Vec<(PathSep<I>, SimplePathSegment<I>)>,
+}
+
+/// Segement of [`PathInExpression`]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PathExprSegment<I>
+where
+    I: CSTInput,
+{
+    /// segment name.
+    pub ident: PathIdentSegment<I>,
+}
+
+/// See [`PathExprSegment`]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum PathIdentSegment<I>
+where
+    I: CSTInput,
+{
+    Super(Super<I>),
+    SelfLower(SelfLower<I>),
+    SelfUpper(SelfUpper<I>),
+    Crate(Option<Dollar<I>>,Crate<I>),
+    Ident(Ident<I>),
 }
 
 #[cfg(test)]

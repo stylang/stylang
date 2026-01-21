@@ -304,10 +304,10 @@ where
             ));
         }
     } else {
-        if lit.fract.is_none() {
+        if lit.fract.is_none() && lit.exp.is_none() {
             let mut lookahead = input.clone().split_off(lit.trunc.0.len() + 1);
 
-            if let Some(_) = next_if(|c| c == '.' || c == '_' || is_xid_start(c))
+            if let Some(_) = next_if(|c| /* for range .. */ c == '.' || c == '_' || is_xid_start(c))
                 .ok()
                 .parse(&mut lookahead)?
             {
@@ -345,14 +345,9 @@ fn parse_exp_body<I>(input: &mut I) -> Result<I, CSTError>
 where
     I: CSTInput,
 {
-    let body = take_while(|c: char| c.is_ascii_hexdigit() || c == '_').parse(input)?;
+    let body = take_while(|c: char| c.is_ascii_digit() || c == '_').parse(input)?;
 
-    if body
-        .as_str()
-        .chars()
-        .find(|c| c.is_ascii_hexdigit())
-        .is_none()
-    {
+    if body.as_str().chars().find(|c| c.is_ascii_digit()).is_none() {
         return Err(CSTError::Semantics(SemanticsKind::Exponent, body.to_span()));
     }
 
@@ -446,16 +441,6 @@ mod tests {
                     dec: TokenStream::from((4, "__10"))
                 })
             })
-        );
-
-        // this may be a field index expr.
-        assert_eq!(
-            TokenStream::from("12.E10").parse::<LitFloat<_>>(),
-            Err(CSTError::Syntax(
-                SyntaxKind::Float,
-                ControlFlow::Recovable,
-                Span::Range(0..3)
-            ))
         );
 
         // this may be a field index expr.

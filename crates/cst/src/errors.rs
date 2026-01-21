@@ -289,6 +289,8 @@ impl KeywordKind {
 pub enum SyntaxKind {
     #[error("identifier or keyword")]
     IdentOrKeyword,
+    #[error("suffixes on literal tokens")]
+    SuffixNoE,
     #[error("raw identifier")]
     RawIdent,
     #[error("reserved raw identifier")]
