@@ -477,6 +477,8 @@ pub enum SemanticsKind {
     Float,
     #[error("reserved num")]
     ReservedNum,
+    #[error("There ought to be at least one other parameter besides variadic.")]
+    FunctionParametersMaybeNamedVariadic,
 }
 
 impl SemanticsKind {

@@ -2,16 +2,19 @@
 //!
 //! [`Paths`]: https://doc.rust-lang.org/reference/paths.html
 
-use parserc::syntax::Syntax;
+use parserc::syntax::{Punctuated, Syntax};
 
 use crate::{
     errors::SyntaxKind,
     input::CSTInput,
     lexical::{
+        delimiter::Paren,
         ident::Ident,
-        keywords::strict::{Crate, SelfLower, SelfUpper, Super},
-        punct::{Dollar, PathSep},
+        keywords::strict::{As, Crate, SelfLower, SelfUpper, Super},
+        label::LifeTime,
+        punct::{Comma, Dollar, Lt, PathSep, RArrow},
     },
+    types::{Type, TypeNoBounds},
 };
 
 /// Segment of [`SimplePath`]
@@ -87,6 +90,8 @@ where
 {
     /// segment name.
     pub ident: PathIdentSegment<I>,
+    /// optional generic arguments.
+    pub generic_args: Option<(PathSep<I>, GenericArgs<I>)>,
 }
 
 /// See [`PathExprSegment`]
@@ -99,8 +104,130 @@ where
     Super(Super<I>),
     SelfLower(SelfLower<I>),
     SelfUpper(SelfUpper<I>),
-    Crate(Option<Dollar<I>>,Crate<I>),
+    Crate(Option<Dollar<I>>, Crate<I>),
     Ident(Ident<I>),
+}
+
+/// Optional generic args for `PathExprSegment`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct GenericArgs<I>
+where
+    I: CSTInput,
+{
+    /// punct `<`
+    pub delimiter_start: Lt<I>,
+    /// args punctuated by `,`
+    pub args: Punctuated<GenericArg<I>, Comma<I>>,
+    /// punct `>`
+    pub delimiter_end: Lt<I>,
+}
+
+/// generic argument for `PathExprSegment`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum GenericArg<I>
+where
+    I: CSTInput,
+{
+    Lifetime(LifeTime<I>),
+}
+
+/// Type paths are used within type definitions, trait bounds, type parameter bounds, and qualified paths.
+///
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-TypePath
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TypePath<I>
+where
+    I: CSTInput,
+{
+    /// optional leading path seperate punct `::`
+    pub leading_path_sep: Option<PathSep<I>>,
+    /// first segment.
+    pub first: TypePathSegment<I>,
+    /// rest segments.
+    pub rest: Vec<(PathSep<I>, TypePathSegment<I>)>,
+}
+
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-TypePathSegment
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TypePathSegment<I>
+where
+    I: CSTInput,
+{
+    /// Name of this segment.
+    pub ident: PathIdentSegment<I>,
+    /// optional segument arguments.
+    pub args: Option<TypePathArgs<I>>,
+}
+
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-TypePathSegment
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum TypePathArgs<I>
+where
+    I: CSTInput,
+{
+    GenericArgs(Option<PathSep<I>>, GenericArgs<I>),
+    TypePathFn(Option<PathSep<I>>, TypePathFn<I>),
+}
+
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-TypePathFn
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TypePathFn<I>
+where
+    I: CSTInput,
+{
+    /// input parameters list, with delimiters `(` + `)`
+    pub inputs: Paren<I, Punctuated<Type<I>, Comma<I>>>,
+    /// output parameters.
+    pub outputs: Option<(RArrow<I>, TypeNoBounds<I>)>,
+}
+
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-QualifiedPathType
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct QuilifiedPathType<I>
+where
+    I: CSTInput,
+{
+    /// punct `<`
+    pub delimiter_start: Lt<I>,
+    /// type name
+    pub ty: Type<I>,
+    /// optional as stmt.
+    pub as_type_path: Option<(As<I>, TypePath<I>)>,
+    /// punct `>`
+    pub delimiter_end: Lt<I>,
+}
+
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-QualifiedPathInType
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct QuilifiedPathInType<I>
+where
+    I: CSTInput,
+{
+    pub ty: QuilifiedPathType<I>,
+    /// first segment.
+    pub first: (PathSep<I>, TypePathSegment<I>),
+    /// rest segements
+    pub rest: Vec<(PathSep<I>, TypePathSegment<I>)>,
 }
 
 #[cfg(test)]
