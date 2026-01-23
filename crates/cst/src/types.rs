@@ -6,11 +6,14 @@
 //!
 //! [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/types.html#grammar-Type
 
-use parserc::syntax::{Or, Punctuated, Syntax};
+use parserc::{
+    ControlFlow,
+    syntax::{Or, Punctuated, Syntax},
+};
 
 use crate::{
     attr::OuterAttribute,
-    errors::CSTError,
+    errors::{CSTError, SyntaxKind},
     input::CSTInput,
     lexical::{
         delimiter::{Bracket, Paren},
@@ -70,6 +73,11 @@ where
     /// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/types.html#r-type.name.path
     TypePath(Box<TypePath<I>>),
 
+    /// More information see [`The Rust Reference`]
+    ///
+    /// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/types/tuple.html#grammar-TupleType
+    TupleType(#[parserc(semantic = check_tuple_type)] Paren<I, Punctuated<Type<I>, Comma<I>>>),
+
     /// In some situations the combination of types may be ambiguous.
     /// Use parentheses around a type to avoid ambiguity.
     ///
@@ -78,10 +86,6 @@ where
     /// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/types.html#r-type.name.parenthesized.intro
     Paren(Paren<I, Box<Type<I>>>),
 
-    /// More information see [`The Rust Reference`]
-    ///
-    /// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/types/tuple.html#grammar-TupleType
-    TupleType(Paren<I, Punctuated<Type<I>, Comma<I>>>),
     /// More information see [`The Rust Reference`]
     ///
     /// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/types/never.html#grammar-NeverType
@@ -124,6 +128,25 @@ where
 
     /// [`Macros`](https://doc.rust-lang.org/stable/reference/macros.html) which expand to a type expression.
     MarcoInvocation(MacroInvocation<I>),
+}
+
+#[inline]
+fn check_tuple_type<I>(
+    _: I,
+    ty: Paren<I, Punctuated<Type<I>, Comma<I>>>,
+) -> Result<Paren<I, Punctuated<Type<I>, Comma<I>>>, CSTError>
+where
+    I: CSTInput,
+{
+    if ty.body.pairs.len() == 0 && ty.body.tail.is_some() {
+        return Err(CSTError::Syntax(
+            SyntaxKind::TupleType,
+            ControlFlow::Recovable,
+            ty.to_span(),
+        ));
+    }
+
+    Ok(ty)
 }
 
 /// More information see [`The Rust Reference`]
@@ -631,6 +654,72 @@ mod tests {
                         })
                     )],
                     tailing_plus: None
+                }
+            })))
+        );
+    }
+
+    #[test]
+    fn test_tuple_type() {
+        assert_eq!(
+            TokenStream::from("(i32,String )").parse::<Type<_>>(),
+            Ok(Type::NoBounds(TypeNoBounds::TupleType(Delimiter {
+                start: ParenStart(None, TokenStream::from((0, "(")), None),
+                end: ParenEnd(
+                    Some(S(TokenStream::from((11, " ")))),
+                    TokenStream::from((12, ")")),
+                    None
+                ),
+                body: Punctuated {
+                    pairs: vec![(
+                        Type::NoBounds(TypeNoBounds::TypePath(Box::new(TypePath {
+                            leading_path_sep: None,
+                            first: TypePathSegment {
+                                ident: PathIdentSegment::Ident(Ident::NonKeywordIdent(
+                                    NonKeywordIdent(TokenStream::from((1, "i32")))
+                                )),
+                                args: None
+                            },
+                            rest: vec![]
+                        }))),
+                        Comma(None, TokenStream::from((4, ",")), None)
+                    )],
+                    tail: Some(Box::new(Type::NoBounds(TypeNoBounds::TypePath(Box::new(
+                        TypePath {
+                            leading_path_sep: None,
+                            first: TypePathSegment {
+                                ident: PathIdentSegment::Ident(Ident::NonKeywordIdent(
+                                    NonKeywordIdent(TokenStream::from((5, "String")))
+                                )),
+                                args: None
+                            },
+                            rest: vec![]
+                        }
+                    )))))
+                }
+            })))
+        );
+
+        assert_eq!(
+            TokenStream::from("(i32,)").parse::<Type<_>>(),
+            Ok(Type::NoBounds(TypeNoBounds::TupleType(Delimiter {
+                start: ParenStart(None, TokenStream::from((0, "(")), None),
+                end: ParenEnd(None, TokenStream::from((5, ")")), None),
+                body: Punctuated {
+                    pairs: vec![(
+                        Type::NoBounds(TypeNoBounds::TypePath(Box::new(TypePath {
+                            leading_path_sep: None,
+                            first: TypePathSegment {
+                                ident: PathIdentSegment::Ident(Ident::NonKeywordIdent(
+                                    NonKeywordIdent(TokenStream::from((1, "i32")))
+                                )),
+                                args: None
+                            },
+                            rest: vec![]
+                        }))),
+                        Comma(None, TokenStream::from((4, ",")), None)
+                    )],
+                    tail: None
                 }
             })))
         );
