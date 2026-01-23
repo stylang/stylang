@@ -481,6 +481,8 @@ pub enum SemanticsKind {
     ReservedNum,
     #[error("There ought to be at least one other parameter besides variadic.")]
     FunctionParametersMaybeNamedVariadic,
+    #[error("block expr")]
+    BlockExpr,
 }
 
 impl SemanticsKind {

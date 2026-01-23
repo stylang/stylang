@@ -11,4 +11,5 @@ pub mod input;
 pub mod lexical;
 pub mod macros;
 pub mod names;
+pub mod stmt;
 pub mod types;
