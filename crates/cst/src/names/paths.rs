@@ -230,6 +230,22 @@ where
     pub rest: Vec<(PathSep<I>, TypePathSegment<I>)>,
 }
 
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-QualifiedPathInExpression
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct QuilifiedPathInExpr<I>
+where
+    I: CSTInput,
+{
+    pub ty: QuilifiedPathType<I>,
+    /// first segment.
+    pub first: (PathSep<I>, PathExprSegment<I>),
+    /// rest segements
+    pub rest: Vec<(PathSep<I>, PathExprSegment<I>)>,
+}
+
 #[cfg(test)]
 mod tests {
     use parserc::{ControlFlow, Span, syntax::SyntaxInput};
