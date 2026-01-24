@@ -367,6 +367,8 @@ pub enum SyntaxKind {
     MacroRepOp,
     #[error("tuple type")]
     TupleType,
+    #[error("tuple expr")]
+    TupleExpr,
 }
 
 impl SyntaxKind {

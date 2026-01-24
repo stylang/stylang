@@ -16,3 +16,6 @@ pub use expr::*;
 
 mod block;
 pub use block::*;
+
+mod array;
+pub use array::*;
