@@ -25,3 +25,9 @@ pub use chains::*;
 
 mod r#struct;
 pub use r#struct::*;
+
+mod closure;
+pub use closure::*;
+
+mod r#range;
+pub use range::*;

@@ -5,7 +5,10 @@ use crate::{
     errors::{CSTError, SemanticsKind},
     expr::ExprWithoutBlock,
     input::CSTInput,
-    lexical::punct::{BraceEnd, BraceStart},
+    lexical::{
+        keywords::strict::{Async, Move},
+        punct::{BraceEnd, BraceStart},
+    },
     stmt::Stmt,
 };
 
@@ -47,4 +50,23 @@ where
     }
 
     Ok(block)
+}
+
+/// An async block is a variant of a block expression which evaluates to a future.
+///
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/expressions/block-expr.html#grammar-AsyncBlockExpression
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct AsyncBlockExpr<I>
+where
+    I: CSTInput,
+{
+    /// `async` keyword
+    pub async_keyword: Async<I>,
+    /// optional `move` keyword
+    pub move_keyword: Option<Move<I>>,
+    /// body of this async block expr.
+    pub block: BlockExpr<I>,
 }

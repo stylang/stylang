@@ -13,9 +13,9 @@ use crate::{
         ident::Ident,
         keywords::strict::{As, Crate, SelfLower, SelfUpper, Super},
         label::LifeTime,
-        punct::{Comma, Dollar, Gt, Lt, Minus, PathSep, RArrow},
+        punct::{Colon, Comma, Dollar, Eq, Gt, Lt, Minus, PathSep, RArrow},
     },
-    types::{Type, TypeNoBounds},
+    types::{Type, TypeNoBounds, TypeParamBounds},
 };
 
 /// Segment of [`SimplePath`]
@@ -146,7 +146,46 @@ where
     BlockExpr(BlockExpr<I>),
     LitExpr(Option<Minus<I>>, LitExpr<I>),
     SimplePathSegment(SimplePathSegment<I>),
-    //TODO: add variants `GenericArgsBinding` and `GenericArgsBounds`
+    GenericArgsBinding(GenericArgsBinding<I>),
+    GenericArgsBounds(GenericArgsBounds<I>),
+}
+
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-GenericArgsBinding
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct GenericArgsBinding<I>
+where
+    I: CSTInput,
+{
+    /// binding target.
+    pub ident: Ident<I>,
+    /// optional generic argument list.
+    pub generic_args: Option<GenericArgs<I>>,
+    /// punct `=`
+    pub eq: Eq<I>,
+    /// assign type.
+    pub ty: Type<I>,
+}
+
+/// More information see [`The Rust Reference`]
+///
+/// [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/paths.html#railroad-GenericArgsBounds
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct GenericArgsBounds<I>
+where
+    I: CSTInput,
+{
+    /// binding target.
+    pub ident: Ident<I>,
+    /// optional generic argument list.
+    pub generic_args: Option<GenericArgs<I>>,
+    /// punct `:`
+    pub colon: Colon<I>,
+    /// bounds for target.
+    pub bounds: TypeParamBounds<I>,
 }
 
 /// Type paths are used within type definitions, trait bounds, type parameter bounds, and qualified paths.

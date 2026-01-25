@@ -7,8 +7,9 @@ use crate::{
     attr::OuterAttribute,
     errors::{CSTError, SyntaxKind},
     expr::{
-        ArrayExpr, AwaitExpr, BlockExpr, CallExpr, CallParams, FieldExpr, IndexExpr, LitExpr,
-        MethodCallExpr, PathExpr, StructExpr, StructExprFields, TupleIndexExpr,
+        ArrayExpr, AsyncBlockExpr, AwaitExpr, BlockExpr, CallExpr, CallParams, ClosureExpr,
+        FieldExpr, IndexExpr, LitExpr, MethodCallExpr, PathExpr, StructExpr, StructExprFields,
+        TupleIndexExpr,
     },
     input::CSTInput,
     lexical::{
@@ -72,7 +73,11 @@ where
             Prefix::MarcoInvocation(expr) => {
                 Expr::WithoutBlock(ExprWithoutBlock::MarcoInvocation(attrs, expr))
             }
+            Prefix::AsyncBlockExpr(expr) => {
+                Expr::WithoutBlock(ExprWithoutBlock::AsyncBlockExpr(attrs, expr))
+            }
             Prefix::BlockExpr(expr) => Expr::WithBlock(ExprWithBlock::BlockExpr(attrs, expr)),
+
             Prefix::ContinueExpr { keyword, label } => {
                 return Ok(Expr::WithoutBlock(ExprWithoutBlock::ContinueExpr {
                     attrs,
@@ -91,6 +96,11 @@ where
                     label,
                     expr,
                 }));
+            }
+            Prefix::ClosureExpr(expr) => {
+                return Ok(Expr::WithoutBlock(ExprWithoutBlock::ClosureExpr(
+                    attrs, expr,
+                )));
             }
         };
 
@@ -200,6 +210,7 @@ where
     UnderscoreExpr(Underscore<I>),
     MarcoInvocation(MacroInvocation<I>),
     BlockExpr(Box<BlockExpr<I>>),
+    AsyncBlockExpr(Box<AsyncBlockExpr<I>>),
     ContinueExpr {
         keyword: Continue<I>,
         label: Option<LifeTimeOrLabel<I>>,
@@ -209,6 +220,7 @@ where
         label: Option<LifeTimeOrLabel<I>>,
         expr: Option<Box<Expr<I>>>,
     },
+    ClosureExpr(ClosureExpr<I>),
 }
 
 #[inline]
@@ -239,6 +251,7 @@ pub enum ExprWithoutBlock<I>
 where
     I: CSTInput,
 {
+    ClosureExpr(Vec<OuterAttribute<I>>, ClosureExpr<I>),
     ContinueExpr {
         attrs: Vec<OuterAttribute<I>>,
         keyword: Continue<I>,
@@ -256,6 +269,7 @@ where
         Vec<OuterAttribute<I>>,
         Paren<I, Punctuated<Expr<I>, Comma<I>>>,
     ),
+    AsyncBlockExpr(Vec<OuterAttribute<I>>, Box<AsyncBlockExpr<I>>),
     GroupedExpr(Vec<OuterAttribute<I>>, Paren<I, Box<Expr<I>>>),
     ArrayExpr(Vec<OuterAttribute<I>>, ArrayExpr<I>),
     UnderscoreExpr(Vec<OuterAttribute<I>>, Underscore<I>),
@@ -320,6 +334,8 @@ where
             } => attrs.to_span() + keyword.to_span() + label.to_span() + expr.to_span(),
             ExprWithoutBlock::IndexExpr(delimiter) => delimiter.to_span(),
             ExprWithoutBlock::StructExpr(expr) => expr.to_span(),
+            ExprWithoutBlock::ClosureExpr(attrs, expr) => attrs.to_span() + expr.to_span(),
+            ExprWithoutBlock::AsyncBlockExpr(attrs, expr) => attrs.to_span() + expr.to_span(),
         }
     }
 }
