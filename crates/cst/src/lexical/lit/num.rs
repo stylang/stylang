@@ -263,7 +263,17 @@ where
 ///  see [`The Rust Reference`]
 ///
 /// [`The Rust Reference`]: https://doc.rust-lang.org/reference/tokens.html#railroad-TUPLE_INDEX
-pub type TupleIndex<I> = LitDec<I>;
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum TupleIndex<I>
+where
+    I: CSTInput,
+{
+    Dec(LitDec<I>),
+    Bin(LitBin<I>),
+    Oct(LitOct<I>),
+    Hex(LitHex<I>),
+}
 
 /// A floating-point literal
 ///

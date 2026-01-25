@@ -369,6 +369,20 @@ pub enum SyntaxKind {
     TupleType,
     #[error("tuple expr")]
     TupleExpr,
+    #[error("expr")]
+    Expr,
+    #[error("expr with block")]
+    ExprWithBlock,
+    #[error("expr without block")]
+    ExprWithoutBlock,
+    #[error("predicate expr")]
+    ExprPredicate,
+    #[error("parenthesized comma-separated list of expression")]
+    CallParams,
+    #[error("field name")]
+    FieldName,
+    #[error("predicate of struct expr field.")]
+    StructExprFieldPredicate,
 }
 
 impl SyntaxKind {
@@ -485,6 +499,8 @@ pub enum SemanticsKind {
     FunctionParametersMaybeNamedVariadic,
     #[error("block expr")]
     BlockExpr,
+    #[error("punct `,`")]
+    Comma,
 }
 
 impl SemanticsKind {

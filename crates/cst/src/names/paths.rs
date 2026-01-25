@@ -6,13 +6,14 @@ use parserc::syntax::{Punctuated, Syntax};
 
 use crate::{
     errors::SyntaxKind,
+    expr::{BlockExpr, LitExpr},
     input::CSTInput,
     lexical::{
         delimiter::Paren,
         ident::Ident,
         keywords::strict::{As, Crate, SelfLower, SelfUpper, Super},
         label::LifeTime,
-        punct::{Comma, Dollar, Lt, PathSep, RArrow},
+        punct::{Comma, Dollar, Gt, Lt, Minus, PathSep, RArrow},
     },
     types::{Type, TypeNoBounds},
 };
@@ -76,9 +77,9 @@ where
     /// optional leading path seperate `::`
     pub leading_sep: Option<PathSep<I>>,
     /// first segment
-    pub first: SimplePathSegment<I>,
+    pub first: PathExprSegment<I>,
     /// rest segments
-    pub rest: Vec<(PathSep<I>, SimplePathSegment<I>)>,
+    pub rest: Vec<(PathSep<I>, PathExprSegment<I>)>,
 }
 
 /// Segement of [`PathInExpression`]
@@ -120,7 +121,7 @@ where
     /// args punctuated by `,`
     pub args: Punctuated<GenericArg<I>, Comma<I>>,
     /// punct `>`
-    pub delimiter_end: Lt<I>,
+    pub delimiter_end: Gt<I>,
 }
 
 /// generic argument for `PathExprSegment`
@@ -131,6 +132,21 @@ where
     I: CSTInput,
 {
     Lifetime(LifeTime<I>),
+    Type(Type<I>),
+    GenericArgsConst(GenericArgsConst<I>),
+}
+
+/// generic argument for `PathExprSegment`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum GenericArgsConst<I>
+where
+    I: CSTInput,
+{
+    BlockExpr(BlockExpr<I>),
+    LitExpr(Option<Minus<I>>, LitExpr<I>),
+    SimplePathSegment(SimplePathSegment<I>),
+    //TODO: add variants `GenericArgsBinding` and `GenericArgsBounds`
 }
 
 /// Type paths are used within type definitions, trait bounds, type parameter bounds, and qualified paths.
