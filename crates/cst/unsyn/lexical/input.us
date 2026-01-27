@@ -1,0 +1,10 @@
+//! Each source file is interpreted as a sequence of Unicode characters encoded in UTF-8.
+//!
+//! More information see [`The Rust Reference`]
+//!
+//! [`The Rust Reference`]: https://doc.rust-lang.org/stable/reference/input-format.html
+
+
+lexer CHAR -> <utf8>;
+
+lexer NUL -> U+0000;

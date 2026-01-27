@@ -1,0 +1,13 @@
+use super::keywords::{strict, reserved};
+
+lexer IDENTIFIER_OR_KEYWORD -> (XID_Start | '_') XID_Continue*;
+
+lexer XID_Start -> <XID_Start>;
+
+lexer XID_Continue -> <XID_Continue>;
+
+lexer RAW_IDENTIFIER -> 'r#' IDENTIFIER_OR_KEYWORD;
+
+lexer NON_KEYWORD_IDENTIFIER -> IDENTIFIER_OR_KEYWORD except (strict | reserved);
+
+lexer IDENTIFIER -> NON_KEYWORD_IDENTIFIER | RAW_IDENTIFIER;
