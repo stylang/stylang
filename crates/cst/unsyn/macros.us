@@ -1,0 +1,93 @@
+syntax MacroInvocation ->
+    SimplePath '!' DelimTokenTree
+    ;
+
+syntax DelimTokenTree ->
+      '(' TokenTree* ')'
+    | '[' TokenTree* ']'
+    | '{' TokenTree* '}'
+    ;
+
+TokenTree ->
+    Token except delimiters | DelimTokenTree
+    ;
+
+syntax MacroInvocationSemi ->
+      SimplePath '!' '(' TokenTree* ')' ';'
+    | SimplePath '!' '[' TokenTree* ']' ';'
+    | SimplePath '!' '{' TokenTree* '}'
+    ;
+
+syntax
+MacroRulesDefinition ->
+    'macro_rules' '!' IDENTIFIER MacroRulesDef
+    ;
+
+syntax
+MacroRulesDef ->
+      '(' MacroRules ')' ';'
+    | '[' MacroRules ']' ';'
+    | '{' MacroRules '}'
+
+syntax
+MacroRules ->
+    MacroRule ( ';' MacroRule )* ';'?
+
+syntax
+MacroRule ->
+    MacroMatcher '=>' MacroTranscriber
+
+syntax
+MacroMatcher ->
+      '(' MacroMatch* ')'
+    | '[' MacroMatch* ']'
+    | '{' MacroMatch* '}'
+
+syntax
+MacroMatch →
+      Token except ('$' | delimiters)
+    | MacroMatcher
+    | '$' ( IDENTIFIER_OR_KEYWORD except 'crate' | RAW_IDENTIFIER ) ':' MacroFragSpec
+    | '$' ( MacroMatch+ ) MacroRepSep? MacroRepOp
+    ;
+
+syntax
+MacroFragSpec →
+      'block'
+    | 'expr'
+    | 'expr_2021'
+    | 'ident'
+    | 'item'
+    | 'lifetime'
+    | 'literal'
+    | 'meta'
+    | 'pat'
+    | 'pat_param'
+    | 'path'
+    | 'stmt'
+    | 'tt'
+    | 'ty'
+    | 'vis'
+    ;
+
+syntax
+MacroRepSep → Tokenexcept delimiters and MacroRepOp;
+
+syntax
+MacroRepOp → '*' | '+' | '?';
+
+syntax
+MacroTranscriber → DelimTokenTree;
+
+
+syntax
+ProcMacroDeriveAttribute →
+    proc_macro_derive ( DeriveMacroName ( ',' DeriveMacroAttributes )? ','? )
+    ;
+
+syntax
+DeriveMacroName → IDENTIFIER;
+
+DeriveMacroAttributes →
+    'attributes' '(' ( IDENTIFIER ( ',' IDENTIFIER )* ','? )? ')'
+    ;

@@ -1,0 +1,56 @@
+syntax
+InnerAttribute -> '#' '!' '[' Attr ']';
+
+syntax
+OuterAttribute -> '#' '[' Attr ']';
+
+syntax
+Attr ->
+      SimplePath AttrInput?
+    | 'unsafe' '(' SimplePath AttrInput? ')'
+    ;
+
+syntax
+AttrInput ->
+      DelimTokenTree
+    | '=' Expression
+    ;
+
+
+syntax
+MetaItem ->
+      SimplePath
+    | SimplePath = Expression
+    | SimplePath '(' MetaSeq? ')'
+    ;
+
+syntax
+MetaSeq ->
+    MetaItemInner ( ',' MetaItemInner )* ','?;
+
+syntax
+MetaItemInner ->
+      MetaItem
+    | Expression
+    ;
+
+
+syntax
+MetaWord ->
+    IDENTIFIER;
+
+syntax
+MetaNameValueStr ->
+    IDENTIFIER '=' ( STRING_LITERAL | RAW_STRING_LITERAL );
+
+syntax
+MetaListPaths ->
+    IDENTIFIER '(' ( SimplePath ( ',' SimplePath )* ','? )? ')';
+
+syntax
+MetaListIdents ->
+    IDENTIFIER '(' ( IDENTIFIER ( ',' IDENTIFIER )* ','? )? ')';
+
+syntax
+MetaListNameValueStr ->
+    IDENTIFIER '(' ( MetaNameValueStr ( ',' MetaNameValueStr )* ','? )? ')';

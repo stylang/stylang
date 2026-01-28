@@ -1,0 +1,142 @@
+syntax
+Pattern -> '|'? PatternNoTopAlt ( '|' PatternNoTopAlt )*;
+
+syntax
+PatternNoTopAlt ->
+      PatternWithoutRange
+    | RangePattern
+    ;
+
+syntax
+PatternWithoutRange ->
+      LiteralPattern
+    | IdentifierPattern
+    | WildcardPattern
+    | RestPattern
+    | ReferencePattern
+    | StructPattern
+    | TupleStructPattern
+    | TuplePattern
+    | GroupedPattern
+    | SlicePattern
+    | PathPattern
+    | MacroInvocation
+    ;
+
+
+syntax
+LiteralPattern -> '-'? LiteralExpression;
+
+syntax
+IdentifierPattern -> 'ref'? 'mut'? IDENTIFIER ( '@' PatternNoTopAlt )?;
+
+syntax
+WildcardPattern -> '_';
+
+syntax
+RestPattern -> '..';
+
+syntax
+RangePattern ->
+      RangeExclusivePattern
+    | RangeInclusivePattern
+    | RangeFromPattern
+    | RangeToExclusivePattern
+    | RangeToInclusivePattern
+    | ObsoleteRangePattern
+    ;
+
+syntax
+RangeExclusivePattern ->
+    RangePatternBound '..' RangePatternBound;
+
+syntax
+RangeInclusivePattern ->
+    RangePatternBound '..=' RangePatternBound;
+
+syntax
+RangeFromPattern ->
+    RangePatternBound '..'
+    ;
+
+syntax
+RangeToExclusivePattern ->
+    '..' RangePatternBound
+    ;
+
+syntax
+RangeToInclusivePattern ->
+    '..=' RangePatternBound
+    ;
+
+syntax
+ObsoleteRangePattern ->
+    RangePatternBound '...' RangePatternBound;
+
+syntax
+RangePatternBound ->
+      LiteralPattern
+    | PathExpression
+    ;
+
+syntax
+ReferencePattern -> ( '&' | '&&' ) 'mut'? PatternWithoutRange;
+
+syntax
+StructPattern ->
+    PathInExpression '{'
+        StructPatternElements?
+    '}'
+    ;
+
+syntax
+StructPatternElements ->
+      StructPatternFields ( ',' | ',' StructPatternEtCetera )?
+    | StructPatternEtCetera
+    ;
+
+syntax
+StructPatternFields ->
+    StructPatternField ( ',' StructPatternField )*
+    ;
+
+syntax
+StructPatternField ->
+    OuterAttribute*
+    (
+        TUPLE_INDEX ':' Pattern
+      | IDENTIFIER ':' Pattern
+      | 'ref'? 'mut'? IDENTIFIER
+    )
+    ;
+
+syntax
+StructPatternEtCetera -> '..';
+
+syntax
+TupleStructPattern -> PathInExpression ( TupleStructItems? )
+
+syntax
+TupleStructItems -> Pattern ( ',' Pattern )* ','?;
+
+syntax
+TuplePattern -> '(' TuplePatternItems? ')';
+
+syntax
+TuplePatternItems ->
+      Pattern ,
+    | RestPattern
+    | Pattern ( ',' Pattern )+ ','?
+    ;
+
+syntax
+GroupedPattern -> '(' Pattern ')';
+
+syntax
+SlicePattern -> '[' SlicePatternItems? ']';
+
+syntax
+SlicePatternItems -> Pattern ( ',' Pattern )* ','?;
+
+syntax
+PathPattern -> PathExpression;

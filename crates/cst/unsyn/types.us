@@ -1,0 +1,95 @@
+syntax
+Type ->
+      TypeNoBounds
+    | ImplTraitType
+    | TraitObjectType
+    ;
+
+syntax
+TypeNoBounds ->
+      ParenthesizedType
+    | ImplTraitTypeOneBound
+    | TraitObjectTypeOneBound
+    | TypePath
+    | TupleType
+    | NeverType
+    | RawPointerType
+    | ReferenceType
+    | ArrayType
+    | SliceType
+    | InferredType
+    | QualifiedPathInType
+    | BareFunctionType
+    | MacroInvocation
+    ;
+
+syntax
+ParenthesizedType -> '(' Type ')';
+
+syntax
+NeverType -> '!';
+
+syntax
+TupleType ->
+      '(' ')'
+    | '(' ( Type , )+ Type? ')'
+    ;
+
+syntax
+ArrayType -> '[' Type ; Expression ']';
+
+syntax
+SliceType -> '[' Type ']';
+
+syntax
+ReferenceType -> '&' Lifetime? 'mut'? TypeNoBounds;
+
+syntax
+RawPointerType -> '*' ( 'mut' | 'const' ) TypeNoBounds;
+
+syntax
+BareFunctionType ->
+    ForLifetimes? FunctionTypeQualifiers 'fn'
+       ( FunctionParametersMaybeNamedVariadic? ) BareFunctionReturnType?
+    ;
+
+syntax
+FunctionTypeQualifiers -> 'unsafe'? ( 'extern' Abi? )?
+
+syntax
+BareFunctionReturnType -> -> TypeNoBounds;
+
+syntax
+FunctionParametersMaybeNamedVariadic ->
+    MaybeNamedFunctionParameters | MaybeNamedFunctionParametersVariadic
+    ;
+
+syntax
+MaybeNamedFunctionParameters ->
+    MaybeNamedParam ( ',' MaybeNamedParam )* ','?
+    ;
+
+syntax
+MaybeNamedParam ->
+    OuterAttribute* ( ( IDENTIFIER | _ ) : )? Type
+    ;
+
+syntax
+MaybeNamedFunctionParametersVariadic ->
+    ( MaybeNamedParam , )* MaybeNamedParam , OuterAttribute* '...'
+    ;
+
+syntax
+TraitObjectType -> 'dyn'? TypeParamBounds;
+
+syntax
+TraitObjectTypeOneBound -> 'dyn'? TraitBound;
+
+syntax
+ImplTraitType -> 'impl' TypeParamBounds;
+
+syntax
+ImplTraitTypeOneBound -> 'impl' TraitBound;
+
+syntax
+InferredType -> '_';

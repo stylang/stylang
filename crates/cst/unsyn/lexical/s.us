@@ -1,4 +1,4 @@
-lexer WHITESPACE →
+whitespace WHITESPACE →
       U+0009
     | U+000A
     | U+000B

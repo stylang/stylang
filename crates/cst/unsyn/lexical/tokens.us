@@ -305,3 +305,12 @@ lexer RESERVED_GUARDED_STRING_LITERAL ->
 RESERVED_POUNDS ->
     '#'{2..}
     ;
+
+lexer delimiters ->
+      '{'
+    | '}'
+    | '['
+    | ']'
+    | '('
+    | ')'
+    ;

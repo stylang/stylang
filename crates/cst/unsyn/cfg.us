@@ -1,0 +1,38 @@
+syntax
+ConfigurationPredicate ->
+      ConfigurationOption
+    | ConfigurationAll
+    | ConfigurationAny
+    | ConfigurationNot
+    | 'true'
+    | 'false'
+    ;
+
+syntax
+ConfigurationOption ->
+    IDENTIFIER ( '=' ( STRING_LITERAL | RAW_STRING_LITERAL ) )?;
+
+syntax
+ConfigurationAll ->
+    'all' '(' ConfigurationPredicateList? ')';
+
+syntax
+ConfigurationAny ->
+    'any' ( ConfigurationPredicateList? );
+
+syntax
+ConfigurationNot ->
+    'not' '(' ConfigurationPredicate ')';
+
+syntax
+ConfigurationPredicateList ->
+    ConfigurationPredicate ( ',' ConfigurationPredicate )* ','?;
+
+syntax
+CfgAttribute -> 'cfg' '(' ConfigurationPredicate ')';
+
+syntax
+CfgAttrAttribute → 'cfg_attr' '(' ConfigurationPredicate , CfgAttrs? ')';
+
+syntax
+CfgAttrs → Attr ( ',' Attr )* ','?;

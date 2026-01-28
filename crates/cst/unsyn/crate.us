@@ -1,0 +1,5 @@
+syntax
+Crate →
+    InnerAttribute*
+    Item*
+    ;

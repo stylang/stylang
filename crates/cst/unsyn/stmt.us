@@ -1,0 +1,402 @@
+syntax
+Statement ->
+      ';'
+    | Item
+    | LetStatement
+    | ExpressionStatement
+    | OuterAttribute* MacroInvocationSemi
+    ;
+
+syntax
+LetStatement ->
+    OuterAttribute* 'let' PatternNoTopAlt ( ':' Type )?
+    (
+          '=' Expression
+        | '=' Expression 'else' BlockExpression
+    )? ';'
+    ;
+
+syntax
+ExpressionStatement ->
+      ExpressionWithoutBlock ';'
+    | ExpressionWithBlock ';'?
+    ;
+
+
+syntax
+Expression ->
+      ExpressionWithoutBlock
+    | ExpressionWithBlock
+    ;
+
+syntax
+ExpressionWithoutBlock ->
+    OuterAttribute*
+    (
+        LiteralExpression
+      | PathExpression
+      | OperatorExpression
+      | GroupedExpression
+      | ArrayExpression
+      | AwaitExpression
+      | IndexExpression
+      | TupleExpression
+      | TupleIndexingExpression
+      | StructExpression
+      | CallExpression
+      | MethodCallExpression
+      | FieldExpression
+      | ClosureExpression
+      | AsyncBlockExpression
+      | ContinueExpression
+      | BreakExpression
+      | RangeExpression
+      | ReturnExpression
+      | UnderscoreExpression
+      | MacroInvocation
+    )
+    ;
+
+syntax
+ExpressionWithBlock ->
+    OuterAttribute*
+    (
+        BlockExpression
+      | ConstBlockExpression
+      | UnsafeBlockExpression
+      | LoopExpression
+      | IfExpression
+      | MatchExpression
+    )
+    ;
+
+syntax
+LiteralExpression ->
+      CHAR_LITERAL
+    | STRING_LITERAL
+    | RAW_STRING_LITERAL
+    | BYTE_LITERAL
+    | BYTE_STRING_LITERAL
+    | RAW_BYTE_STRING_LITERAL
+    | C_STRING_LITERAL
+    | RAW_C_STRING_LITERAL
+    | INTEGER_LITERAL
+    | FLOAT_LITERAL
+    | 'true'
+    | 'false'
+    ;
+
+syntax
+PathExpression ->
+      PathInExpression
+    | QualifiedPathInExpression
+    ;
+
+syntax
+BlockExpression ->
+    '{'
+        InnerAttribute*
+        Statements?
+    '}'
+    ;
+
+syntax
+Statements ->
+      Statement+
+    | Statement+ ExpressionWithoutBlock
+    | ExpressionWithoutBlock
+    ;
+
+syntax
+AsyncBlockExpression -> 'async' 'move'? BlockExpression;
+
+syntax
+ConstBlockExpression -> 'const' BlockExpression;
+
+syntax
+UnsafeBlockExpression -> 'unsafe' BlockExpression;
+
+syntax
+OperatorExpression ->
+      BorrowExpression
+    | DereferenceExpression
+    | TryPropagationExpression
+    | NegationExpression
+    | ArithmeticOrLogicalExpression
+    | ComparisonExpression
+    | LazyBooleanExpression
+    | TypeCastExpression
+    | AssignmentExpression
+    | CompoundAssignmentExpression
+    ;
+
+syntax
+BorrowExpression ->
+      ( '&' | '&&' ) Expression
+    | ( '&' | '&&' ) 'mut' Expression
+    | ( '&' | '&&' ) 'raw' 'const' Expression
+    | ( '&' | '&&' ) 'raw' 'mut' Expression
+    ;
+
+syntax
+DereferenceExpression -> '*' Expression;
+
+syntax
+TryPropagationExpression -> Expression '?';
+
+syntax
+NegationExpression ->
+      '-' Expression
+    | '!' Expression
+    ;
+
+
+syntax
+ArithmeticOrLogicalExpression ->
+      Expression '+' Expression
+    | Expression '-' Expression
+    | Expression '*' Expression
+    | Expression '/' Expression
+    | Expression '%' Expression
+    | Expression '&' Expression
+    | Expression '|' Expression
+    | Expression '^' Expression
+    | Expression '<<' Expression
+    | Expression '>>' Expression
+    ;
+
+syntax
+ComparisonExpression ->
+      Expression '==' Expression
+    | Expression '!=' Expression
+    | Expression '>' Expression
+    | Expression '<' Expression
+    | Expression '>=' Expression
+    | Expression '<=' Expression
+    ;
+
+syntax
+LazyBooleanExpression ->
+      Expression '||' Expression
+    | Expression '&&' Expression
+    ;
+
+syntax
+TypeCastExpression -> Expression 'as' TypeNoBounds;
+
+syntax
+AssignmentExpression -> Expression '=' Expression;
+
+
+syntax
+CompoundAssignmentExpression ->
+      Expression '+=' Expression
+    | Expression '-=' Expression
+    | Expression '*=' Expression
+    | Expression '/=' Expression
+    | Expression '%=' Expression
+    | Expression '&=' Expression
+    | Expression '|=' Expression
+    | Expression '^=' Expression
+    | Expression '<<=' Expression
+    | Expression '>>=' Expression
+    ;
+
+syntax
+GroupedExpression -> '(' Expression ')';
+
+
+syntax
+ArrayExpression -> '[' ArrayElements? ']';
+
+syntax
+ArrayElements ->
+      Expression ( ',' Expression )* ','?
+    | Expression ';' Expression
+    ;
+
+syntax
+IndexExpression -> Expression '[' Expression ']';
+
+syntax
+TupleExpression -> '(' TupleElements? ')';
+
+syntax
+TupleElements -> ( Expression ',' )+ Expression?;
+
+syntax
+TupleIndexingExpression -> Expression '.' TUPLE_INDEX;
+
+syntax
+StructExpression ->
+    PathInExpression '{' ( StructExprFields | StructBase )? '}'
+    ;
+
+syntax
+StructExprFields ->
+    StructExprField ( ',' StructExprField )* ( ',' StructBase | ','? )
+    ;
+
+syntax
+StructExprField ->
+    OuterAttribute*
+    (
+        IDENTIFIER
+      | ( IDENTIFIER | TUPLE_INDEX ) ':' Expression
+    )
+    ;
+
+syntax
+StructBase -> '..' Expression;
+
+
+syntax
+CallExpression -> Expression '(' CallParams? ')';
+
+syntax
+CallParams -> Expression ( ',' Expression )* ','?;
+
+syntax
+MethodCallExpression -> Expression '.' PathExprSegment '(' CallParams? ')';
+
+syntax
+FieldExpression -> Expression '.' IDENTIFIER;
+
+
+syntax
+ClosureExpression ->
+    'async'?
+    'move'?
+    ( '||' | '|' ClosureParameters? '|' )
+    ( Expression | '->' TypeNoBounds BlockExpression )
+    ;
+
+syntax
+ClosureParameters -> ClosureParam ( ',' ClosureParam )* ','?;
+
+syntax
+ClosureParam -> OuterAttribute* PatternNoTopAlt ( ':' Type )?;
+
+syntax
+LoopExpression ->
+    LoopLabel? (
+        InfiniteLoopExpression
+      | PredicateLoopExpression
+      | IteratorLoopExpression
+      | LabelBlockExpression
+    )
+    ;
+
+syntax
+InfiniteLoopExpression -> 'loop' BlockExpression;
+
+syntax
+PredicateLoopExpression -> 'while' Conditions BlockExpression;
+
+syntax
+IteratorLoopExpression ->
+    'for' Pattern 'in' Expression except StructExpression
+    BlockExpression
+    ;
+
+syntax
+LoopLabel -> LIFETIME_OR_LABEL ':';
+
+syntax
+BreakExpression -> 'break' LIFETIME_OR_LABEL? Expression?;
+
+syntax
+LabelBlockExpression -> BlockExpression;
+
+syntax
+ContinueExpression -> 'continue' LIFETIME_OR_LABEL?;
+
+syntax
+RangeExpression ->
+      RangeExpr
+    | RangeFromExpr
+    | RangeToExpr
+    | RangeFullExpr
+    | RangeInclusiveExpr
+    | RangeToInclusiveExpr
+
+syntax
+RangeExpr -> Expression '..' Expression;
+
+syntax
+RangeFromExpr -> Expression '..';
+
+syntax
+RangeToExpr -> '..' Expression;
+
+syntax
+RangeFullExpr -> '..';
+
+syntax
+RangeInclusiveExpr -> Expression '..=' Expression;
+
+syntax
+RangeToInclusiveExpr -> '..=' Expression;
+
+syntax
+IfExpression ->
+    'if' Conditions BlockExpression
+    ( 'else' ( BlockExpression | IfExpression ) )?
+    ;
+
+syntax
+Conditions ->
+      Expression except StructExpression
+    | LetChain
+    ;
+
+syntax
+LetChain -> LetChainCondition ( '&&' LetChainCondition )*;
+
+syntax
+LetChainCondition ->
+      Expression except ExcludedConditions
+    | OuterAttribute* 'let' Pattern = Scrutinee except ExcludedConditions
+    ;
+
+syntax
+ExcludedConditions ->
+      StructExpression
+    | LazyBooleanExpression
+    | RangeExpr
+    | RangeFromExpr
+    | RangeInclusiveExpr
+    | AssignmentExpression
+    | CompoundAssignmentExpression
+    ;
+
+syntax
+MatchExpression ->
+    'match' Scrutinee '{'
+        InnerAttribute*
+        MatchArms?
+    '}'
+    ;
+
+syntax
+Scrutinee -> Expression except StructExpression;
+
+syntax
+MatchArms ->
+    ( MatchArm '=>' ( ExpressionWithoutBlock ',' | ExpressionWithBlock ','? ) )*
+    MatchArm => Expression ','?;
+
+syntax
+MatchArm -> OuterAttribute* Pattern MatchArmGuard?;
+
+syntax
+MatchArmGuard -> 'if' Expression;
+
+syntax
+ReturnExpression -> 'return' Expression?;
+
+syntax
+AwaitExpression -> Expression '.' 'await';
+
+syntax
+UnderscoreExpression -> '_';

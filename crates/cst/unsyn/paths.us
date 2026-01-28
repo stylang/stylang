@@ -1,0 +1,81 @@
+syntax
+SimplePath ->
+    '::'? SimplePathSegment ( '::' SimplePathSegment )*
+
+syntax
+SimplePathSegment ->
+    IDENTIFIER | 'super' | 'self' | 'crate' | '$crate'
+    ;
+
+syntax
+PathInExpression ->
+    '::'? PathExprSegment ( '::' PathExprSegment )*
+    ;
+
+syntax
+PathExprSegment ->
+    PathIdentSegment ( '::' GenericArgs )?
+    ;
+
+syntax
+PathIdentSegment ->
+    IDENTIFIER | 'super' | 'self' | 'Self' | 'crate' | '$crate'
+    ;
+
+syntax
+GenericArgs ->
+      '<' '>'
+    | '<' ( GenericArg ',' )* GenericArg ','? '>'
+    ;
+
+syntax
+GenericArg ->
+    Lifetime | Type | GenericArgsConst | GenericArgsBinding | GenericArgsBounds
+    ;
+
+syntax
+GenericArgsConst ->
+      BlockExpression
+    | LiteralExpression
+    | - LiteralExpression
+    | SimplePathSegment
+    ;
+
+syntax
+GenericArgsBinding ->
+    IDENTIFIER GenericArgs? '=' Type
+    ;
+
+syntax
+GenericArgsBounds ->
+    IDENTIFIER GenericArgs? ':' TypeParamBounds
+    ;
+
+syntax
+QualifiedPathInExpression -> QualifiedPathType ( '::' PathExprSegment )+;
+
+syntax
+QualifiedPathType -> '<' Type ( as TypePath )? '>';
+
+syntax
+QualifiedPathInType -> QualifiedPathType ( '::' TypePathSegment )+;
+
+syntax
+TypePath -> '::'? TypePathSegment ( '::' TypePathSegment )*;
+
+syntax
+TypePathSegment -> PathIdentSegment ( '::'? ( GenericArgs | TypePathFn ) )?;
+
+syntax
+TypePathFn -> ( TypePathFnInputs? ) ( '->' TypeNoBounds )?;
+
+syntax
+TypePathFnInputs -> Type ( ',' Type )* ','?;
+
+syntax
+Visibility ->
+      pub
+    | pub '(' crate ')'
+    | pub '(' self  ')'
+    | pub '(' super ')'
+    | pub '(' in SimplePath ')';

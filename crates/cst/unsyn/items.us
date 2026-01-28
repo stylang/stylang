@@ -1,0 +1,229 @@
+syntax
+Module ->
+      unsafe? mod IDENTIFIER ;
+    | unsafe? mod IDENTIFIER '{'
+        InnerAttribute*
+        Item*
+      '}'
+    ;
+
+
+syntax
+ExternCrate -> 'extern' 'crate' CrateRef AsClause? ;
+
+syntax
+CrateRef -> IDENTIFIER | 'self';
+
+syntax
+AsClause -> 'as' ( IDENTIFIER | '_' );
+
+
+syntax
+UseDeclaration -> use UseTree ;
+
+syntax
+UseTree ->
+      ( SimplePath? '::' )? *
+    | ( SimplePath? '::' )? '{' ( UseTree ( ',' UseTree )* ','? )? '}'
+    | SimplePath ( 'as' ( IDENTIFIER | '_' ) )?
+    ;
+
+
+syntax
+Function ->
+    FunctionQualifiers fn IDENTIFIER GenericParams?
+        ( FunctionParameters? )
+        FunctionReturnType? WhereClause?
+        ( BlockExpression | ; )
+    ;
+
+syntax
+FunctionQualifiers -> 'const'? 'async'? ItemSafety? ( 'extern' Abi? )?;
+
+syntax
+ItemSafety -> 'safe' | 'unsafe';
+
+syntax
+Abi -> STRING_LITERAL | RAW_STRING_LITERAL;
+
+syntax
+FunctionParameters ->
+      SelfParam ','?
+    | ( SelfParam ',' )? FunctionParam ( ',' FunctionParam )* ','?
+    ;
+
+syntax
+SelfParam -> OuterAttribute* ( ShorthandSelf | TypedSelf );
+
+syntax
+ShorthandSelf -> ( '&' | '&' Lifetime )? 'mut'? 'self';
+
+syntax
+TypedSelf -> 'mut'? 'self' : Type;
+
+syntax
+FunctionParam -> OuterAttribute* ( FunctionParamPattern | '...' | Type );
+
+syntax
+FunctionParamPattern -> PatternNoTopAlt : ( Type | '...' );
+
+syntax
+FunctionReturnType -> -> Type;
+
+syntax
+TypeAlias ->
+    'type' IDENTIFIER GenericParams? ( ':' TypeParamBounds )?
+        WhereClause?
+        ( '=' Type WhereClause? )? ;
+    ;
+
+syntax
+Struct ->
+      StructStruct
+    | TupleStruct
+
+syntax
+StructStruct ->
+    'struct' IDENTIFIER GenericParams? WhereClause? ( { StructFields? } | ';' )
+    ;
+
+syntax
+TupleStruct ->
+    'struct' IDENTIFIER GenericParams? ( TupleFields? ) WhereClause? ';'
+    ;
+
+syntax
+StructFields -> StructField ( ',' StructField )* ','?;
+
+syntax
+StructField -> OuterAttribute* Visibility? IDENTIFIER ':' Type;
+
+syntax
+TupleFields -> TupleField ( ',' TupleField )* ','?;
+
+syntax
+TupleField -> OuterAttribute* Visibility? Type;
+
+syntax
+Enumeration ->
+    'enum' IDENTIFIER GenericParams? WhereClause? '{' EnumVariants? '}';
+
+syntax
+EnumVariants -> EnumVariant ( ',' EnumVariant )* ','?;
+
+syntax
+EnumVariant ->
+    OuterAttribute* Visibility?
+    IDENTIFIER ( EnumVariantTuple | EnumVariantStruct )? EnumVariantDiscriminant?
+    ;
+
+syntax
+EnumVariantTuple -> '(' TupleFields? ')';
+
+syntax
+EnumVariantStruct -> '{' StructFields? '}'
+
+syntax
+EnumVariantDiscriminant -> '=' Expression;
+
+syntax
+Union ->
+    'union' IDENTIFIER GenericParams? WhereClause? '{' StructFields? '}'
+    ;
+
+syntax
+ConstantItem ->
+    'const' ( IDENTIFIER | '_' ) : Type ( '=' Expression )? ';'
+    ;
+
+syntax
+StaticItem ->
+    ItemSafety? 'static' 'mut'? IDENTIFIER : Type ( '=' Expression )? ';'
+    ;
+
+syntax
+Trait ->
+    'unsafe'? 'trait' IDENTIFIER GenericParams? ( ':' TypeParamBounds? )? WhereClause?
+    '{'
+        InnerAttribute*
+        AssociatedItem*
+    '}'
+    ;
+
+syntax
+Implementation -> InherentImpl | TraitImpl;
+
+syntax
+InherentImpl ->
+    impl GenericParams? Type WhereClause? '{'
+        InnerAttribute*
+        AssociatedItem*
+    '}'
+    ;
+
+syntax
+TraitImpl ->
+    'unsafe'? impl GenericParams? '!'? TypePath for Type
+    WhereClause?
+    '{'
+        InnerAttribute*
+        AssociatedItem*
+    '}'
+    ;
+
+syntax
+ExternBlock ->
+    'unsafe'? 'extern' Abi? '{'
+        InnerAttribute*
+        ExternalItem*
+    '}'
+
+syntax
+ExternalItem ->
+    OuterAttribute* (
+        MacroInvocationSemi
+      | Visibility? StaticItem
+      | Visibility? Function
+    )
+    ;
+
+syntax
+GenericParams -> '<' ( GenericParam ( ',' GenericParam )* ','? )? '>';
+
+syntax
+GenericParam -> OuterAttribute* ( LifetimeParam | TypeParam | ConstParam );
+
+syntax
+LifetimeParam -> Lifetime ( ':' LifetimeBounds )?;
+
+syntax
+TypeParam -> IDENTIFIER ( ':' TypeParamBounds? )? ( '=' Type )?;
+
+syntax
+ConstParam ->
+    const IDENTIFIER : Type
+    ( '=' ( BlockExpression | IDENTIFIER | '-'? LiteralExpression ) )?
+    ;
+
+syntax
+WhereClause -> 'where' ( WhereClauseItem ',' )* WhereClauseItem?;
+
+syntax
+WhereClauseItem ->
+      LifetimeWhereClauseItem
+    | TypeBoundWhereClauseItem
+    ;
+
+syntax
+LifetimeWhereClauseItem -> Lifetime : LifetimeBounds;
+
+syntax
+TypeBoundWhereClauseItem -> ForLifetimes? Type ':' TypeParamBounds?;
+
+syntax
+AssociatedItem ->
+    OuterAttribute* (
+        MacroInvocationSemi
+      | ( Visibility? ( TypeAlias | ConstantItem | Function ) )
+    )
+    ;
