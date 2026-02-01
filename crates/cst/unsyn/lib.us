@@ -1,9 +1,9 @@
-pub mod lexical;
-pub mod macros;
-pub mod crate;
-pub mod cfg;
-pub mod attrs;
-pub mod stmt;
-pub mod patt;
-pub mod types;
-pub mod items;
+mod lexical;
+mod macros;
+mod crates;
+mod cfg;
+mod attrs;
+mod stmt;
+mod patt;
+mod types;
+mod items;

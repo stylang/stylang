@@ -6,7 +6,7 @@ use crate::{
     lexical::{
         delimiter::Brace,
         ident::Ident,
-        keyword::{As, Use},
+        keyword::{As, Mod, Use},
         punct::{Comma, PathSep, Star},
     },
     syntax::Path,
@@ -52,6 +52,19 @@ where
         /// Optional as branch.
         Option<(As<I>, Ident<I>)>,
     ),
+}
+
+/// Declare a module.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Syntax)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ModuleDeclaration<I>
+where
+    I: UnsynInput,
+{
+    /// leading keyword `mod`
+    pub keyword: Mod<I>,
+    /// module name.
+    pub ident: Ident<I>,
 }
 
 #[cfg(test)]

@@ -32,11 +32,11 @@ NeverType -> '!';
 syntax
 TupleType ->
       '(' ')'
-    | '(' ( Type , )+ Type? ')'
+    | '(' ( Type ',' )+ Type? ')'
     ;
 
 syntax
-ArrayType -> '[' Type ; Expression ']';
+ArrayType -> '[' Type ';' Expression ']';
 
 syntax
 SliceType -> '[' Type ']';
@@ -54,10 +54,10 @@ BareFunctionType ->
     ;
 
 syntax
-FunctionTypeQualifiers -> 'unsafe'? ( 'extern' Abi? )?
+FunctionTypeQualifiers -> 'unsafe'? ( 'extern' Abi? )?;
 
 syntax
-BareFunctionReturnType -> -> TypeNoBounds;
+BareFunctionReturnType -> TypeNoBounds;
 
 syntax
 FunctionParametersMaybeNamedVariadic ->
@@ -71,12 +71,12 @@ MaybeNamedFunctionParameters ->
 
 syntax
 MaybeNamedParam ->
-    OuterAttribute* ( ( IDENTIFIER | _ ) : )? Type
+    OuterAttribute* ( ( IDENTIFIER | '_' ) ':' )? Type
     ;
 
 syntax
 MaybeNamedFunctionParametersVariadic ->
-    ( MaybeNamedParam , )* MaybeNamedParam , OuterAttribute* '...'
+    ( MaybeNamedParam ',' )* MaybeNamedParam ',' OuterAttribute* '...'
     ;
 
 syntax

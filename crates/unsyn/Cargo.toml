@@ -13,6 +13,9 @@ parserc = { version = "^0.12", default-features = false, features = ["syntax","i
 serde = { version = "1.0.228", optional = true }
 unicode-ident = "1.0.22"
 
+[dev-dependencies]
+walkdir = "2"
+
 [features]
 default = ["serde"]
 serde = ["dep:serde","parserc/serde"]

@@ -314,5 +314,7 @@ mod tests {
                 delimiter_end: TokenStream::from((9, "'"))
             })
         );
+
+        println!("{:?}", TokenStream::from(r#"'\\\''"#).parse::<LitStr<_>>());
     }
 }

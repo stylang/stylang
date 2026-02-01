@@ -34,7 +34,7 @@ where
         match content.as_str() {
             "lexer" | "syntax" | "followed" | "except" | "use" | "super" | "crate" => {
                 return Err(UnsynError::Semantics(
-                    SemanticsKind::Ident,
+                    SemanticsKind::Keyword,
                     content.to_span(),
                 ));
             }

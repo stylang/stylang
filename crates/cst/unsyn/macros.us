@@ -8,6 +8,7 @@ syntax DelimTokenTree ->
     | '{' TokenTree* '}'
     ;
 
+syntax
 TokenTree ->
     Token except delimiters | DelimTokenTree
     ;
@@ -28,23 +29,26 @@ MacroRulesDef ->
       '(' MacroRules ')' ';'
     | '[' MacroRules ']' ';'
     | '{' MacroRules '}'
+    ;
 
 syntax
 MacroRules ->
     MacroRule ( ';' MacroRule )* ';'?
+    ;
 
 syntax
 MacroRule ->
-    MacroMatcher '=>' MacroTranscriber
+    MacroMatcher '=>' MacroTranscriber;
 
 syntax
 MacroMatcher ->
       '(' MacroMatch* ')'
     | '[' MacroMatch* ']'
     | '{' MacroMatch* '}'
+    ;
 
 syntax
-MacroMatch →
+MacroMatch ->
       Token except ('$' | delimiters)
     | MacroMatcher
     | '$' ( IDENTIFIER_OR_KEYWORD except 'crate' | RAW_IDENTIFIER ) ':' MacroFragSpec
@@ -52,7 +56,7 @@ MacroMatch →
     ;
 
 syntax
-MacroFragSpec →
+MacroFragSpec ->
       'block'
     | 'expr'
     | 'expr_2021'
@@ -71,23 +75,24 @@ MacroFragSpec →
     ;
 
 syntax
-MacroRepSep → Tokenexcept delimiters and MacroRepOp;
+MacroRepSep -> Tokenexcept delimiters and MacroRepOp;
 
 syntax
-MacroRepOp → '*' | '+' | '?';
+MacroRepOp -> '*' | '+' | '?';
 
 syntax
-MacroTranscriber → DelimTokenTree;
+MacroTranscriber -> DelimTokenTree;
 
 
 syntax
-ProcMacroDeriveAttribute →
+ProcMacroDeriveAttribute ->
     proc_macro_derive ( DeriveMacroName ( ',' DeriveMacroAttributes )? ','? )
     ;
 
 syntax
-DeriveMacroName → IDENTIFIER;
+DeriveMacroName -> IDENTIFIER;
 
-DeriveMacroAttributes →
+syntax
+DeriveMacroAttributes ->
     'attributes' '(' ( IDENTIFIER ( ',' IDENTIFIER )* ','? )? ')'
     ;

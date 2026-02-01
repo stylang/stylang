@@ -20,7 +20,7 @@ AttrInput ->
 syntax
 MetaItem ->
       SimplePath
-    | SimplePath = Expression
+    | SimplePath '=' Expression
     | SimplePath '(' MetaSeq? ')'
     ;
 

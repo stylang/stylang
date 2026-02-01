@@ -76,6 +76,10 @@ pub enum KeywordKind {
     As,
     #[error("keyword 'this'")]
     This,
+    #[error("keyword 'whitespace'")]
+    Whitespace,
+    #[error("keyword 'mod'")]
+    Mod,
 }
 
 impl KeywordKind {
@@ -117,6 +121,8 @@ pub enum SyntaxKind {
     UnicodeEscape,
     #[error("literal decimal number")]
     Dec,
+    #[error("ExprNoTopAlt")]
+    ExprNoTopAlt,
 }
 
 impl SyntaxKind {
@@ -146,8 +152,8 @@ pub enum SemanticsKind {
     HexDigit,
     #[error("string content")]
     StrContent,
-    #[error("ident")]
-    Ident,
+    #[error("keyword")]
+    Keyword,
     #[error("unicode escape")]
     UnicodeEscape,
     #[error("empty set expression")]

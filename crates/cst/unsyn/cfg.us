@@ -32,7 +32,7 @@ syntax
 CfgAttribute -> 'cfg' '(' ConfigurationPredicate ')';
 
 syntax
-CfgAttrAttribute → 'cfg_attr' '(' ConfigurationPredicate , CfgAttrs? ')';
+CfgAttrAttribute -> 'cfg_attr' '(' ConfigurationPredicate ',' CfgAttrs? ')';
 
 syntax
-CfgAttrs → Attr ( ',' Attr )* ','?;
+CfgAttrs -> Attr ( ',' Attr )* ','?;

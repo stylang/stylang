@@ -319,6 +319,7 @@ RangeExpression ->
     | RangeFullExpr
     | RangeInclusiveExpr
     | RangeToInclusiveExpr
+    ;
 
 syntax
 RangeExpr -> Expression '..' Expression;
@@ -356,7 +357,7 @@ LetChain -> LetChainCondition ( '&&' LetChainCondition )*;
 syntax
 LetChainCondition ->
       Expression except ExcludedConditions
-    | OuterAttribute* 'let' Pattern = Scrutinee except ExcludedConditions
+    | OuterAttribute* 'let' Pattern '=' Scrutinee except ExcludedConditions
     ;
 
 syntax
@@ -384,7 +385,7 @@ Scrutinee -> Expression except StructExpression;
 syntax
 MatchArms ->
     ( MatchArm '=>' ( ExpressionWithoutBlock ',' | ExpressionWithBlock ','? ) )*
-    MatchArm => Expression ','?;
+    MatchArm '=>' Expression ','?;
 
 syntax
 MatchArm -> OuterAttribute* Pattern MatchArmGuard?;

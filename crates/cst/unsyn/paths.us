@@ -1,6 +1,7 @@
 syntax
 SimplePath ->
     '::'? SimplePathSegment ( '::' SimplePathSegment )*
+    ;
 
 syntax
 SimplePathSegment ->
@@ -37,7 +38,7 @@ syntax
 GenericArgsConst ->
       BlockExpression
     | LiteralExpression
-    | - LiteralExpression
+    | '-' LiteralExpression
     | SimplePathSegment
     ;
 

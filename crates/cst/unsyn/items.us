@@ -1,6 +1,6 @@
 syntax
 Module ->
-      unsafe? mod IDENTIFIER ;
+      unsafe? mod IDENTIFIER ';'
     | unsafe? mod IDENTIFIER '{'
         InnerAttribute*
         Item*
@@ -19,11 +19,11 @@ AsClause -> 'as' ( IDENTIFIER | '_' );
 
 
 syntax
-UseDeclaration -> use UseTree ;
+UseDeclaration -> 'use' UseTree ;
 
 syntax
 UseTree ->
-      ( SimplePath? '::' )? *
+      ( SimplePath? '::' )? '*'
     | ( SimplePath? '::' )? '{' ( UseTree ( ',' UseTree )* ','? )? '}'
     | SimplePath ( 'as' ( IDENTIFIER | '_' ) )?
     ;
@@ -34,7 +34,7 @@ Function ->
     FunctionQualifiers fn IDENTIFIER GenericParams?
         ( FunctionParameters? )
         FunctionReturnType? WhereClause?
-        ( BlockExpression | ; )
+        ( BlockExpression | ';' )
     ;
 
 syntax
@@ -59,32 +59,33 @@ syntax
 ShorthandSelf -> ( '&' | '&' Lifetime )? 'mut'? 'self';
 
 syntax
-TypedSelf -> 'mut'? 'self' : Type;
+TypedSelf -> 'mut'? 'self' ':' Type;
 
 syntax
 FunctionParam -> OuterAttribute* ( FunctionParamPattern | '...' | Type );
 
 syntax
-FunctionParamPattern -> PatternNoTopAlt : ( Type | '...' );
+FunctionParamPattern -> PatternNoTopAlt ':' ( Type | '...' );
 
 syntax
-FunctionReturnType -> -> Type;
+FunctionReturnType -> '->' Type;
 
 syntax
 TypeAlias ->
     'type' IDENTIFIER GenericParams? ( ':' TypeParamBounds )?
         WhereClause?
-        ( '=' Type WhereClause? )? ;
+        ( '=' Type WhereClause? )? ';'
     ;
 
 syntax
 Struct ->
       StructStruct
     | TupleStruct
+    ;
 
 syntax
 StructStruct ->
-    'struct' IDENTIFIER GenericParams? WhereClause? ( { StructFields? } | ';' )
+    'struct' IDENTIFIER GenericParams? WhereClause? ( '{' StructFields? '}' | ';' )
     ;
 
 syntax
@@ -121,7 +122,7 @@ syntax
 EnumVariantTuple -> '(' TupleFields? ')';
 
 syntax
-EnumVariantStruct -> '{' StructFields? '}'
+EnumVariantStruct -> '{' StructFields? '}';
 
 syntax
 EnumVariantDiscriminant -> '=' Expression;
@@ -133,12 +134,12 @@ Union ->
 
 syntax
 ConstantItem ->
-    'const' ( IDENTIFIER | '_' ) : Type ( '=' Expression )? ';'
+    'const' ( IDENTIFIER | '_' ) ':' Type ( '=' Expression )? ';'
     ;
 
 syntax
 StaticItem ->
-    ItemSafety? 'static' 'mut'? IDENTIFIER : Type ( '=' Expression )? ';'
+    ItemSafety? 'static' 'mut'? IDENTIFIER ':' Type ( '=' Expression )? ';'
     ;
 
 syntax
@@ -177,6 +178,7 @@ ExternBlock ->
         InnerAttribute*
         ExternalItem*
     '}'
+    ;
 
 syntax
 ExternalItem ->
@@ -201,7 +203,7 @@ TypeParam -> IDENTIFIER ( ':' TypeParamBounds? )? ( '=' Type )?;
 
 syntax
 ConstParam ->
-    const IDENTIFIER : Type
+    const IDENTIFIER ':' Type
     ( '=' ( BlockExpression | IDENTIFIER | '-'? LiteralExpression ) )?
     ;
 
@@ -215,7 +217,7 @@ WhereClauseItem ->
     ;
 
 syntax
-LifetimeWhereClauseItem -> Lifetime : LifetimeBounds;
+LifetimeWhereClauseItem -> Lifetime ':' LifetimeBounds;
 
 syntax
 TypeBoundWhereClauseItem -> ForLifetimes? Type ':' TypeParamBounds?;

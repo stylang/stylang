@@ -45,6 +45,7 @@ macro_rules! define_keyword {
     };
 }
 
+define_keyword!(Whitespace, "whitespace");
 define_keyword!(Lexer, "lexer");
 define_keyword!(Syntax, "syntax");
 define_keyword!(Followed, "followed");
@@ -54,3 +55,4 @@ define_keyword!(Super, "super");
 define_keyword!(Crate, "crate");
 define_keyword!(As, "as");
 define_keyword!(This, "this");
+define_keyword!(Mod, "mod");
