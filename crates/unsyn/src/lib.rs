@@ -2,4 +2,5 @@
 
 pub mod errors;
 pub mod input;
-pub mod lit;
+pub mod lexical;
+pub mod syntax;
